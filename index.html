@@ -2268,6 +2268,164 @@
     }
     #stageRecap button:hover { background: var(--amber); }
 
+    /* =====================================================================
+       PS1 MAIN MENU — dark/green CRT vibe, rotating cart, chunky type
+       ===================================================================== */
+    #mainMenu {
+      position: fixed; inset: 0; z-index: 100;
+      display: none;
+      background: #02080a;
+      overflow: hidden;
+      font-family: 'Russo One', 'Share Tech Mono', monospace;
+      color: #b8ffae;
+      letter-spacing: 2px;
+    }
+    #mainMenu.show { display: block; }
+
+    /* abstract green-grid background — perspective city/circuit pattern.
+       Two stacked gradients give a low-fi grid. CSS animation scrolls it. */
+    #menuGridBG {
+      position: absolute; inset: 0;
+      background:
+        repeating-linear-gradient(0deg,   rgba(40,200,100,0.10) 0px, rgba(40,200,100,0.10) 1px, transparent 1px, transparent 28px),
+        repeating-linear-gradient(90deg,  rgba(40,200,100,0.08) 0px, rgba(40,200,100,0.08) 1px, transparent 1px, transparent 28px),
+        radial-gradient(ellipse at 50% 70%, rgba(20,80,40,0.55) 0%, rgba(0,0,0,0.95) 75%);
+      animation: menuGridScroll 24s linear infinite;
+      filter: blur(0.4px);
+    }
+    @keyframes menuGridScroll {
+      0%   { background-position: 0 0, 0 0, 0 0; }
+      100% { background-position: 0 280px, 280px 0, 0 0; }
+    }
+
+    /* low-poly rotating cart sits behind the menu */
+    #menuCanvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.92;
+      filter: drop-shadow(0 0 12px rgba(80, 220, 120, 0.4));
+    }
+    /* scanline overlay layered on top of everything */
+    #mainMenu .menu-scanlines {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(0deg,
+        rgba(0,0,0,0.30) 0px, rgba(0,0,0,0.30) 1px,
+        transparent 1px, transparent 3px);
+      mix-blend-mode: multiply;
+    }
+
+    /* title block — chunky, low-res */
+    #mainMenu .menu-title-row {
+      position: absolute; top: 32px; left: 36px;
+      pointer-events: none;
+      z-index: 4;
+    }
+    #mainMenu .menu-sub {
+      font-size: 14px; letter-spacing: 5px;
+      color: #5cd87a;
+      text-shadow: 2px 2px 0 #0a3a18;
+      margin-bottom: 4px;
+    }
+    #mainMenu .menu-title {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 120px; line-height: 0.9;
+      letter-spacing: 8px;
+      color: #b8ffae;
+      text-shadow:
+        5px 5px 0 #0a3a18,
+        10px 10px 0 #051a0c,
+        0 0 22px rgba(150, 255, 170, 0.35);
+    }
+
+    /* option list — left aligned, chunky, selected has triangle cursor */
+    #mainMenu .menu-options {
+      position: absolute;
+      bottom: 90px; left: 56px;
+      pointer-events: auto;
+      z-index: 4;
+      display: flex; flex-direction: column;
+      gap: 10px;
+      min-width: 340px;
+    }
+    #mainMenu .menu-options .opt {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 30px; letter-spacing: 6px;
+      color: #5cd87a;
+      text-shadow: 3px 3px 0 #051a0c;
+      padding: 6px 14px 6px 38px;
+      position: relative;
+      transition: color 80ms steps(3, end);
+    }
+    #mainMenu .menu-options .opt.sel {
+      color: #ffffe8;
+      text-shadow: 3px 3px 0 #051a0c, 0 0 14px rgba(180, 255, 200, 0.5);
+      animation: menuSelPulse 600ms steps(4, end) infinite;
+    }
+    #mainMenu .menu-options .opt.sel::before {
+      content: '▶';
+      position: absolute; left: 6px; top: 50%;
+      transform: translateY(-50%);
+      color: #ffb036;
+      text-shadow: 2px 2px 0 #1a0a00;
+      animation: menuCursorBlink 420ms steps(3, end) infinite;
+    }
+    @keyframes menuSelPulse {
+      0%, 100% { transform: translateX(0); }
+      50%      { transform: translateX(2px); }
+    }
+    @keyframes menuCursorBlink {
+      0%, 70% { opacity: 1; }
+      71%, 100% { opacity: 0.45; }
+    }
+    /* settings rows have a value column */
+    #mainMenu .menu-options .opt .opt-val {
+      margin-left: 16px;
+      color: #ffce4a;
+      font-size: 22px;
+      letter-spacing: 4px;
+      text-shadow: 2px 2px 0 #1a0a00;
+    }
+    #mainMenu .menu-options .opt.sel .opt-val { color: #ffefb8; }
+
+    /* status bar across the bottom — PS1 config screen look */
+    #mainMenu .menu-statusbar {
+      position: absolute; bottom: 18px; left: 56px; right: 56px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px; letter-spacing: 3px;
+      color: #6df068;
+      text-shadow: 1px 1px 0 #021008;
+      padding: 6px 12px;
+      background: rgba(20, 60, 28, 0.55);
+      border: 1px solid rgba(120, 240, 130, 0.35);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+      z-index: 4;
+    }
+
+    /* full-screen confirm flash */
+    #mainMenu .menu-flash {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: rgba(180, 255, 180, 0);
+      transition: background 80ms ease-out;
+      z-index: 5;
+    }
+    #mainMenu .menu-flash.bang { background: rgba(220, 255, 230, 0.85); transition: none; }
+
+    /* mobile tweaks */
+    @media (max-width: 820px), (pointer: coarse) {
+      #mainMenu .menu-title { font-size: 72px; letter-spacing: 5px; }
+      #mainMenu .menu-options { left: 22px; min-width: 0; right: 22px; bottom: 100px; }
+      #mainMenu .menu-options .opt { font-size: 22px; letter-spacing: 4px; padding-left: 30px; }
+      #mainMenu .menu-options .opt .opt-val { font-size: 16px; }
+      #mainMenu .menu-statusbar { left: 14px; right: 14px; font-size: 10px; letter-spacing: 2px; }
+      #mainMenu .menu-title-row { top: 18px; left: 20px; }
+    }
+
     /* ====== Replay-results stamp-in styling ====== */
     /* Each row starts hidden and snaps in via .in. Bonus row flashes. */
     #stageRecap .recap-stats .stat-row {
@@ -2478,6 +2636,25 @@
   </style>
 </head>
 <body>
+
+  <!-- ===== PS1-style main menu (covers everything until START) ===== -->
+  <div id="mainMenu" class="show">
+    <div id="menuGridBG"></div>
+    <canvas id="menuCanvas"></canvas>
+    <div class="menu-scanlines"></div>
+    <div class="menu-title-row">
+      <div class="menu-sub">MAIN MENU</div>
+      <div class="menu-title">CART</div>
+    </div>
+    <div class="menu-options" id="menuOptions">
+      <!-- populated by JS based on _menuMode -->
+    </div>
+    <div class="menu-statusbar" id="menuStatus">
+      VERSION 0.04 · SOUND: ON · MUSIC: ON · CONTROL: ONE-THUMB · CRT: ON · PRESS START
+    </div>
+    <div class="menu-flash" id="menuFlash"></div>
+  </div>
+
   <canvas id="c"></canvas>
   <canvas id="streaks"></canvas>
   <canvas id="boostBlast"></canvas>
@@ -3589,6 +3766,235 @@
     // ---- stage intro / countdown state ----
     // states: 'fadeIn' (0.5s) → 'idle' (0.6s) → '3' → '2' → '1' → 'GO' (0.5s) → null (playing)
     let introState = null;
+
+    // =================================================================
+    // PS1-style main menu — gates the entire game until START.
+    // Lives over the world canvas with its own little Three.js scene
+    // for the rotating cart preview.
+    // =================================================================
+    let _menuActive = true;
+    let _menuMode = 'main';                // 'main' | 'settings'
+    let _menuIdx = 0;
+    const _menuOpts = {
+      main:     ['START', 'SETTINGS'],
+      settings: ['SOUND', 'MUSIC', 'CRT', 'CONTROL', 'BACK'],
+    };
+    const _settings = {
+      sound:   true,
+      music:   true,
+      crt:     true,
+      control: 'ONE-THUMB',  // toggled to 'CLASSIC' on desktop preference
+    };
+    function _applySettings() {
+      // CRT — toggle the scanlines + #vignette layers
+      const sc = document.getElementById('scanlines');
+      const vg = document.getElementById('vignette');
+      if (sc) sc.style.display = _settings.crt ? '' : 'none';
+      if (vg) vg.style.opacity = _settings.crt ? '' : '0';
+      // Sound — mute the SFX bus (audioMaster). Music is independent.
+      if (typeof audioMaster !== 'undefined' && audioMaster && typeof audioCtx !== 'undefined' && audioCtx) {
+        audioMaster.gain.setTargetAtTime(_settings.sound ? 0.28 : 0, audioCtx.currentTime, 0.05);
+      }
+      // Music — gate the <audio id="bigStepper">
+      const mus = document.getElementById('bigStepper');
+      if (mus) mus.muted = !_settings.music;
+    }
+    function _updateMenuStatus() {
+      const s = document.getElementById('menuStatus');
+      if (!s) return;
+      s.textContent =
+        `VERSION 0.04 · SOUND: ${_settings.sound ? 'ON' : 'OFF'} · ` +
+        `MUSIC: ${_settings.music ? 'ON' : 'OFF'} · ` +
+        `CONTROL: ${_settings.control} · ` +
+        `CRT: ${_settings.crt ? 'ON' : 'OFF'} · PRESS START`;
+    }
+    function _renderMenuOptions() {
+      const root = document.getElementById('menuOptions');
+      if (!root) return;
+      const list = _menuOpts[_menuMode];
+      root.innerHTML = '';
+      list.forEach((name, i) => {
+        const row = document.createElement('div');
+        row.className = 'opt' + (i === _menuIdx ? ' sel' : '');
+        let valHtml = '';
+        if (_menuMode === 'settings') {
+          if (name === 'SOUND')   valHtml = `<span class="opt-val">${_settings.sound ? '◄ ON ►' : '◄ OFF ►'}</span>`;
+          if (name === 'MUSIC')   valHtml = `<span class="opt-val">${_settings.music ? '◄ ON ►' : '◄ OFF ►'}</span>`;
+          if (name === 'CRT')     valHtml = `<span class="opt-val">${_settings.crt   ? '◄ ON ►' : '◄ OFF ►'}</span>`;
+          if (name === 'CONTROL') valHtml = `<span class="opt-val">◄ ${_settings.control} ►</span>`;
+        }
+        row.innerHTML = `${name}${valHtml}`;
+        row.addEventListener('click', () => {
+          _menuIdx = i;
+          _renderMenuOptions();
+          if (_menuMode === 'settings' && name !== 'BACK') {
+            _menuAdjust(+1);
+          } else {
+            _menuConfirm();
+          }
+        });
+        root.appendChild(row);
+      });
+    }
+    function _menuMove(delta) {
+      const len = _menuOpts[_menuMode].length;
+      _menuIdx = (_menuIdx + delta + len) % len;
+      try { sfxClack(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+      _renderMenuOptions();
+    }
+    function _menuAdjust(delta) {
+      // Left/Right when in settings — flip the current row's value
+      if (_menuMode !== 'settings') return;
+      const opt = _menuOpts.settings[_menuIdx];
+      if (opt === 'SOUND')   _settings.sound = !_settings.sound;
+      else if (opt === 'MUSIC') _settings.music = !_settings.music;
+      else if (opt === 'CRT')   _settings.crt   = !_settings.crt;
+      else if (opt === 'CONTROL') {
+        _settings.control = (_settings.control === 'ONE-THUMB') ? 'CLASSIC' : 'ONE-THUMB';
+      } else return;
+      _applySettings();
+      _updateMenuStatus();
+      _renderMenuOptions();
+      try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+    }
+    function _menuConfirm() {
+      const opt = _menuOpts[_menuMode][_menuIdx];
+      try { startAudio(); } catch (_) {}  // first gesture
+      const flash = document.getElementById('menuFlash');
+      if (flash) {
+        flash.classList.remove('bang');
+        void flash.offsetWidth;
+        flash.classList.add('bang');
+        setTimeout(() => flash.classList.remove('bang'), 240);
+      }
+      try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+      if (_menuMode === 'main' && opt === 'START') {
+        setTimeout(exitMainMenu, 220);
+        return;
+      }
+      if (_menuMode === 'main' && opt === 'SETTINGS') {
+        _menuMode = 'settings';
+        _menuIdx = 0;
+        _renderMenuOptions();
+        return;
+      }
+      if (_menuMode === 'settings' && opt === 'BACK') {
+        _menuMode = 'main';
+        _menuIdx = 1; // remember SETTINGS row
+        _renderMenuOptions();
+        return;
+      }
+      // any other settings row → cycle its value
+      _menuAdjust(+1);
+    }
+    function _menuBack() {
+      if (_menuMode === 'settings') {
+        _menuMode = 'main';
+        _menuIdx = 1;
+        _renderMenuOptions();
+        try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+      }
+    }
+
+    // ---- the rotating cart preview uses its own small Three.js scene ----
+    let _menuScene = null, _menuCam = null, _menuRen = null, _menuCart = null;
+    function _initMenuScene() {
+      const cnv = document.getElementById('menuCanvas');
+      if (!cnv) return;
+      _menuRen = new THREE.WebGLRenderer({ canvas: cnv, antialias: false, alpha: true });
+      _menuRen.setPixelRatio(0.85);   // PS1-ish crunch
+      _menuRen.setClearColor(0x000000, 0);
+      _menuScene = new THREE.Scene();
+      _menuCam = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.1, 100);
+      _menuCam.position.set(0, 1.6, 5.4);
+      _menuCam.lookAt(0, 0.9, 0);
+      // Lights — flat-ish, two-tone so the cart reads with chunky shading
+      const key = new THREE.DirectionalLight(0xb8ffb0, 1.0);
+      key.position.set(2, 4, 3);
+      _menuScene.add(key);
+      const fill = new THREE.DirectionalLight(0x80ffa0, 0.4);
+      fill.position.set(-3, 2, -2);
+      _menuScene.add(fill);
+      _menuScene.add(new THREE.AmbientLight(0x103018, 0.7));
+      // Build a gray / white version of the cart so it reads against the green grid
+      _menuCart = makeCartMesh();
+      _menuCart.traverse((o) => {
+        if (o.isMesh && o.material) {
+          const c = o.material.color ? o.material.color.getHex() : 0xffffff;
+          // recolor yellow body parts to bright cool-white; darks to charcoal
+          const isDark = (c & 0x404040) === c;
+          o.material = new THREE.MeshLambertMaterial({
+            color: isDark ? 0x1a2a22 : 0xeaeae0,
+            polygonOffset: true, polygonOffsetFactor: -1,
+          });
+        }
+      });
+      _menuCart.scale.set(2.6, 2.6, 2.6);
+      _menuCart.position.y = -0.4;
+      _menuScene.add(_menuCart);
+      // simple shadow disc
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(2.2, 18),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = -0.42;
+      _menuScene.add(shadow);
+      _menuResize();
+    }
+    function _menuResize() {
+      if (!_menuRen) return;
+      _menuRen.setSize(innerWidth, innerHeight, false);
+      _menuCam.aspect = innerWidth / innerHeight;
+      _menuCam.updateProjectionMatrix();
+    }
+    addEventListener('resize', _menuResize);
+
+    function _tickMenu(nowSec) {
+      if (!_menuRen) return;
+      if (_menuCart) {
+        _menuCart.rotation.y = nowSec * 0.55;
+        _menuCart.position.y = -0.4 + Math.sin(nowSec * 1.2) * 0.06;
+      }
+      _menuRen.render(_menuScene, _menuCam);
+    }
+
+    function exitMainMenu() {
+      const root = document.getElementById('mainMenu');
+      if (root) root.classList.remove('show');
+      _menuActive = false;
+      _applySettings();
+      // begin the stage intro that was deferred
+      if (typeof startIntro === 'function') startIntro();
+    }
+
+    // ---- input ----
+    addEventListener('keydown', (e) => {
+      if (!_menuActive) return;
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup'   || k === 'w') { e.preventDefault(); _menuMove(-1); }
+      else if (k === 'arrowdown' || k === 's') { e.preventDefault(); _menuMove(+1); }
+      else if (k === 'arrowleft' || k === 'a') { e.preventDefault(); _menuAdjust(-1); }
+      else if (k === 'arrowright'|| k === 'd') { e.preventDefault(); _menuAdjust(+1); }
+      else if (k === 'enter' || k === ' ')      { e.preventDefault(); _menuConfirm(); }
+      else if (k === 'escape')                  { e.preventDefault(); _menuBack(); }
+    });
+    // Tap a status bar / background to start the game on touch devices
+    addEventListener('touchend', (e) => {
+      if (!_menuActive) return;
+      // taps on .opt are already handled by per-row click
+      const tgt = e.target;
+      if (tgt && tgt.closest && tgt.closest('.opt')) return;
+    }, { passive: true });
+
+    // Defer scene init until module finishes — Three.js + makeCartMesh need
+    // to be defined first. Called explicitly from the bottom of the file.
+    function _kickOffMainMenu() {
+      _renderMenuOptions();
+      _updateMenuStatus();
+      _applySettings();
+      try { _initMenuScene(); } catch (e) { console.warn('menu scene init failed', e); }
+    }
     let introT = 0;
     let introHasShown = false; // allows tap-to-skip after first stage
     let levelGroup = new THREE.Group();
@@ -4914,6 +5320,35 @@
       let pad = null;
       for (const p of pads) { if (p && p.connected) { pad = p; break; } }
       if (!pad) return;
+
+      // ---- main menu: nav with D-pad / stick, confirm with south ----
+      if (_menuActive) {
+        const lx = pad.axes[0] || 0;
+        const ly = pad.axes[1] || 0;
+        const DZ = 0.45;
+        const up    = (pad.buttons[12] && pad.buttons[12].pressed) || ly < -DZ;
+        const down  = (pad.buttons[13] && pad.buttons[13].pressed) || ly >  DZ;
+        const left  = (pad.buttons[14] && pad.buttons[14].pressed) || lx < -DZ;
+        const right = (pad.buttons[15] && pad.buttons[15].pressed) || lx >  DZ;
+        const confirm = (pad.buttons[0] && pad.buttons[0].pressed) || (pad.buttons[9] && pad.buttons[9].pressed);
+        const back    = (pad.buttons[1] && pad.buttons[1].pressed);
+        const edges = ['mUp','mDown','mLeft','mRight','mOk','mBack'];
+        const vals  = [up, down, left, right, confirm, back];
+        for (let i = 0; i < edges.length; i++) {
+          const pressed = !!vals[i];
+          const prev = _padPrev[edges[i]] || false;
+          if (pressed && !prev) {
+            if (i === 0) _menuMove(-1);
+            else if (i === 1) _menuMove(+1);
+            else if (i === 2) _menuAdjust(-1);
+            else if (i === 3) _menuAdjust(+1);
+            else if (i === 4) _menuConfirm();
+            else if (i === 5) _menuBack();
+          }
+          _padPrev[edges[i]] = pressed;
+        }
+        return;   // don't fall through to gameplay bindings while menu is up
+      }
       // Left stick X — apply deadzone, fall back to D-pad
       const lx = pad.axes[0] || 0;
       const DZ = 0.18;
@@ -6880,6 +7315,9 @@
     //       →  3 / 2 / 1 (0.6s each, countdown visible, HUD dim)
     //       →  go     (0.4s, race begins, HUD full)
     function startIntro() {
+      // Hold off the stage intro until the player has dismissed the main menu.
+      // The intro will be re-invoked from exitMainMenu() once START is chosen.
+      if (_menuActive) return;
       document.body.classList.add('intro-active');
       document.body.classList.remove('countdown-phase');
       introState = 'fadeIn';
@@ -7075,6 +7513,10 @@
     _resetStageStyleStats();
     // (_replayBuffer is initialized empty further down; no reset call needed
     //  here — calling it before the `const` would hit a TDZ error.)
+
+    // Bring up the PS1 main menu over the freshly-built world. The intro
+    // and gameplay tick are gated on _menuActive until the player picks START.
+    _kickOffMainMenu();
 
     // =========================================================================
     // main loop
@@ -7579,6 +8021,11 @@
       // ---- gamepad polling (any standard-mapping controller) ----
       pollGamepad();
 
+      // ---- main menu render (and gamepad input handled below) ----
+      if (_menuActive) {
+        _tickMenu(performance.now() * 0.001);
+      }
+
       // ---- stage intro plays before gameplay resumes ----
       if (introState) {
         runIntro(dt);
@@ -7589,7 +8036,7 @@
         tickReplay(dt);
       }
 
-      if (!gameOver && !stageRecap && !introState) {
+      if (!gameOver && !stageRecap && !introState && !_menuActive) {
         // throttle — boost is a press-to-fire timed burst, not a hold
         if (boostActive) {
           boostTime -= dt;
