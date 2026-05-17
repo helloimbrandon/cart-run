@@ -4493,6 +4493,7 @@
         kind: kind.kind,
         alive: true,
         passed: false,
+        minSideDist: Infinity,    // tracks the closest dlat while the truck was alongside; used by scoreDodge()
         nextLaneChange: performance.now() + rand(2000, 5500),
       };
       traffic.push(veh);
@@ -5144,13 +5145,10 @@
       if (!o.force && performance.now() - _lastBark < 700) return;
       _lastBark = performance.now();
       showBark(text);
-      if (window.speechSynthesis) {
-        const u = new SpeechSynthesisUtterance(text);
-        u.rate = 0.85;     // SLOWER so the words land
-        u.pitch = 1.0;     // natural pitch (was 1.55)
-        u.volume = 1.0;    // MAX volume
-        try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch(_) {}
-      }
+      // speechSynthesis is intentionally disabled: on iOS/macOS Safari it
+      // takes the OS audio session and ducks the music HTMLAudioElement.
+      // The on-screen bark + raveVocal hits already cover the announcer
+      // feel without that side effect.
       // synthetic reverb-tail pad underneath the voice so it has a "hall" halo
       if (audioCtx && audioReverb) {
         const t = audioCtx.currentTime + 0.02;
@@ -5544,8 +5542,109 @@
       boost:      { color: '#ff7a00', glyph: '➤', sound: 'sfxBoost' },
       warning:    { color: '#ff3a30', glyph: '!', sound: 'sfxCrash' },
       combo:      { color: '#ffce4a', glyph: '×', sound: 'sfxPickup' },
+      nearmiss:   { color: '#ffce4a', glyph: '»', sound: 'sfxClack' },
+      closecall:  { color: '#ff7a00', glyph: '!', sound: 'sfxBump' },
+      thread:     { color: '#00d4ff', glyph: '✦', sound: 'sfxBoost' },
+      oncoming:   { color: '#ff3a30', glyph: '▼', sound: 'sfxBump' },
     };
     let _comboStreak = { lastType: null, count: 0, lastT: 0 };
+
+    // -----------------------------------------------------------------
+    // Burnout-style traffic dodge scoring + DANGER CHAIN multiplier.
+    // -----------------------------------------------------------------
+    const DODGE_COMBO_WINDOW = 2000;   // ms after last dodge before chain resets
+    const DODGE_COMBO_MAX    = 5;
+    let _dodgeCombo      = 0;
+    let _dodgeComboTime  = 0;
+    let _lastDodgeMs     = 0;
+    let _lastDodgeSide   = 0;          // sign of (car.lat - truckLat) on the last dodge
+    let _lastDodgeBarkMs = 0;
+    const DODGE_VOICE_LINES = ['NICE', 'CLOSE', 'KEEP GOING', 'RISKY'];
+
+    function _breakDodgeChain(reason) {
+      if (_dodgeCombo >= 2) {
+        arcadeCallout(reason || 'COMBO LOST', { type: 'warning', pos: 'lr', size: 's', holdMs: 600 });
+      }
+      _dodgeCombo = 0;
+      _dodgeComboTime = 0;
+      _lastDodgeMs = 0;
+      _lastDodgeSide = 0;
+    }
+
+    function scoreDodge(c) {
+      // Called when the truck cleanly passes a traffic vehicle.
+      // c.minSideDist was tracked while the truck was alongside.
+      const minD = c.minSideDist;
+      if (minD === Infinity) return;                 // truck never came close
+      const playerHalf = 0.9;
+      const carHalf    = c.half || 0.9;
+      const contactDist = playerHalf + carHalf;       // ~1.8m at collision
+      const closeDist   = contactDist + 0.6;          // ≤ 2.4m — "extremely close"
+      const nearDist    = contactDist + 2.0;          // ≤ 3.8m — "near miss"
+      if (minD <= contactDist) return;                // would have been a collision, handled elsewhere
+      if (minD > nearDist) return;                    // too far to count as a dodge
+      // skip dodge scoring if the truck is essentially stopped (cheese guard)
+      if (truckSpeed < 8) return;
+
+      const now = performance.now();
+      const oncoming = (c.dir === -1);
+
+      // tier classification
+      let label, base, type;
+      if (minD <= closeDist) {
+        label = oncoming ? 'CLOSE CALL' : 'CLOSE CALL';
+        base  = oncoming ? 400 : 250;
+        type  = 'closecall';
+      } else {
+        label = oncoming ? 'ONCOMING'   : 'NEAR MISS';
+        base  = oncoming ? 200 : 100;
+        type  = oncoming ? 'oncoming' : 'nearmiss';
+      }
+
+      // combo timer
+      if (now - _dodgeComboTime < DODGE_COMBO_WINDOW) {
+        _dodgeCombo = Math.min(DODGE_COMBO_MAX, _dodgeCombo + 1);
+      } else {
+        _dodgeCombo = 1;
+      }
+      _dodgeComboTime = now;
+
+      // THREAD THE NEEDLE: previous dodge was on the opposite side within 360ms
+      const carSide = Math.sign(c.lat - truckLateral) || 1;
+      const threaded =
+        (now - _lastDodgeMs < 360) &&
+        _lastDodgeSide !== 0 &&
+        _lastDodgeSide !== carSide;
+      _lastDodgeMs   = now;
+      _lastDodgeSide = carSide;
+      if (threaded) {
+        label = 'THREAD THE NEEDLE';
+        base  = Math.max(base, 500);
+        type  = 'thread';
+      }
+
+      const mult = _dodgeCombo;
+      const pts  = base * mult;
+      addScore(pts);
+      stageDodges++;
+
+      const subtext = mult > 1
+        ? `+${pts} · CHAIN ×${mult}`
+        : `+${pts}`;
+      arcadeCallout(label, {
+        type, subtext, pos: 'lr',
+        size: threaded ? 'l' : '',
+        holdMs: threaded ? 1000 : 700,
+      });
+
+      // occasional voice bark; gated so it isn't annoying
+      if (mult >= 3 && now - _lastDodgeBarkMs > 4000 && Math.random() < 0.55) {
+        _lastDodgeBarkMs = now;
+        bark(threaded
+          ? 'NICE'
+          : DODGE_VOICE_LINES[(Math.random() * DODGE_VOICE_LINES.length) | 0]);
+      }
+    }
 
     function arcadeCallout(text, opts) {
       opts = opts || {};
@@ -6124,8 +6223,8 @@
 
       let tOrigin = null;          // {x, y, time}
       let tMoved = false;
-      const STEER_DEADZONE = 12;   // px before steering registers
-      const STEER_FULL = 120;      // px for max steer
+      const STEER_DEADZONE = 4;    // px before steering registers — small so steering feels instant
+      const STEER_FULL = 70;       // px for max steer
 
       function clearSteer() { keys['a'] = false; keys['d'] = false; }
 
@@ -6463,6 +6562,11 @@
         if (!gameOver) {
           const ds = (c.s - truckS);  // positive: ahead of truck
           const dlat = Math.abs(c.lat - truckLateral);
+          // While the truck is "alongside" this car, track the closest lateral
+          // distance — used by scoreDodge() to classify near-miss tier.
+          if (Math.abs(ds) < 6) {
+            if (dlat < c.minSideDist) c.minSideDist = dlat;
+          }
           // collision
           // jump-over forgiveness: if truck is airborne, skip the hit
           if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half) && bumpY < 0.7) {
@@ -6472,6 +6576,7 @@
             boostMeter = Math.max(0, boostMeter - BOOST_CRASH_LOSS);
             boostActive = false;
             addScore(-40);
+            _breakDodgeChain('COMBO LOST');
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
             arcadeCallout('WATCH IT', { type: 'warning', pos: 'lr', holdMs: 700 });
@@ -6501,15 +6606,11 @@
           // score on safe pass (only fires once per vehicle)
           if (!c.passed) {
             // for oncoming: passed when ds becomes negative; for same-direction: when we overtake (truck.s > c.s)
-            if (c.dir === -1 && ds < -1) {
+            if ((c.dir === -1 && ds < -1) || (c.dir === +1 && ds < -1)) {
               c.passed = true;
               addScore(c.points);
-              stageDodges++;
-            } else if (c.dir === +1 && ds < -1) {
-              // truck overtook a slower vehicle (it now sits behind)
-              c.passed = true;
-              addScore(c.points);
-              stageDodges++;
+              // Burnout-style tier scoring + DANGER CHAIN multiplier on top.
+              scoreDodge(c);
             }
           }
         }
