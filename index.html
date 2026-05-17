@@ -2758,13 +2758,13 @@
     const horizonGroup = new THREE.Group();
     scene.add(horizonGroup);
     function buildHorizon() {
-      const ringR = 330;
+      const ringR = 360;
       const peaks = 72;
       for (let i = 0; i < peaks; i++) {
         const angle = (i / peaks) * Math.PI * 2;
         const jitter = rand(-0.04, 0.04);
-        const h = rand(28, 60);
-        const w = rand(36, 70);
+        const h = rand(46, 92);
+        const w = rand(54, 100);
         const m = new THREE.Mesh(
           new THREE.ConeGeometry(w, h, 4),
           new THREE.MeshLambertMaterial({ color: 0x6a8aa0 })
@@ -2776,13 +2776,13 @@
       // a faint second ring of darker silhouettes further out for depth
       for (let i = 0; i < 36; i++) {
         const angle = (i / 36) * Math.PI * 2;
-        const h = rand(48, 90);
-        const w = rand(70, 120);
+        const h = rand(74, 138);
+        const w = rand(96, 160);
         const m = new THREE.Mesh(
           new THREE.ConeGeometry(w, h, 4),
           new THREE.MeshLambertMaterial({ color: 0x4a5a78 })
         );
-        m.position.set(Math.cos(angle) * 430, h / 2 - 6, Math.sin(angle) * 430);
+        m.position.set(Math.cos(angle) * 470, h / 2 - 6, Math.sin(angle) * 470);
         m.rotation.y = rand(0, Math.PI * 2);
         horizonGroup.add(m);
       }
@@ -3291,8 +3291,8 @@
     let storeMesh = null;
     let levelTransitioning = false;
 
-    const ROAD_W = 12;
-    const LANE_LIMIT = ROAD_W / 2 - 1.0;
+    const ROAD_W = 16;                  // wider arcade road
+    const LANE_LIMIT = ROAD_W / 2 - 1.2;
 
     // ----- procedural decor builders -----
     const houseColors = [0xe8c897, 0xc9d8a8, 0xd9a8a8, 0xa8c9d8, 0xeed197, 0xdcbfd4, 0xb0c1a8, 0xf0d4a4, 0xb4c4e0];
@@ -3300,13 +3300,13 @@
 
     function makeHouse() {
       const g = new THREE.Group();
-      const w = rand(8, 13), d = rand(7, 11), h = rand(3.5, 5.5);
+      const w = rand(11, 18), d = rand(10, 15), h = rand(5, 8);
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
         new THREE.MeshLambertMaterial({ color: houseColors[(Math.random() * houseColors.length) | 0] })
       );
       body.position.y = h / 2; g.add(body);
-      const rH = rand(2, 3.6);
+      const rH = rand(3, 5.2);
       const roof = new THREE.Mesh(
         new THREE.ConeGeometry(Math.max(w, d) * 0.78, rH, 4),
         new THREE.MeshLambertMaterial({ color: roofColors[(Math.random() * roofColors.length) | 0] })
@@ -3331,27 +3331,27 @@
     }
     function makeTree() {
       const g = new THREE.Group();
-      const tH = rand(1.4, 2.0);
+      const tH = rand(2.2, 3.2);
       const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.22, 0.32, tH, 7),
+        new THREE.CylinderGeometry(0.30, 0.44, tH, 7),
         new THREE.MeshLambertMaterial({ color: 0x6b4a2a })
       );
       trunk.position.y = tH / 2; g.add(trunk);
       const leafColors = [0x3a8a3a, 0x4ca44c, 0x356a32, 0x6ab44a];
       const leaves = new THREE.Mesh(
-        new THREE.SphereGeometry(rand(1.2, 1.9), 8, 6),
+        new THREE.SphereGeometry(rand(1.9, 2.8), 8, 6),
         new THREE.MeshLambertMaterial({ color: leafColors[(Math.random() * leafColors.length) | 0] })
       );
-      leaves.position.y = tH + 0.8; g.add(leaves);
+      leaves.position.y = tH + 1.2; g.add(leaves);
       setShadows(g, true, true);
       return g;
     }
     function makeMailbox() {
       const g = new THREE.Group();
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), new THREE.MeshLambertMaterial({ color: 0x444 }));
-      post.position.y = 0.6; g.add(post);
-      const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.36, 0.62), new THREE.MeshLambertMaterial({ color: 0xc02020 }));
-      box.position.y = 1.36; g.add(box);
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.7, 0.14), new THREE.MeshLambertMaterial({ color: 0x444 }));
+      post.position.y = 0.85; g.add(post);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.50, 0.84), new THREE.MeshLambertMaterial({ color: 0xc02020 }));
+      box.position.y = 1.92; g.add(box);
       setShadows(g, true, true);
       return g;
     }
@@ -3873,7 +3873,7 @@
           // primary building (house or downtown building)
           if (Math.random() < L.houseDensity) {
             const b = isDowntown ? makeBuilding() : makeHouse();
-            const off = isDowntown ? rand(16, 21) : rand(14, 18);
+            const off = isDowntown ? rand(19, 25) : rand(17, 22);
             b.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             b.rotation.y = yaw + (side === -1 ? Math.PI : 0);
             levelGroup.add(b);
@@ -3881,7 +3881,7 @@
           // tree (more frequent now)
           if (!isDowntown && Math.random() < L.treeDensity) {
             const tr = makeTree();
-            const off = rand(9.0, 11.5);
+            const off = rand(11, 14);
             tr.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             levelGroup.add(tr);
           }
@@ -4035,18 +4035,18 @@
         for (const side of [-1, 1]) {
           const off = ROAD_W / 2 + 1.7;
           const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.08, 0.08, 5.5, 6),
+            new THREE.CylinderGeometry(0.11, 0.11, 8, 6),
             new THREE.MeshLambertMaterial({ color: 0x444 })
           );
-          pole.position.set(p.x + rt.x * side * off, 2.75, p.z + rt.z * side * off);
+          pole.position.set(p.x + rt.x * side * off, 4, p.z + rt.z * side * off);
           pole.castShadow = true;
           levelGroup.add(pole);
           // lamp head at top (lit at dusk levels)
           const lamp = new THREE.Mesh(
-            new THREE.BoxGeometry(0.4, 0.25, 0.4),
+            new THREE.BoxGeometry(0.56, 0.32, 0.56),
             new THREE.MeshBasicMaterial({ color: isDowntown ? 0xfff5b0 : (isAvenue ? 0xffd9a0 : 0xddddcc) })
           );
-          lamp.position.set(p.x + rt.x * side * (off - 0.25), 5.4, p.z + rt.z * side * (off - 0.25));
+          lamp.position.set(p.x + rt.x * side * (off - 0.3), 7.9, p.z + rt.z * side * (off - 0.3));
           levelGroup.add(lamp);
         }
       }
@@ -6325,11 +6325,10 @@
       const aheadTan = tangentAt(lookAheadT);
       const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
       const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
-      // 12mm wide-angle chase cam — closer + higher + angled down so the
-      // road ahead reads further into the distance.
-      const camTargetX = truck.position.x - blendTanX * 7.0;
+      // 12mm wide-angle chase cam — pulled in close, height + angle kept.
+      const camTargetX = truck.position.x - blendTanX * 4.5;
       const camTargetY = 9.5 + bumpY * 0.4;
-      const camTargetZ = truck.position.z - blendTanZ * 7.0;
+      const camTargetZ = truck.position.z - blendTanZ * 4.5;
       camera.position.x += (camTargetX - camera.position.x) * 0.14;
       camera.position.y += (camTargetY - camera.position.y) * 0.10;
       camera.position.z += (camTargetZ - camera.position.z) * 0.18;
