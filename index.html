@@ -1,0 +1,2438 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cart Run — Beat the Cart Clock</title>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif; color: #fff; }
+    #c { display: block; width: 100vw; height: 100vh; }
+    #hud {
+      position: fixed; top: 14px; left: 14px;
+      pointer-events: none;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.7);
+    }
+    #hud .row { font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: 0.5px; }
+    #hud .row#cartsRow.low { color: #ff7060; animation: pulse 0.45s ease-in-out infinite alternate; }
+    @keyframes pulse { from { opacity: 1; } to { opacity: 0.55; } }
+    #hud .small { font-size: 13px; opacity: 0.85; font-weight: 500; margin-top: 8px; max-width: 380px; }
+    #speedoWrap {
+      position: fixed; right: 14px; top: 14px;
+      pointer-events: none;
+      text-align: right;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+    #speedoWrap .big { font-size: 56px; font-weight: 900; line-height: 1; letter-spacing: 1px; }
+    #speedoWrap .lbl { font-size: 12px; opacity: 0.85; letter-spacing: 2px; }
+    #speedoWrap.boost .big { color: #ffe46b; text-shadow: 0 0 18px rgba(255,200,40,0.7); }
+    #boostMeter {
+      position: fixed; right: 14px; top: 124px;
+      width: 220px; height: 18px;
+      background: rgba(0,0,0,0.45);
+      border: 2px solid rgba(255,255,255,0.45);
+      border-radius: 5px;
+      overflow: hidden;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    }
+    #boostFill {
+      height: 100%; width: 100%;
+      background: linear-gradient(90deg, #ff7040, #ffd040, #fff19a);
+      box-shadow: 0 0 18px rgba(255,200,80,0.6);
+      transition: width 0.08s linear, background 0.2s;
+    }
+    #boostFill.empty { background: linear-gradient(90deg, #5a2020, #6a3030); box-shadow: none; }
+    #boostLabel {
+      position: fixed; right: 14px; top: 144px;
+      width: 220px; text-align: center; font-size: 11px; font-weight: 800;
+      letter-spacing: 2px; opacity: 0.9; pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+    #boostLabel.empty { color: #ff7060; }
+    #overlay {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.78));
+      backdrop-filter: blur(2px);
+    }
+    #overlay h1 { font-size: 64px; margin: 0; letter-spacing: 2px; }
+    #overlay h1.win { color: #ffe46b; text-shadow: 0 4px 18px rgba(255,200,40,0.5); }
+    #overlay h1.lose { color: #ff7060; text-shadow: 0 4px 18px rgba(255,90,60,0.5); }
+    #overlay p { font-size: 18px; margin: 0; opacity: 0.92; max-width: 680px; text-align: center; }
+    #overlay button {
+      padding: 12px 28px; font-size: 17px; border: none; border-radius: 10px;
+      background: #ffe46b; color: #222; font-weight: 800; cursor: pointer; letter-spacing: 0.5px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    }
+    #overlay button:hover { background: #fff19a; }
+    #title-card {
+      position: fixed; left: 50%; top: 22%; transform: translate(-50%, -50%);
+      pointer-events: none; text-align: center;
+      text-shadow: 0 3px 14px rgba(0,0,0,0.55);
+      transition: opacity 1s ease 1.6s;
+    }
+    #title-card .t1 { font-size: 44px; font-weight: 900; letter-spacing: 3px; }
+    #title-card .t2 { font-size: 16px; opacity: 0.9; margin-top: 4px; }
+    #title-card.fade { opacity: 0; }
+    #vignette {
+      position: fixed; inset: 0; pointer-events: none;
+      box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
+      transition: box-shadow 0.15s ease-out;
+      mix-blend-mode: multiply;
+    }
+    #streaks {
+      position: fixed; inset: 0; pointer-events: none;
+      width: 100vw; height: 100vh;
+      mix-blend-mode: screen;
+    }
+    #boostBlast {
+      position: fixed; inset: 0; pointer-events: none;
+      width: 100vw; height: 100vh;
+      mix-blend-mode: screen;
+      opacity: 0;
+    }
+    #banner {
+      position: fixed; left: 50%; top: 38%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      font-size: 64px; font-weight: 900; letter-spacing: 5px;
+      color: #ffe46b;
+      text-shadow: 0 4px 24px rgba(0,0,0,0.7), 0 0 8px rgba(0,0,0,0.6);
+      opacity: 0;
+      transition: opacity 0.25s ease-out, transform 0.5s ease-out;
+      text-align: center;
+    }
+    #banner.show { opacity: 1; }
+    #banner .sub { display: block; font-size: 18px; opacity: 0.85; letter-spacing: 3px; margin-top: 6px; color:#fff; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <canvas id="streaks"></canvas>
+  <canvas id="boostBlast"></canvas>
+  <div id="vignette"></div>
+
+  <div id="hud">
+    <div id="cartsRow" class="row">🛒 <span id="carts">150</span></div>
+    <div class="row">🏬 <span id="dist">0</span> m</div>
+    <div class="row" style="font-size:16px;">📍 STAGE <span id="lvl">1</span>/3 · <span id="lvlName">SUBURB</span></div>
+    <div class="small">WASD / Arrows — steer & throttle &nbsp;·&nbsp; SPACE — boost &nbsp;·&nbsp; M — mute &nbsp;·&nbsp; Carts = your timer. Dodge oncoming traffic. <strong>FLOOR IT.</strong></div>
+    <div class="small" id="audioLbl" style="margin-top:4px; opacity:0.7;">🎵 dark d&amp;b · 170 BPM · press any key to start audio</div>
+  </div>
+
+  <div id="speedoWrap">
+    <div class="big"><span id="speed">0</span></div>
+    <div class="lbl">MPH</div>
+  </div>
+  <div id="boostMeter"><div id="boostFill"></div></div>
+  <div id="boostLabel">BOOST</div>
+
+  <div id="title-card">
+    <div class="t1">CART RUN</div>
+    <div class="t2">3 deliveries · 1 truck · no restock</div>
+  </div>
+
+  <div id="banner"></div>
+
+  <div id="overlay">
+    <h1 id="title">YOU MADE IT</h1>
+    <p id="subtitle"></p>
+    <button id="again">Drive Again</button>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+    import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+    // =========================================================================
+    // helpers
+    // =========================================================================
+    const rand = (min, max) => min + Math.random() * (max - min);
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    function setShadows(obj, cast = true, receive = true) {
+      obj.traverse(o => { if (o.isMesh) { o.castShadow = cast; o.receiveShadow = receive; } });
+    }
+    function makeTextSign(text, w = 10, h = 2.6, bg = '#ff4a3a', fg = '#ffffff') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024; canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = fg;
+      ctx.font = '900 180px ui-sans-serif, system-ui, sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2 + 6);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.anisotropy = 4;
+      return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+    }
+
+    // =========================================================================
+    // renderer / scene / camera / post-processing
+    // =========================================================================
+    const canvas = document.getElementById('c');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x9fd7ff);
+    scene.fog = new THREE.Fog(0x9fd7ff, 70, 280);
+
+    const camera = new THREE.PerspectiveCamera(64, innerWidth / innerHeight, 0.1, 900);
+    camera.position.set(0, 7, -12);
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const afterimagePass = new AfterimagePass(0.0);
+    composer.addPass(afterimagePass);
+    composer.addPass(new OutputPass());
+
+    const streakCanvas = document.getElementById('streaks');
+    const streakCtx = streakCanvas.getContext('2d');
+    const blastCanvas = document.getElementById('boostBlast');
+    const blastCtx = blastCanvas.getContext('2d');
+
+    function resize() {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight, false);
+      composer.setSize(innerWidth, innerHeight);
+      const dpr = Math.min(devicePixelRatio, 2);
+      for (const cv of [streakCanvas, blastCanvas]) {
+        cv.width = innerWidth * dpr;
+        cv.height = innerHeight * dpr;
+        cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    }
+    addEventListener('resize', resize);
+    resize();
+
+    // ----- manga boost blast: pre-baked random line angles -----
+    const boostLineAngles = [];
+    const BOOST_LINE_COUNT = 96;
+    for (let i = 0; i < BOOST_LINE_COUNT; i++) {
+      const baseAngle = (i / BOOST_LINE_COUNT) * Math.PI * 2;
+      const jitter = (Math.random() - 0.5) * 0.05;
+      boostLineAngles.push({
+        angle: baseAngle + jitter,
+        width: 1.4 + Math.random() * 4.2,
+        lenMul: 0.65 + Math.random() * 0.65,
+        alphaMul: 0.5 + Math.random() * 0.55,
+      });
+    }
+    let boostBlastTimer = 0;
+    const BOOST_BLAST_DUR = 0.6;
+    function triggerBoostBlast() {
+      boostBlastTimer = BOOST_BLAST_DUR;
+      blastCanvas.style.opacity = '1';
+    }
+    function drawBoostBlast(progress) {
+      const w = innerWidth, h = innerHeight;
+      const cx = w / 2, cy = h * 0.48;
+      blastCtx.clearRect(0, 0, w, h);
+      const maxLen = Math.max(w, h) * 0.85;
+      const fade = 1 - progress * progress;
+      for (const line of boostLineAngles) {
+        const innerR = maxLen * (0.05 + progress * 0.15);
+        const outerR = maxLen * line.lenMul * (0.4 + progress * 0.6);
+        const cosA = Math.cos(line.angle);
+        const sinA = Math.sin(line.angle);
+        const x1 = cx + cosA * innerR;
+        const y1 = cy + sinA * innerR;
+        const x2 = cx + cosA * outerR;
+        const y2 = cy + sinA * outerR;
+        const grad = blastCtx.createLinearGradient(x1, y1, x2, y2);
+        const alpha = fade * line.alphaMul * 0.65;
+        grad.addColorStop(0,   `rgba(225, 240, 255, ${alpha * 0.3})`);
+        grad.addColorStop(0.3, `rgba(190, 225, 255, ${alpha})`);
+        grad.addColorStop(1,   `rgba(140, 195, 255, 0)`);
+        blastCtx.strokeStyle = grad;
+        blastCtx.lineWidth = line.width;
+        blastCtx.lineCap = 'round';
+        blastCtx.beginPath();
+        blastCtx.moveTo(x1, y1);
+        blastCtx.lineTo(x2, y2);
+        blastCtx.stroke();
+      }
+      // focus hole
+      const clearR = maxLen * (0.08 + progress * 0.07);
+      const clearGrd = blastCtx.createRadialGradient(cx, cy, 0, cx, cy, clearR);
+      clearGrd.addColorStop(0, 'rgba(0,0,0,1)');
+      clearGrd.addColorStop(0.6, 'rgba(0,0,0,0.8)');
+      clearGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      blastCtx.globalCompositeOperation = 'destination-out';
+      blastCtx.fillStyle = clearGrd;
+      blastCtx.fillRect(0, 0, w, h);
+      blastCtx.globalCompositeOperation = 'source-over';
+    }
+
+    // =========================================================================
+    // lights (single sun + hemi + ambient; sun follows truck)
+    // =========================================================================
+    const sun = new THREE.DirectionalLight(0xfff2d8, 1.05);
+    sun.position.set(60, 90, 40);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    const sd = 55;
+    sun.shadow.camera.left = -sd; sun.shadow.camera.right = sd;
+    sun.shadow.camera.top = sd;   sun.shadow.camera.bottom = -sd;
+    sun.shadow.camera.near = 1;   sun.shadow.camera.far = 260;
+    sun.shadow.bias = -0.0005;
+    scene.add(sun);
+    const hemi = new THREE.HemisphereLight(0xb0d8ff, 0x6b8a4a, 0.55);
+    scene.add(hemi);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+    const shadowTarget = new THREE.Object3D();
+    scene.add(shadowTarget);
+    sun.target = shadowTarget;
+
+    // ---------- distant horizon ring (mountains + far skyline) ----------
+    // Persistent across levels; tinted per stage. Follows truck so it's always far away.
+    const horizonGroup = new THREE.Group();
+    scene.add(horizonGroup);
+    function buildHorizon() {
+      const ringR = 330;
+      const peaks = 72;
+      for (let i = 0; i < peaks; i++) {
+        const angle = (i / peaks) * Math.PI * 2;
+        const jitter = rand(-0.04, 0.04);
+        const h = rand(28, 60);
+        const w = rand(36, 70);
+        const m = new THREE.Mesh(
+          new THREE.ConeGeometry(w, h, 4),
+          new THREE.MeshLambertMaterial({ color: 0x6a8aa0 })
+        );
+        m.position.set(Math.cos(angle + jitter) * ringR, h / 2 - 2, Math.sin(angle + jitter) * ringR);
+        m.rotation.y = rand(0, Math.PI * 2);
+        horizonGroup.add(m);
+      }
+      // a faint second ring of darker silhouettes further out for depth
+      for (let i = 0; i < 36; i++) {
+        const angle = (i / 36) * Math.PI * 2;
+        const h = rand(48, 90);
+        const w = rand(70, 120);
+        const m = new THREE.Mesh(
+          new THREE.ConeGeometry(w, h, 4),
+          new THREE.MeshLambertMaterial({ color: 0x4a5a78 })
+        );
+        m.position.set(Math.cos(angle) * 430, h / 2 - 6, Math.sin(angle) * 430);
+        m.rotation.y = rand(0, Math.PI * 2);
+        horizonGroup.add(m);
+      }
+    }
+    buildHorizon();
+    function tintHorizon(near, far) {
+      let i = 0;
+      horizonGroup.traverse(o => {
+        if (!o.isMesh) return;
+        o.material.color.setHex(i < 72 ? near : far);
+        i++;
+      });
+    }
+
+    // =========================================================================
+    // shopping cart mesh (yellow, nested-grocery-cart look)
+    // =========================================================================
+    const CART_YELLOW = 0xf3c12d;
+    const CART_DARK   = 0xa07d18;
+
+    function makeCartMesh() {
+      const g = new THREE.Group();
+      // basket outer
+      const basket = new THREE.Mesh(
+        new THREE.BoxGeometry(0.58, 0.42, 0.78),
+        new THREE.MeshLambertMaterial({ color: CART_YELLOW })
+      );
+      basket.position.y = 0.52;
+      g.add(basket);
+      // basket inner (dark to read as hollow when nested)
+      const inner = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.34, 0.7),
+        new THREE.MeshLambertMaterial({ color: CART_DARK })
+      );
+      inner.position.y = 0.58;
+      g.add(inner);
+      // basket grid bars (lateral)
+      const barMat = new THREE.MeshLambertMaterial({ color: CART_YELLOW });
+      for (let i = -1; i <= 1; i++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.02, 0.02), barMat);
+        bar.position.set(0, 0.62, i * 0.3);
+        g.add(bar);
+      }
+      // handle bar
+      const handle = new THREE.Mesh(
+        new THREE.BoxGeometry(0.62, 0.05, 0.05),
+        new THREE.MeshLambertMaterial({ color: CART_YELLOW })
+      );
+      handle.position.set(0, 0.92, -0.42);
+      g.add(handle);
+      // handle posts
+      for (const sx of [-1, 1]) {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.45, 0.05), barMat);
+        post.position.set(sx * 0.29, 0.72, -0.4);
+        g.add(post);
+      }
+      // legs
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        const l = new THREE.Mesh(
+          new THREE.BoxGeometry(0.05, 0.45, 0.05),
+          new THREE.MeshLambertMaterial({ color: CART_YELLOW })
+        );
+        l.position.set(sx * 0.24, 0.28, sz * 0.32);
+        g.add(l);
+      }
+      // wheels
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+        const w = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 7, 6),
+          new THREE.MeshLambertMaterial({ color: 0x222 })
+        );
+        w.position.set(sx * 0.24, 0.08, sz * 0.34);
+        g.add(w);
+      }
+      setShadows(g, true, true);
+      return g;
+    }
+
+    // =========================================================================
+    // box truck (white cargo, roll-up door)
+    // =========================================================================
+    const truck = new THREE.Group();
+
+    // chassis
+    const chassis = new THREE.Mesh(
+      new THREE.BoxGeometry(2.7, 0.4, 7.6),
+      new THREE.MeshLambertMaterial({ color: 0x222222 })
+    );
+    chassis.position.set(0, 0.7, -0.4);
+    truck.add(chassis);
+
+    // cab (front)
+    const CAB_Z = 2.3;
+    const cab = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 1.9, 2.4),
+      new THREE.MeshLambertMaterial({ color: 0xfafafa })
+    );
+    cab.position.set(0, 1.85, CAB_Z);
+    truck.add(cab);
+    const cabRoof = new THREE.Mesh(
+      new THREE.BoxGeometry(2.52, 0.1, 2.42),
+      new THREE.MeshLambertMaterial({ color: 0xdddddd })
+    );
+    cabRoof.position.set(0, 2.85, CAB_Z);
+    truck.add(cabRoof);
+    // windshield
+    const ws = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 1.0, 0.05),
+      new THREE.MeshBasicMaterial({ color: 0x1f3a55 })
+    );
+    ws.position.set(0, 2.25, CAB_Z + 1.21);
+    truck.add(ws);
+    // side windows
+    for (const sx of [-1, 1]) {
+      const sw = new THREE.Mesh(
+        new THREE.BoxGeometry(0.05, 0.9, 1.4),
+        new THREE.MeshBasicMaterial({ color: 0x1f3a55 })
+      );
+      sw.position.set(sx * 1.27, 2.15, CAB_Z);
+      truck.add(sw);
+    }
+    // headlights
+    for (const sx of [-1, 1]) {
+      const h = new THREE.Mesh(
+        new THREE.BoxGeometry(0.45, 0.3, 0.05),
+        new THREE.MeshBasicMaterial({ color: 0xfff7c2 })
+      );
+      h.position.set(sx * 0.85, 1.3, CAB_Z + 1.23);
+      truck.add(h);
+    }
+    // grill
+    const grill = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.5, 0.06),
+      new THREE.MeshLambertMaterial({ color: 0x333 })
+    );
+    grill.position.set(0, 0.95, CAB_Z + 1.23);
+    truck.add(grill);
+
+    // cargo box (open back) — built from 5 panels
+    const BOX_W = 2.7, BOX_H = 4.4, BOX_D = 5.6;
+    const BOX_CY = 0.9 + BOX_H / 2;  // center Y (~3.1 → top at 5.3)
+    const BOX_CZ = -2.0;              // truck-local center Z
+    const boxMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const boxTrimMat = new THREE.MeshLambertMaterial({ color: 0xc8c8c8 });
+    // floor
+    const boxFloor = new THREE.Mesh(new THREE.BoxGeometry(BOX_W, 0.12, BOX_D), boxTrimMat);
+    boxFloor.position.set(0, 0.9, BOX_CZ);
+    truck.add(boxFloor);
+    // left wall
+    const boxLW = new THREE.Mesh(new THREE.BoxGeometry(0.1, BOX_H, BOX_D), boxMat);
+    boxLW.position.set(-BOX_W / 2, BOX_CY, BOX_CZ);
+    truck.add(boxLW);
+    // right wall
+    const boxRW = new THREE.Mesh(new THREE.BoxGeometry(0.1, BOX_H, BOX_D), boxMat);
+    boxRW.position.set(BOX_W / 2, BOX_CY, BOX_CZ);
+    truck.add(boxRW);
+    // top
+    const boxTop = new THREE.Mesh(new THREE.BoxGeometry(BOX_W + 0.1, 0.12, BOX_D), boxMat);
+    boxTop.position.set(0, BOX_CY + BOX_H / 2, BOX_CZ);
+    truck.add(boxTop);
+    // front wall (between cab and cargo)
+    const boxFront = new THREE.Mesh(new THREE.BoxGeometry(BOX_W, BOX_H, 0.1), boxMat);
+    boxFront.position.set(0, BOX_CY, BOX_CZ + BOX_D / 2);
+    truck.add(boxFront);
+    // side panel ribs (for box-truck character)
+    for (const sx of [-1, 1]) {
+      for (let i = -2; i <= 2; i++) {
+        const rib = new THREE.Mesh(
+          new THREE.BoxGeometry(0.05, BOX_H * 0.9, 0.04),
+          boxTrimMat
+        );
+        rib.position.set(sx * (BOX_W / 2 + 0.04), BOX_CY, BOX_CZ + i * 1.0);
+        truck.add(rib);
+      }
+    }
+    // rear frame
+    const rearTopBar = new THREE.Mesh(
+      new THREE.BoxGeometry(BOX_W + 0.2, 0.12, 0.12),
+      boxTrimMat
+    );
+    rearTopBar.position.set(0, BOX_CY + BOX_H / 2 - 0.05, BOX_CZ - BOX_D / 2);
+    truck.add(rearTopBar);
+    // rolled-up door (cylinder at top of rear opening)
+    const door = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.3, BOX_W - 0.05, 18),
+      new THREE.MeshLambertMaterial({ color: 0xe2e2e2 })
+    );
+    door.rotation.z = Math.PI / 2;
+    door.position.set(0, BOX_CY + BOX_H / 2 - 0.45, BOX_CZ - BOX_D / 2 + 0.32);
+    truck.add(door);
+    // door track guides
+    for (const sx of [-1, 1]) {
+      const guide = new THREE.Mesh(
+        new THREE.BoxGeometry(0.05, BOX_H * 0.95, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x999 })
+      );
+      guide.position.set(sx * (BOX_W / 2 - 0.05), BOX_CY, BOX_CZ - BOX_D / 2 + 0.05);
+      truck.add(guide);
+    }
+    // tail lights
+    for (const sx of [-1, 1]) {
+      const tl = new THREE.Mesh(
+        new THREE.BoxGeometry(0.4, 0.25, 0.05),
+        new THREE.MeshBasicMaterial({ color: 0xcc2020 })
+      );
+      tl.position.set(sx * 0.95, 1.0, BOX_CZ - BOX_D / 2 - 0.03);
+      truck.add(tl);
+    }
+
+    // wheels (6 wheels - dual rear common on box trucks; we'll do single rears for simplicity)
+    const wheelMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 18);
+    const wheels = [];
+    const wheelOffsets = [
+      [-1.4, CAB_Z], [1.4, CAB_Z],       // front (under cab)
+      [-1.4, -3.4],  [1.4, -3.4],         // rear (under cargo)
+    ];
+    for (const [x, z] of wheelOffsets) {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.rotation.z = Math.PI / 2;
+      w.position.set(x, 0.6, z);
+      truck.add(w);
+      wheels.push(w);
+      const hcap = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.25, 0.42, 12),
+        new THREE.MeshLambertMaterial({ color: 0x888 })
+      );
+      hcap.rotation.z = Math.PI / 2;
+      hcap.position.set(x, 0.6, z);
+      truck.add(hcap);
+    }
+
+    setShadows(truck, true, true);
+    scene.add(truck);
+
+    // -------------- cart stack inside cargo box --------------
+    const cartStack = new THREE.Group();
+    truck.add(cartStack);
+
+    const MAX_CARTS = 120;
+    let cartsRemaining = MAX_CARTS;
+    const stackCarts = [];
+
+    function buildCartStack() {
+      // 3 nested lines × 10 nested × 4 layers = 120 slots — fits inside the taller box
+      const lineXs = [-0.85, 0, 0.85];
+      const cartsPerLine = 10;
+      const layers = 4;
+      const lineSpacingZ = 0.45;
+      const layerH = 0.85;
+      const baseY = 1.05;
+      const frontZ = BOX_CZ + BOX_D / 2 - 0.6;
+      let idx = 0;
+      for (let layer = 0; layer < layers; layer++) {
+        for (let r = 0; r < cartsPerLine; r++) {
+          for (let col = 0; col < lineXs.length; col++) {
+            if (idx >= MAX_CARTS) return;
+            const cart = makeCartMesh();
+            const bx = lineXs[col];
+            const by = baseY + layer * layerH;
+            const bz = frontZ - r * lineSpacingZ;
+            cart.position.set(bx, by, bz);
+            cart.rotation.y = 0;
+            // wobble state — base + spring-damper offsets so carts jostle in the bed
+            cart._baseX = bx; cart._baseY = by; cart._baseZ = bz;
+            cart._wobX = 0; cart._wobZ = 0; cart._wobR = 0;
+            cart._wobVX = 0; cart._wobVZ = 0; cart._wobVR = 0;
+            cartStack.add(cart);
+            stackCarts.push(cart);
+            idx++;
+          }
+        }
+      }
+    }
+    buildCartStack();
+
+    function updateStackVisibility() {
+      for (let i = 0; i < stackCarts.length; i++) {
+        stackCarts[i].visible = i < cartsRemaining;
+      }
+    }
+    updateStackVisibility();
+
+    // -------------- trail + detached carts --------------
+    const trail = [];
+    const detached = [];
+    const MAX_TRAIL_LEN = 24;
+    const TRAIL_SPACING = 0.46;     // tight nesting
+
+    function dropCart() {
+      if (cartsRemaining <= 0) return;
+      cartsRemaining--;
+      updateStackVisibility();
+      const cart = makeCartMesh();
+      // slight initial tilt
+      cart.rotation.set(rand(-0.25, 0.25), rand(-0.6, 0.6), rand(-0.25, 0.25));
+      // spawn behind truck at the rear opening in world space
+      truck.updateMatrixWorld();
+      const local = new THREE.Vector3(rand(-0.9, 0.9), rand(1.5, 2.2), BOX_CZ - BOX_D / 2 - 0.2);
+      local.applyMatrix4(truck.matrixWorld);
+      cart.position.copy(local);
+      // inherit a portion of truck velocity along the curve tangent (gravity drag does the rest)
+      const carryFactor = rand(0.55, 0.85);
+      cart._vx = _curTan.x * truckSpeed * carryFactor + rand(-2.5, 2.5);
+      cart._vz = _curTan.z * truckSpeed * carryFactor + rand(-2.5, 2.5);
+      cart._vy = rand(2.5, 5.5);
+      cart._wx = rand(-5, 5);       // angular velocity (tumble spin)
+      cart._wy = rand(-3, 3);
+      cart._wz = rand(-5, 5);
+      cart._tumbleT = rand(0.55, 1.05);  // seconds of free physics before joining chain
+      cart._bounces = 0;
+      scene.add(cart);
+      trail.unshift(cart);
+      if (trail.length > MAX_TRAIL_LEN) {
+        const tail = trail.pop();
+        detached.push(tail);
+      }
+    }
+
+    // =========================================================================
+    // levels: curves, palettes, road builder
+    // =========================================================================
+    const LEVELS = [
+      {
+        name: 'SUBURB',
+        points: [
+          [0, 0, 0], [0, 0, 200], [-22, 0, 380], [12, 0, 560], [-6, 0, 740], [0, 0, 900],
+        ],
+        skyColor: 0x9fd7ff, fogColor: 0x9fd7ff, fogNear: 70, fogFar: 320,
+        sunColor: 0xfff2d8, hemiSky: 0xb0d8ff, hemiGround: 0x6b8a4a,
+        grassColor: 0x6dab4a, roadColor: 0x3b3b3b,
+        mountainNear: 0x7d9aba, mountainFar: 0x546890,
+        houseDensity: 0.85, treeDensity: 0.5, mailboxDensity: 0.4,
+        bumps: 3, potholes: 2, trafficCount: 3, parkedCarChance: 0.15,
+      },
+      {
+        name: 'AVENUE',
+        points: [
+          [0, 0, 0], [0, 0, 200], [45, 0, 380], [55, 0, 560], [-20, 0, 760], [-30, 0, 960], [-5, 0, 1180],
+        ],
+        skyColor: 0xff9866, fogColor: 0xff8a6a, fogNear: 60, fogFar: 280,
+        sunColor: 0xffd8a8, hemiSky: 0xffb070, hemiGround: 0x7a4a30,
+        grassColor: 0x4a8a3a, roadColor: 0x2a2a2a,
+        mountainNear: 0xb86a4a, mountainFar: 0x6a3a3a,
+        houseDensity: 0.7, treeDensity: 0.35, mailboxDensity: 0.25,
+        bumps: 5, potholes: 4, trafficCount: 6, parkedCarChance: 0.22,
+      },
+      {
+        name: 'DOWNTOWN',
+        points: [
+          [0, 0, 0], [25, 0, 180], [-30, 0, 340], [40, 0, 520], [-45, 0, 700], [25, 0, 880], [0, 0, 1080], [0, 0, 1300],
+        ],
+        skyColor: 0x3a2a55, fogColor: 0x40305a, fogNear: 55, fogFar: 240,
+        sunColor: 0xc8b0ff, hemiSky: 0x6a4a90, hemiGround: 0x1a1a2a,
+        grassColor: 0x3a4a3a, roadColor: 0x1f1f1f,
+        mountainNear: 0x4a3a6a, mountainFar: 0x2a1f44,
+        houseDensity: 0.95, treeDensity: 0.15, mailboxDensity: 0.1,
+        bumps: 6, potholes: 6, trafficCount: 10, parkedCarChance: 0.35,
+      },
+    ];
+
+    let levelIdx = 0;
+    let curve = null;
+    let curveLength = 0;
+    let levelGroup = new THREE.Group();
+    scene.add(levelGroup);
+    const obstacles = [];          // {type, t, gapMinLat, gapMaxLat, lat, hit}
+    const traffic = [];            // {mesh, s, lat}
+    const boostPickups = [];       // {mesh, s, lat, alive, t0}
+    let storeMesh = null;
+    let levelTransitioning = false;
+
+    const ROAD_W = 12;
+    const LANE_LIMIT = ROAD_W / 2 - 1.0;
+
+    // ----- procedural decor builders -----
+    const houseColors = [0xe8c897, 0xc9d8a8, 0xd9a8a8, 0xa8c9d8, 0xeed197, 0xdcbfd4, 0xb0c1a8, 0xf0d4a4, 0xb4c4e0];
+    const roofColors  = [0x6a4a3a, 0x4a3a3a, 0x5a4a3a, 0x3a3a3a, 0x6a3a2a];
+
+    function makeHouse() {
+      const g = new THREE.Group();
+      const w = rand(8, 13), d = rand(7, 11), h = rand(3.5, 5.5);
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color: houseColors[(Math.random() * houseColors.length) | 0] })
+      );
+      body.position.y = h / 2; g.add(body);
+      const rH = rand(2, 3.6);
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(Math.max(w, d) * 0.78, rH, 4),
+        new THREE.MeshLambertMaterial({ color: roofColors[(Math.random() * roofColors.length) | 0] })
+      );
+      roof.rotation.y = Math.PI / 4;
+      roof.position.y = h + rH / 2;
+      g.add(roof);
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 2.1, 0.08),
+        new THREE.MeshLambertMaterial({ color: 0x4a2a1a })
+      );
+      door.position.set(rand(-w / 4, w / 4), 1.05, d / 2 + 0.05);
+      g.add(door);
+      const winMat = new THREE.MeshBasicMaterial({ color: 0xc7e7ff });
+      for (const sx of [-1, 1]) {
+        const wn = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 0.05), winMat);
+        wn.position.set(sx * (w / 3), h * 0.62, d / 2 + 0.05);
+        g.add(wn);
+      }
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeTree() {
+      const g = new THREE.Group();
+      const tH = rand(1.4, 2.0);
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.22, 0.32, tH, 7),
+        new THREE.MeshLambertMaterial({ color: 0x6b4a2a })
+      );
+      trunk.position.y = tH / 2; g.add(trunk);
+      const leafColors = [0x3a8a3a, 0x4ca44c, 0x356a32, 0x6ab44a];
+      const leaves = new THREE.Mesh(
+        new THREE.SphereGeometry(rand(1.2, 1.9), 8, 6),
+        new THREE.MeshLambertMaterial({ color: leafColors[(Math.random() * leafColors.length) | 0] })
+      );
+      leaves.position.y = tH + 0.8; g.add(leaves);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeMailbox() {
+      const g = new THREE.Group();
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.2, 0.1), new THREE.MeshLambertMaterial({ color: 0x444 }));
+      post.position.y = 0.6; g.add(post);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.36, 0.62), new THREE.MeshLambertMaterial({ color: 0xc02020 }));
+      box.position.y = 1.36; g.add(box);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeHedge(length = 4) {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, rand(0.55, 0.85), length),
+        new THREE.MeshLambertMaterial({ color: 0x356a32 })
+      );
+      m.position.y = m.geometry.parameters.height / 2;
+      m.castShadow = true; m.receiveShadow = true;
+      return m;
+    }
+    function makeBush() {
+      const m = new THREE.Mesh(
+        new THREE.SphereGeometry(rand(0.5, 0.9), 7, 6),
+        new THREE.MeshLambertMaterial({ color: 0x3a8a3a })
+      );
+      m.position.y = 0.45;
+      m.castShadow = true; m.receiveShadow = true;
+      return m;
+    }
+    function makeGarbageCan() {
+      const g = new THREE.Group();
+      const colors = [0x2a2a2a, 0x174a8a, 0x227a2a];
+      const c = colors[(Math.random() * colors.length) | 0];
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.32, 0.9, 10),
+        new THREE.MeshLambertMaterial({ color: c })
+      );
+      body.position.y = 0.45; g.add(body);
+      const lid = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.34, 0.34, 0.08, 10),
+        new THREE.MeshLambertMaterial({ color: 0x444 })
+      );
+      lid.position.y = 0.94; g.add(lid);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeFenceSegment(length = 3.6) {
+      const g = new THREE.Group();
+      const railMat = new THREE.MeshLambertMaterial({ color: 0xefefe6 });
+      const top = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, length), railMat);
+      top.position.y = 0.95; g.add(top);
+      const bot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, length), railMat);
+      bot.position.y = 0.4;  g.add(bot);
+      const pickets = Math.floor(length / 0.22);
+      for (let i = 0; i < pickets; i++) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.0, 0.05), railMat);
+        p.position.set(0, 0.5, -length / 2 + (i + 0.5) * (length / pickets));
+        g.add(p);
+      }
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeStopSign() {
+      const g = new THREE.Group();
+      const post = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 2.4, 6),
+        new THREE.MeshLambertMaterial({ color: 0x666 })
+      );
+      post.position.y = 1.2; g.add(post);
+      const plate = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.42, 0.05, 8),
+        new THREE.MeshLambertMaterial({ color: 0xc02020 })
+      );
+      plate.position.y = 2.3; plate.rotation.x = Math.PI / 2;
+      g.add(plate);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeFireHydrant() {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.2, 0.7, 8),
+        new THREE.MeshLambertMaterial({ color: 0xd84a3a })
+      );
+      body.position.y = 0.35; g.add(body);
+      const cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0xd84a3a })
+      );
+      cap.position.y = 0.78; g.add(cap);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeBillboard() {
+      const g = new THREE.Group();
+      const post1 = new THREE.Mesh(
+        new THREE.BoxGeometry(0.25, 6.5, 0.25),
+        new THREE.MeshLambertMaterial({ color: 0x333 })
+      );
+      post1.position.set(-2.2, 3.25, 0); g.add(post1);
+      const post2 = post1.clone(); post2.position.x = 2.2; g.add(post2);
+      const phrases = ['FRESH CARTS', '½ OFF ROLL-UP', 'SALE TODAY', 'OPEN 24 HRS', 'BUY 3 GET 4', 'CART RUN'];
+      const colors = [['#ffe46b','#1a1a1a'], ['#e62a3a','#ffffff'], ['#1c8aff','#ffffff'], ['#2bc77a','#1a1a1a']];
+      const c = colors[(Math.random() * colors.length) | 0];
+      const sign = makeTextSign(phrases[(Math.random() * phrases.length) | 0], 6.5, 2.4, c[0], c[1]);
+      sign.position.set(0, 5.2, 0);
+      g.add(sign);
+      setShadows(g, true, true);
+      return g;
+    }
+    function makeBuilding() {
+      // tall block with lit-window grid — for DOWNTOWN
+      const g = new THREE.Group();
+      const w = rand(11, 18), d = rand(9, 14), h = rand(10, 22);
+      const palette = [0x6a6a78, 0x4a4a55, 0x787888, 0x5a5060, 0x4a3a4a];
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color: palette[(Math.random() * palette.length) | 0] })
+      );
+      body.position.y = h / 2; g.add(body);
+      const litMat  = new THREE.MeshBasicMaterial({ color: 0xffd86b });
+      const dimMat  = new THREE.MeshBasicMaterial({ color: 0xfff7d8 });
+      const darkMat = new THREE.MeshBasicMaterial({ color: 0x2a2a30 });
+      const wCols = Math.max(3, Math.floor(w / 1.6));
+      const wRows = Math.max(4, Math.floor(h / 1.6));
+      for (let row = 0; row < wRows; row++) {
+        for (let col = 0; col < wCols; col++) {
+          const x = (col - (wCols - 1) / 2) * (w / wCols);
+          const y = 1.0 + row * 1.5;
+          if (y > h - 0.5) continue;
+          const r = Math.random();
+          const mat = r < 0.35 ? litMat : r < 0.55 ? dimMat : darkMat;
+          const wn = new THREE.Mesh(new THREE.BoxGeometry(w / wCols * 0.55, 1.0, 0.04), mat);
+          wn.position.set(x, y, d / 2 + 0.03);
+          g.add(wn);
+        }
+      }
+      // roof box detail
+      const cap = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 0.4, 0.8, d * 0.4),
+        new THREE.MeshLambertMaterial({ color: 0x222 })
+      );
+      cap.position.set(0, h + 0.4, 0);
+      g.add(cap);
+      setShadows(g, true, true);
+      return g;
+    }
+
+    function makeBoostPickup() {
+      // glowing yellow octahedron in a ring, hovering above the road
+      const g = new THREE.Group();
+      const core = new THREE.Mesh(
+        new THREE.OctahedronGeometry(0.55, 0),
+        new THREE.MeshBasicMaterial({ color: 0xffe44a })
+      );
+      core.position.y = 1.4;
+      g.add(core);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.85, 0.08, 6, 18),
+        new THREE.MeshBasicMaterial({ color: 0xfff5a0 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.3;
+      g.add(ring);
+      // glow column
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfff5a0, transparent: true, opacity: 0.32 })
+      );
+      beam.position.y = 0.85;
+      g.add(beam);
+      g._core = core;
+      return g;
+    }
+
+    function makeCar(color = 0x2a6acc) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 4), new THREE.MeshLambertMaterial({ color }));
+      body.position.y = 0.7; g.add(body);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 2.2), new THREE.MeshLambertMaterial({ color }));
+      top.position.set(0, 1.25, -0.2); g.add(top);
+      const winMat = new THREE.MeshBasicMaterial({ color: 0x223a55 });
+      const front = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.05), winMat);
+      front.position.set(0, 1.25, 0.9); g.add(front);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.05), winMat);
+      back.position.set(0, 1.25, -1.3); g.add(back);
+      const wm = new THREE.MeshLambertMaterial({ color: 0x111 });
+      for (const sx of [-1, 1]) for (const sz of [-1.3, 1.3]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.25, 12), wm);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(sx * 0.95, 0.32, sz);
+        g.add(w);
+      }
+      // headlights forward (+z) and tail (-z)
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xfff5b0 }));
+      hl.position.set(0, 0.85, 2.02); g.add(hl);
+      const tll = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xcc2020 }));
+      tll.position.set(0, 0.85, -2.02); g.add(tll);
+      setShadows(g, true, true);
+      return g;
+    }
+
+    // ----- helpers for placing things along the curve -----
+    const _tan = new THREE.Vector3();
+    const _pt = new THREE.Vector3();
+    function pointAt(t) { return curve.getPointAt(clamp(t, 0, 1), _pt.clone()); }
+    function tangentAt(t) { return curve.getTangentAt(clamp(t, 0, 1), _tan.clone()).normalize(); }
+    function rightFromTangent(tan) { return new THREE.Vector3(tan.z, 0, -tan.x).normalize(); }
+
+    function buildRoadGeo(width, segments, lightShade, darkShade) {
+      // alternating road tile shading (per pair of segments) — outrun-style speed cue
+      const verts = [], colors = [], idx = [];
+      const lc = new THREE.Color(lightShade);
+      const dc = new THREE.Color(darkShade);
+      for (let i = 0; i <= segments; i++) {
+        const tt = i / segments;
+        const p = pointAt(tt);
+        const tn = tangentAt(tt);
+        const rt = rightFromTangent(tn);
+        verts.push(p.x + rt.x * width / 2, 0.04, p.z + rt.z * width / 2);
+        verts.push(p.x - rt.x * width / 2, 0.04, p.z - rt.z * width / 2);
+        const useLight = (Math.floor(i / 2) % 2) === 0;
+        const c = useLight ? lc : dc;
+        colors.push(c.r, c.g, c.b, c.r, c.g, c.b);
+        if (i < segments) {
+          const a = i * 2, b = i * 2 + 1, c2 = (i + 1) * 2, d = (i + 1) * 2 + 1;
+          idx.push(a, b, d, a, d, c2);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    function buildRumbleGeo(side, innerOff, width, segments) {
+      // alternating red/white rumble strip — the classic arcade speed reference
+      const verts = [], colors = [], idx = [];
+      const red   = new THREE.Color(0xd02828);
+      const white = new THREE.Color(0xf5f5f5);
+      for (let i = 0; i <= segments; i++) {
+        const tt = i / segments;
+        const p = pointAt(tt);
+        const tn = tangentAt(tt);
+        const rt = rightFromTangent(tn);
+        verts.push(p.x + rt.x * side * innerOff,        0.05, p.z + rt.z * side * innerOff);
+        verts.push(p.x + rt.x * side * (innerOff + width), 0.05, p.z + rt.z * side * (innerOff + width));
+        const isRed = (i % 2) === 0;
+        const c = isRed ? red : white;
+        colors.push(c.r, c.g, c.b, c.r, c.g, c.b);
+        if (i < segments) {
+          const a = i * 2, b = i * 2 + 1, c2 = (i + 1) * 2, d = (i + 1) * 2 + 1;
+          idx.push(a, b, d, a, d, c2);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    function buildStripGeo(widthOffset, width, segments) {
+      // strip parallel to road, offset to one side (sits flat at y=0 → road is +0.04 above)
+      const verts = [], idx = [];
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        const innerOff = widthOffset;
+        const outerOff = widthOffset + width;
+        verts.push(p.x + rt.x * innerOff, 0.0, p.z + rt.z * innerOff);
+        verts.push(p.x + rt.x * outerOff, 0.0, p.z + rt.z * outerOff);
+        if (i < segments) {
+          const a = i * 2, b = i * 2 + 1, c = (i + 1) * 2, d = (i + 1) * 2 + 1;
+          idx.push(a, b, d, a, d, c);
+        }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    // ----- level transition / banner -----
+    const bannerEl = document.getElementById('banner');
+    let bannerTimer = null;
+    function showBanner(text, sub = '', ms = 1600) {
+      bannerEl.innerHTML = text + (sub ? `<span class="sub">${sub}</span>` : '');
+      bannerEl.classList.add('show');
+      clearTimeout(bannerTimer);
+      bannerTimer = setTimeout(() => bannerEl.classList.remove('show'), ms);
+    }
+
+    function disposeLevel() {
+      levelGroup.traverse(o => {
+        if (o.isMesh) {
+          o.geometry?.dispose();
+          if (Array.isArray(o.material)) o.material.forEach(m => m?.dispose && m.dispose());
+          else o.material?.dispose && o.material.dispose();
+        }
+      });
+      scene.remove(levelGroup);
+      levelGroup = new THREE.Group();
+      scene.add(levelGroup);
+      obstacles.length = 0;
+      // remove any detached trail carts (they were anchored to a prior road)
+      for (const c of detached) scene.remove(c);
+      detached.length = 0;
+      traffic.length = 0;
+      boostPickups.length = 0;
+      storeMesh = null;
+    }
+
+    function loadLevel(idx) {
+      disposeLevel();
+      const L = LEVELS[idx];
+      // background / fog
+      scene.background = new THREE.Color(L.skyColor);
+      scene.fog.color.setHex(L.fogColor);
+      scene.fog.near = L.fogNear;
+      scene.fog.far = L.fogFar;
+      sun.color.setHex(L.sunColor);
+      hemi.color.setHex(L.hemiSky);
+      hemi.groundColor.setHex(L.hemiGround);
+      tintHorizon(L.mountainNear, L.mountainFar);
+
+      // build curve
+      const pts = L.points.map(p => new THREE.Vector3(p[0], p[1], p[2]));
+      curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+      curveLength = curve.getLength();
+
+      // grass extends well beyond road (DoubleSide so it renders regardless of winding)
+      const grassGeo = buildStripGeo(-200, 400, 220);
+      const grass = new THREE.Mesh(
+        grassGeo,
+        new THREE.MeshLambertMaterial({ color: L.grassColor, side: THREE.DoubleSide })
+      );
+      grass.receiveShadow = true;
+      levelGroup.add(grass);
+
+      // road segments — alternating light/dark for speed reference
+      const ROAD_SEG = Math.max(180, Math.floor(curveLength / 4));
+      const roadLight = new THREE.Color(L.roadColor).offsetHSL(0, 0, 0.04).getHex();
+      const roadDark  = L.roadColor;
+      const roadGeo = buildRoadGeo(ROAD_W, ROAD_SEG, roadLight, roadDark);
+      const road = new THREE.Mesh(
+        roadGeo,
+        new THREE.MeshLambertMaterial({ vertexColors: true })
+      );
+      road.receiveShadow = true;
+      levelGroup.add(road);
+
+      // rumble strips on both edges (red/white alternating, classic arcade)
+      for (const side of [-1, 1]) {
+        const innerOff = ROAD_W / 2 - 0.6;
+        const rumbleGeo = buildRumbleGeo(side, innerOff, 0.6, ROAD_SEG);
+        const rumble = new THREE.Mesh(
+          rumbleGeo,
+          new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })
+        );
+        levelGroup.add(rumble);
+      }
+
+      // sidewalks (outside the rumble strips)
+      for (const side of [-1, 1]) {
+        const swGeo = buildStripGeo(side * (ROAD_W / 2), side * 2, 220);
+        const sw = new THREE.Mesh(
+          swGeo,
+          new THREE.MeshLambertMaterial({ color: 0xc8c8c0, side: THREE.DoubleSide })
+        );
+        sw.receiveShadow = true;
+        levelGroup.add(sw);
+      }
+
+      // dashed center line
+      const dashSpacing = 6;
+      const numDashes = Math.floor(curveLength / dashSpacing);
+      const dashGeo = new THREE.PlaneGeometry(0.28, 2.5);
+      const dashMat = new THREE.MeshBasicMaterial({ color: 0xffe46b });
+      for (let i = 0; i < numDashes; i++) {
+        const t = (i * dashSpacing) / curveLength;
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const d = new THREE.Mesh(dashGeo, dashMat);
+        d.rotation.x = -Math.PI / 2;
+        d.rotation.z = -Math.atan2(tn.x, tn.z);
+        d.position.set(p.x, 0.06, p.z);
+        levelGroup.add(d);
+      }
+
+      // decor along curve — denser placement, per-stage flavor
+      const carColors = [0x2a6acc, 0x3a8a3a, 0xc8a830, 0x8a3030, 0x444444, 0xc0c0c0, 0x7a4ab8];
+      const isDowntown = L.name === 'DOWNTOWN';
+      const isAvenue   = L.name === 'AVENUE';
+
+      const stepM = 12;     // tight spacing — every 12m something on each side
+      let s = 8;
+      while (s < curveLength - 60) {
+        const t = s / curveLength;
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        const yaw = Math.atan2(tn.x, tn.z);
+        for (const side of [-1, 1]) {
+          // primary building (house or downtown building)
+          if (Math.random() < L.houseDensity) {
+            const b = isDowntown ? makeBuilding() : makeHouse();
+            const off = isDowntown ? rand(16, 21) : rand(14, 18);
+            b.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            b.rotation.y = yaw + (side === -1 ? Math.PI : 0);
+            levelGroup.add(b);
+          }
+          // tree (more frequent now)
+          if (!isDowntown && Math.random() < L.treeDensity) {
+            const tr = makeTree();
+            const off = rand(9.0, 11.5);
+            tr.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            levelGroup.add(tr);
+          }
+          // mailbox
+          if (!isDowntown && Math.random() < L.mailboxDensity) {
+            const m = makeMailbox();
+            const off = ROAD_W / 2 + 2.4;
+            m.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            m.rotation.y = yaw;
+            levelGroup.add(m);
+          }
+          // parked car
+          if (Math.random() < L.parkedCarChance) {
+            const c = makeCar(carColors[(Math.random() * carColors.length) | 0]);
+            const off = ROAD_W / 2 + 2.6;
+            c.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            c.rotation.y = yaw + Math.PI / 2 * side;
+            levelGroup.add(c);
+          }
+          // hedge / bush filler (suburb + avenue)
+          if (!isDowntown && Math.random() < 0.55) {
+            const h = makeHedge(rand(3.5, 5.5));
+            const off = ROAD_W / 2 + 3.2;
+            h.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            h.rotation.y = yaw;
+            levelGroup.add(h);
+          }
+          if (!isDowntown && Math.random() < 0.35) {
+            const b = makeBush();
+            const off = rand(7, 13);
+            b.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            levelGroup.add(b);
+          }
+          // garbage cans on curb
+          if (Math.random() < 0.18) {
+            const gc = makeGarbageCan();
+            const off = ROAD_W / 2 + 1.6;
+            gc.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            levelGroup.add(gc);
+          }
+          // fire hydrants — rare
+          if (Math.random() < 0.06) {
+            const fh = makeFireHydrant();
+            const off = ROAD_W / 2 + 1.5;
+            fh.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            levelGroup.add(fh);
+          }
+        }
+        s += rand(stepM * 0.85, stepM * 1.2);
+      }
+
+      // continuous fence run along each side (suburb only) — placed every ~4m so it follows the curve
+      if (L.name === 'SUBURB') {
+        for (let fs = 8; fs < curveLength - 8; fs += 3.8) {
+          if (Math.random() < 0.55) continue; // gappy
+          const t = fs / curveLength;
+          const p = pointAt(t);
+          const tn = tangentAt(t);
+          const rt = rightFromTangent(tn);
+          const yaw = Math.atan2(tn.x, tn.z);
+          for (const side of [-1, 1]) {
+            const fence = makeFenceSegment(3.6);
+            const off = ROAD_W / 2 + 3.6;
+            fence.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            fence.rotation.y = yaw;
+            levelGroup.add(fence);
+          }
+        }
+      }
+
+      // billboards (avenue + downtown) — rare but readable
+      if (isAvenue || isDowntown) {
+        for (let bs = 60; bs < curveLength - 80; bs += rand(120, 200)) {
+          const t = bs / curveLength;
+          const p = pointAt(t);
+          const tn = tangentAt(t);
+          const rt = rightFromTangent(tn);
+          const yaw = Math.atan2(tn.x, tn.z);
+          const side = Math.random() < 0.5 ? -1 : 1;
+          const bb = makeBillboard();
+          const off = ROAD_W / 2 + 8;
+          bb.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+          bb.rotation.y = yaw + (side === -1 ? 0 : Math.PI);
+          levelGroup.add(bb);
+        }
+      }
+
+      // stop signs at occasional intersections
+      for (let ss = 80; ss < curveLength - 60; ss += rand(150, 240)) {
+        const t = ss / curveLength;
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        for (const side of [-1, 1]) {
+          if (Math.random() < 0.6) {
+            const sg = makeStopSign();
+            const off = ROAD_W / 2 + 2.0;
+            sg.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            levelGroup.add(sg);
+          }
+        }
+      }
+
+      // boost pickups — scatter along curve, alternating lanes
+      const pickupCount = 7 + idx; // 7, 8, 9 across the stages
+      for (let i = 0; i < pickupCount; i++) {
+        const sPos = 120 + (i + 0.5) * ((curveLength - 200) / pickupCount) + rand(-20, 20);
+        const lat = (i % 2 === 0 ? 2.5 : -2.5) + rand(-1, 1);
+        const t = clamp(sPos / curveLength, 0, 1);
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        const pk = makeBoostPickup();
+        pk.position.set(p.x + rt.x * lat, 0, p.z + rt.z * lat);
+        levelGroup.add(pk);
+        boostPickups.push({ mesh: pk, s: sPos, lat, alive: true, t0: Math.random() * 10 });
+      }
+
+      // streetlamps every 14m (denser, more populated feel)
+      for (let z = 6; z < curveLength; z += 14) {
+        const t = z / curveLength;
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        for (const side of [-1, 1]) {
+          const off = ROAD_W / 2 + 1.7;
+          const pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.08, 0.08, 5.5, 6),
+            new THREE.MeshLambertMaterial({ color: 0x444 })
+          );
+          pole.position.set(p.x + rt.x * side * off, 2.75, p.z + rt.z * side * off);
+          pole.castShadow = true;
+          levelGroup.add(pole);
+          // lamp head at top (lit at dusk levels)
+          const lamp = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 0.25, 0.4),
+            new THREE.MeshBasicMaterial({ color: isDowntown ? 0xfff5b0 : (isAvenue ? 0xffd9a0 : 0xddddcc) })
+          );
+          lamp.position.set(p.x + rt.x * side * (off - 0.25), 5.4, p.z + rt.z * side * (off - 0.25));
+          levelGroup.add(lamp);
+        }
+      }
+
+      // obstacles: bumps + potholes distributed along curve
+      const sps = [];
+      const stride = curveLength / (L.bumps + L.potholes + 1);
+      for (let i = 1; i <= L.bumps + L.potholes; i++) sps.push(i * stride + rand(-stride * 0.3, stride * 0.3));
+      let bumpsLeft = L.bumps;
+      let potsLeft = L.potholes;
+      for (const sPos of sps) {
+        const t = clamp(sPos / curveLength, 0.04, 0.95);
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        if (bumpsLeft > 0 && (potsLeft === 0 || Math.random() < 0.55)) {
+          bumpsLeft--;
+          // speed bump with a 2-segment gap
+          const seg = ROAD_W / 5;
+          const gapStart = Math.floor(Math.random() * 4);
+          for (let i = 0; i < 5; i++) {
+            if (i === gapStart || i === gapStart + 1) continue;
+            const c = (i % 2 === 0) ? 0xfff100 : 0x222222;
+            const b = new THREE.Mesh(
+              new THREE.BoxGeometry(seg - 0.08, 0.4, 1.0),
+              new THREE.MeshLambertMaterial({ color: c })
+            );
+            const off = (i - 2) * seg;
+            b.position.set(p.x + rt.x * off, 0.2, p.z + rt.z * off);
+            b.rotation.y = Math.atan2(tn.x, tn.z);
+            b.castShadow = true; b.receiveShadow = true;
+            levelGroup.add(b);
+          }
+          const gapMinLat = (gapStart - 2) * seg - seg / 2;
+          const gapMaxLat = (gapStart + 1 - 2) * seg + seg / 2;
+          obstacles.push({ type: 'bump', t, gapMinLat, gapMaxLat, hit: false });
+        } else if (potsLeft > 0) {
+          potsLeft--;
+          const lat = rand(-3.5, 3.5);
+          const m = new THREE.Mesh(
+            new THREE.CircleGeometry(1.0, 18),
+            new THREE.MeshLambertMaterial({ color: 0x0a0a0a })
+          );
+          m.rotation.x = -Math.PI / 2;
+          m.position.set(p.x + rt.x * lat, 0.03, p.z + rt.z * lat);
+          levelGroup.add(m);
+          obstacles.push({ type: 'pot', t, lat, hit: false });
+        }
+      }
+
+      // oncoming traffic — spawn ahead of truck periodically (managed in tick)
+      // for now, pre-seed with cars at random s positions ahead
+      for (let i = 0; i < L.trafficCount; i++) {
+        spawnTrafficCar(rand(80, curveLength - 100));
+      }
+
+      // big-box store at end of curve, planted on-axis with parking lot facing the truck
+      const endP = pointAt(0.998);
+      const endTn = tangentAt(0.998);
+      storeMesh = makeStore(L.name === 'DOWNTOWN' ? 'GROC' : L.name === 'AVENUE' ? 'PLAZA' : 'MART');
+      // Position store ~80m past curve end along the tangent. Store's local +Z faces -tangent (entrance toward truck).
+      const ahead = endP.clone().add(endTn.clone().multiplyScalar(95));
+      storeMesh.position.set(ahead.x, 0, ahead.z);
+      storeMesh.rotation.y = Math.atan2(endTn.x, endTn.z) + Math.PI;
+      levelGroup.add(storeMesh);
+
+      // banner
+      showBanner(`STAGE ${idx + 1}`, L.name, 1600);
+    }
+
+    function makeStore(name) {
+      // massive big-box mart with huge empty parking lot
+      const g = new THREE.Group();
+      const w = 90, d = 50, h = 14;
+      // body
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshLambertMaterial({ color: 0xf2f2ec })
+      );
+      body.position.y = h / 2;
+      g.add(body);
+      // blue brand band along the top
+      const band = new THREE.Mesh(
+        new THREE.BoxGeometry(w + 0.4, 2.6, d + 0.4),
+        new THREE.MeshLambertMaterial({ color: 0x1c8aff })
+      );
+      band.position.y = h - 1.3;
+      g.add(band);
+      // big front sign
+      const sign = makeTextSign(`${name}-MART`, 30, 3.2, '#1c8aff', '#ffffff');
+      sign.position.set(0, h - 1.3, d / 2 + 0.32);
+      g.add(sign);
+      // smaller secondary sign
+      const sub = makeTextSign('OPEN 24 HRS', 14, 1.4, '#ffffff', '#1c8aff');
+      sub.position.set(-w / 2 + 12, 2.0, d / 2 + 0.33);
+      g.add(sub);
+      // glass entrance row (full-width)
+      const glass = new THREE.Mesh(
+        new THREE.BoxGeometry(34, 8, 0.12),
+        new THREE.MeshBasicMaterial({ color: 0x9fd0ff })
+      );
+      glass.position.set(0, 4, d / 2 + 0.07);
+      g.add(glass);
+      // entrance frame
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(34.5, 8.5, 0.22),
+        new THREE.MeshLambertMaterial({ color: 0x666 })
+      );
+      frame.position.set(0, 4.15, d / 2 + 0.02);
+      g.add(frame);
+      // sliding-door divider
+      for (let i = -1; i <= 1; i += 2) {
+        const div = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 8, 0.16),
+          new THREE.MeshLambertMaterial({ color: 0x333 })
+        );
+        div.position.set(i * 5.7, 4, d / 2 + 0.1);
+        g.add(div);
+      }
+      // back loading bays (visible if truck rolls past)
+      for (let i = -3; i <= 3; i++) {
+        const bay = new THREE.Mesh(
+          new THREE.BoxGeometry(3, 4.5, 0.15),
+          new THREE.MeshLambertMaterial({ color: 0x666 })
+        );
+        bay.position.set(i * 5, 2.25, -d / 2 - 0.05);
+        g.add(bay);
+      }
+
+      // massive parking lot in front (entrance is on +Z side here, truck arrives via +tangent → entrance)
+      const LOT_W = 160, LOT_D = 80;
+      const lot = new THREE.Mesh(
+        new THREE.PlaneGeometry(LOT_W, LOT_D),
+        new THREE.MeshLambertMaterial({ color: 0x5e5e5e })
+      );
+      lot.rotation.x = -Math.PI / 2;
+      lot.position.set(0, 0.05, d / 2 + LOT_D / 2 + 2);
+      lot.receiveShadow = true;
+      g.add(lot);
+      // parking stripes — long grid
+      const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const rows = 5;
+      for (let row = 0; row < rows; row++) {
+        const rowZ = d / 2 + 8 + row * 14;
+        for (let i = -12; i <= 12; i++) {
+          const s = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 5.5), stripeMat);
+          s.rotation.x = -Math.PI / 2;
+          s.position.set(i * 6, 0.08, rowZ);
+          g.add(s);
+        }
+      }
+      // pole lights scattered across the lot
+      for (let i = -2; i <= 2; i++) {
+        for (let row = 0; row < 3; row++) {
+          const pole = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.14, 0.14, 9, 8),
+            new THREE.MeshLambertMaterial({ color: 0x444 })
+          );
+          pole.position.set(i * 28, 4.5, d / 2 + 16 + row * 20);
+          pole.castShadow = true;
+          g.add(pole);
+          const head = new THREE.Mesh(
+            new THREE.BoxGeometry(1.6, 0.4, 1.6),
+            new THREE.MeshBasicMaterial({ color: 0xfff5b0 })
+          );
+          head.position.set(i * 28, 9.1, d / 2 + 16 + row * 20);
+          g.add(head);
+        }
+      }
+      // a couple parked cars + cart corral in the lot
+      const carColorsLot = [0x2266cc, 0xc83030, 0xc0c0c0, 0x444, 0xc8a830, 0x7a4ab8];
+      for (let i = 0; i < 12; i++) {
+        const c = makeCar(carColorsLot[(Math.random() * carColorsLot.length) | 0]);
+        c.position.set(rand(-LOT_W / 2 + 6, LOT_W / 2 - 6), 0, d / 2 + rand(8, LOT_D - 4));
+        c.rotation.y = Math.random() < 0.5 ? 0 : Math.PI;
+        g.add(c);
+      }
+      // cart corrals — small fenced rectangles with carts inside (yellow!)
+      for (let i = -1; i <= 1; i++) {
+        const corral = new THREE.Mesh(
+          new THREE.BoxGeometry(6, 1.2, 1.6),
+          new THREE.MeshLambertMaterial({ color: 0x888 })
+        );
+        corral.position.set(i * 18, 0.6, d / 2 + 10);
+        g.add(corral);
+        // a few yellow carts in each corral
+        for (let k = 0; k < 4; k++) {
+          const c = makeCartMesh();
+          c.position.set(i * 18 - 2 + k * 0.55, 0.0, d / 2 + 10);
+          c.rotation.y = Math.PI / 2;
+          g.add(c);
+        }
+      }
+      // big "ENTRANCE" arrow on the lot pavement pointing toward doors
+      const arrow = makeTextSign('→ ENTRANCE →', 18, 1.6, '#5e5e5e', '#ffffff');
+      arrow.rotation.x = -Math.PI / 2;
+      arrow.position.set(0, 0.085, d / 2 + 28);
+      g.add(arrow);
+
+      setShadows(g, true, true);
+      return g;
+    }
+
+    function spawnTrafficCar(s) {
+      const carColors = [0x2a6acc, 0xc8a830, 0x8a3030, 0x444444, 0xc0c0c0, 0x7a4ab8, 0xffffff];
+      const c = makeCar(carColors[(Math.random() * carColors.length) | 0]);
+      // oncoming car drives in the LEFT lane (negative lateral)
+      const lat = rand(-4, -2);
+      levelGroup.add(c);
+      traffic.push({ mesh: c, s, lat, speed: rand(10, 16), alive: true });
+      // initial position
+      const t = clamp(s / curveLength, 0, 1);
+      const p = pointAt(t);
+      const tn = tangentAt(t);
+      const rt = rightFromTangent(tn);
+      c.position.set(p.x + rt.x * lat, 0, p.z + rt.z * lat);
+      c.rotation.y = Math.atan2(-tn.x, -tn.z); // facing opposite of travel
+    }
+
+    // =========================================================================
+    // input
+    // =========================================================================
+    const keys = Object.create(null);
+    addEventListener('keydown', e => {
+      const wasDown = keys[e.key.toLowerCase()];
+      keys[e.key.toLowerCase()] = true;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!wasDown && boostMeter > 0) triggerBoostBlast();   // manga burst only when boost is available
+      }
+      startAudio();
+      if (e.key.toLowerCase() === 'm') toggleMute();
+    });
+    addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+    addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
+    addEventListener('pointerdown', startAudio);
+
+    // =========================================================================
+    // audio: 170 BPM dark d&b / tech-step (procedural, '98 vibe)
+    // =========================================================================
+    let audioCtx = null;
+    let audioStarted = false;
+    let audioMaster = null;
+    let audioReverb = null;
+    let audioMuted = false;
+    let nextNoteTime = 0;
+    let stepCounter = 0;
+    let schedulerHandle = null;
+    const BPM = 170;
+    const STEP_DUR = 60 / BPM / 4;
+    const LOOKAHEAD = 0.12;
+    const SCHED_MS = 25;
+
+    const ROOT_HZ = 36.71; // D1
+
+    // 24-bar arrangement: A (groove, 8) → B (breakdown w/ melody, 8) → C (build w/ riser, 8)
+    // Each section's bass line: 32 quarter-note semitone offsets (8 bars × 4 quarters)
+    const BASS_A = [
+      0, 0, 0, -4,   0, 0, -5, -8,   0, 0, 0, -4,   0, 0, -5, -8,
+      0, 0, 0, -4,   0, 0, -5, -8,   0, 0, 0, -4,   0, 0, -5, -8,
+    ];
+    const BASS_B = [
+      0, 0, 5, 5,    3, 3, 0, 0,    -2, -2, 3, 3,   5, 7, 0, 0,
+      0, 0, 5, 5,    3, 3, 0, 0,    -2, -2, 3, 3,   5, 7, 0, 0,
+    ];
+    const BASS_C = [
+      0, 0, 0, 0,    0, 0, 0, 0,    -2, -2, -2, -2,  -2, -2, -2, -2,
+      3, 3, 3, 3,    5, 5, 5, 5,    7, 7, 10, 10,    12, 12, 12, 12,
+    ];
+
+    // Section B lead melody — eighths over 8 bars (64 eighths). null = rest. semitones from D3.
+    // Phrase repeats twice (4 bars × 2). D minor (notes: D=0, F=3, G=5, A=7, Bb=8, C=10, D=12).
+    const MELODY_B = [
+      0, null, null, 3,    5, null, 7, null,     3, null, 0, null,    7, null, 3, 0,
+      0, null, 3, null,    8, null, 7, 5,        3, 0, null, null,   10, 0, null, null,
+      0, null, null, 3,    5, null, 7, null,     3, null, 0, null,    7, null, 3, 0,
+      0, null, 3, null,    8, null, 7, 5,        3, 0, null, null,   10, 0, null, null,
+    ];
+
+    function startAudio() {
+      if (audioStarted) return;
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      audioCtx = new AC();
+      audioStarted = true;
+
+      const comp = audioCtx.createDynamicsCompressor();
+      comp.threshold.value = -12; comp.knee.value = 6;
+      comp.ratio.value = 8;       comp.attack.value = 0.002;
+      comp.release.value = 0.18;
+      comp.connect(audioCtx.destination);
+
+      // ----- PS1-era lo-fi master chain: bitcrush + lowpass before compression -----
+      const lofiLP = audioCtx.createBiquadFilter();
+      lofiLP.type = 'lowpass';
+      lofiLP.frequency.value = 10500;
+      lofiLP.Q.value = 0.6;
+      lofiLP.connect(comp);
+      const crusher = makeBitcrusher(10);
+      crusher.connect(lofiLP);
+
+      audioMaster = audioCtx.createGain();
+      audioMaster.gain.value = 0.5;
+      audioMaster.connect(crusher);
+
+      const irLen = audioCtx.sampleRate * 2.4;
+      const ir = audioCtx.createBuffer(2, irLen, audioCtx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = ir.getChannelData(ch);
+        let prev = 0;
+        for (let i = 0; i < d.length; i++) {
+          const t = i / d.length;
+          const env = Math.pow(1 - t, 3.2) * (i < 80 ? i / 80 : 1);
+          const n = (Math.random() * 2 - 1) * env;
+          prev = prev * 0.78 + n * 0.22;
+          d[i] = prev;
+        }
+      }
+      audioReverb = audioCtx.createConvolver();
+      audioReverb.buffer = ir;
+      const revGain = audioCtx.createGain();
+      revGain.gain.value = 0.32;
+      audioReverb.connect(revGain);
+      revGain.connect(audioMaster);
+
+      startPad();
+
+      nextNoteTime = audioCtx.currentTime + 0.12;
+      stepCounter = 0;
+      schedulerHandle = setInterval(audioScheduler, SCHED_MS);
+
+      const lbl = document.getElementById('audioLbl');
+      if (lbl) lbl.textContent = '🎵 dark d&b · 170 BPM · press M to mute';
+    }
+    function toggleMute() {
+      if (!audioStarted) return;
+      audioMuted = !audioMuted;
+      audioMaster.gain.setTargetAtTime(audioMuted ? 0 : 0.5, audioCtx.currentTime, 0.03);
+      const lbl = document.getElementById('audioLbl');
+      if (lbl) lbl.textContent = audioMuted
+        ? '🔇 muted · press M to unmute'
+        : '🎵 dark d&b · 170 BPM · press M to mute';
+    }
+    function makeBitcrusher(bits) {
+      const ws = audioCtx.createWaveShaper();
+      const samples = 4096;
+      const curve = new Float32Array(samples);
+      const levels = Math.pow(2, bits);
+      for (let i = 0; i < samples; i++) {
+        const x = (i / (samples - 1)) * 2 - 1;
+        curve[i] = Math.round(x * levels) / levels;
+      }
+      ws.curve = curve;
+      ws.oversample = 'none';
+      return ws;
+    }
+
+    // current section getter (also exposed for HUD if wanted)
+    let currentSection = 'A';
+
+    function audioScheduler() {
+      if (!audioCtx) return;
+      while (nextNoteTime < audioCtx.currentTime + LOOKAHEAD) {
+        const s   = stepCounter;
+        const ss  = s % 16;                // sixteenth within bar
+        const bar = Math.floor(s / 16);
+        const cyclePos = bar % 24;          // position in 24-bar cycle
+        const sec = cyclePos < 8 ? 'A' : cyclePos < 16 ? 'B' : 'C';
+        const barInSec = cyclePos % 8;
+        currentSection = sec;
+
+        if (sec === 'A')      schedSectionA(nextNoteTime, ss, barInSec);
+        else if (sec === 'B') schedSectionB(nextNoteTime, ss, barInSec);
+        else                  schedSectionC(nextNoteTime, ss, barInSec);
+
+        stepCounter++;
+        nextNoteTime += STEP_DUR;
+      }
+    }
+
+    function schedSectionA(t, ss, bar) {
+      // main groove (dark tech-step)
+      if (ss === 0 || ss === 11)              scheduleKick(t);
+      if (ss === 4 || ss === 12)              scheduleSnare(t);
+      if ((ss === 7 || ss === 15) && Math.random() < 0.5) scheduleSnare(t, 0.32);
+      if (ss === 2 || ss === 10)              scheduleHat(t, false);
+      if (ss === 6 || ss === 14)              scheduleHat(t, true);
+      if (ss === 8 && bar % 4 === 0)          scheduleMetal(t);
+      if (ss % 4 === 0) {
+        const q = bar * 4 + (ss / 4);
+        scheduleBass(t, BASS_A[q % BASS_A.length], false);
+      }
+    }
+
+    function schedSectionB(t, ss, bar) {
+      // breakdown — sparse drums + PS1 square-lead melody
+      if (ss === 0)               scheduleKick(t);
+      if (ss === 12)              scheduleSnare(t);
+      if (ss === 6 || ss === 14)  scheduleHat(t, true);
+      // melody on eighths
+      if (ss % 2 === 0) {
+        const eIdx = bar * 8 + (ss / 2);
+        const note = MELODY_B[eIdx % MELODY_B.length];
+        if (note !== null && note !== undefined) scheduleLead(t, note);
+      }
+      // bass (slightly softer in breakdown)
+      if (ss % 4 === 0) {
+        const q = bar * 4 + (ss / 4);
+        scheduleBass(t, BASS_B[q % BASS_B.length], true);
+      }
+    }
+
+    function schedSectionC(t, ss, bar) {
+      // build — four-on-the-floor + escalating snare roll + 8-bar riser
+      if (ss % 4 === 0)            scheduleKick(t);
+      if (ss === 4 || ss === 12)   scheduleSnare(t);
+      // escalating snare roll on the last 2 bars of section
+      if (bar === 6 && ss % 4 === 0) scheduleSnare(t, 0.35);
+      if (bar === 7) {
+        // doubles in bar 7, sixteenths in last beat
+        if (ss < 12 && ss % 2 === 0)  scheduleSnare(t, 0.4);
+        if (ss >= 12)                 scheduleSnare(t, 0.45 + (ss - 12) * 0.04);
+      }
+      // closed hat every 8th
+      if (ss % 2 === 0)            scheduleHat(t, false);
+      // metal accent at end of bar
+      if (ss === 14 && bar % 2 === 0) scheduleMetal(t);
+      // 8-bar riser fires at start of section C
+      if (ss === 0 && bar === 0)   scheduleRiser(t, 8 * 16 * STEP_DUR);
+      // bass (climbing)
+      if (ss % 4 === 0) {
+        const q = bar * 4 + (ss / 4);
+        scheduleBass(t, BASS_C[q % BASS_C.length], false);
+      }
+    }
+    function envGain(t, peak, attack, decay) {
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peak, t + attack);
+      g.gain.exponentialRampToValueAtTime(0.001, t + attack + decay);
+      return g;
+    }
+    function scheduleKick(t) {
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(150, t);
+      o.frequency.exponentialRampToValueAtTime(58, t + 0.045);
+      const g = envGain(t, 0.85, 0.002, 0.13);
+      o.connect(g); g.connect(audioMaster);
+      o.start(t); o.stop(t + 0.16);
+      const buf = audioCtx.createBuffer(1, 512, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1600;
+      const cg = audioCtx.createGain(); cg.gain.value = 0.5;
+      src.connect(hp); hp.connect(cg); cg.connect(audioMaster);
+      src.start(t);
+    }
+    function scheduleSnare(t, vol = 0.9) {
+      const dur = 0.28;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 3.0;
+      const g = envGain(t, vol * 0.85, 0.001, dur);
+      src.connect(bp); bp.connect(g); g.connect(audioMaster);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.7;
+      g.connect(rs); rs.connect(audioReverb);
+      src.start(t);
+      const o = audioCtx.createOscillator(); o.type = 'triangle';
+      o.frequency.setValueAtTime(330, t);
+      o.frequency.exponentialRampToValueAtTime(165, t + 0.05);
+      const og = envGain(t, 0.55 * vol, 0.001, 0.11);
+      o.connect(og); og.connect(audioMaster);
+      o.start(t); o.stop(t + 0.13);
+      const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const d2 = buf2.getChannelData(0);
+      for (let i = 0; i < d2.length; i++) d2[i] = Math.random() * 2 - 1;
+      const src2 = audioCtx.createBufferSource(); src2.buffer = buf2;
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 5500;
+      const g2 = envGain(t, 0.45 * vol, 0.001, 0.05);
+      src2.connect(hp); hp.connect(g2); g2.connect(audioMaster);
+      src2.start(t);
+    }
+    function scheduleHat(t, open) {
+      const dur = open ? 0.22 : 0.034;
+      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 9000;
+      const g = envGain(t, open ? 0.16 : 0.11, 0.001, dur);
+      src.connect(hp); hp.connect(g); g.connect(audioMaster);
+      if (open) { const rs = audioCtx.createGain(); rs.gain.value = 0.25; g.connect(rs); rs.connect(audioReverb); }
+      src.start(t);
+    }
+    function scheduleMetal(t) {
+      const partials = [2200, 3700, 5300];
+      const peaks    = [0.06, 0.05, 0.04];
+      for (let i = 0; i < partials.length; i++) {
+        const o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.value = partials[i];
+        const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = partials[i]; bp.Q.value = 10;
+        const g = envGain(t, peaks[i], 0.001, 0.26);
+        o.connect(bp); bp.connect(g); g.connect(audioMaster);
+        const rs = audioCtx.createGain(); rs.gain.value = 0.5; g.connect(rs); rs.connect(audioReverb);
+        o.start(t); o.stop(t + 0.3);
+      }
+    }
+    function scheduleBass(t, semis, soft) {
+      const freq = ROOT_HZ * Math.pow(2, semis / 12);
+      const dur = STEP_DUR * 4 * 1.04;
+      const subAmp  = soft ? 0.42 : 0.55;
+      const reeseAmp = soft ? 0.13 : 0.2;
+      const sub = audioCtx.createOscillator(); sub.type = 'sine'; sub.frequency.value = freq;
+      const subG = audioCtx.createGain();
+      subG.gain.setValueAtTime(0, t);
+      subG.gain.linearRampToValueAtTime(subAmp, t + 0.015);
+      subG.gain.setValueAtTime(subAmp, t + dur - 0.05);
+      subG.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      sub.connect(subG); subG.connect(audioMaster);
+      sub.start(t); sub.stop(t + dur + 0.05);
+
+      const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 360; lp.Q.value = 9;
+      const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.55;
+      const lfoG = audioCtx.createGain(); lfoG.gain.value = 260;
+      lfo.connect(lfoG); lfoG.connect(lp.frequency);
+      lfo.start(t); lfo.stop(t + dur + 0.05);
+
+      const gg = audioCtx.createGain();
+      gg.gain.setValueAtTime(0, t);
+      gg.gain.linearRampToValueAtTime(reeseAmp, t + 0.02);
+      gg.gain.setValueAtTime(reeseAmp, t + dur - 0.05);
+      gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+      const detunes = [-18, -7, 7, 18];
+      for (const dt of detunes) {
+        const o = audioCtx.createOscillator(); o.type = 'sawtooth';
+        o.frequency.value = freq * 2;
+        o.detune.value = dt;
+        o.connect(lp);
+        o.start(t); o.stop(t + dur + 0.05);
+      }
+      lp.connect(gg); gg.connect(audioMaster);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.18;
+      gg.connect(rs); rs.connect(audioReverb);
+    }
+
+    function scheduleLead(t, semis) {
+      // PS1-game style square lead — slightly detuned, short LP envelope
+      // Octave choice: ROOT_HZ * 8 puts us around D4 (293Hz)
+      const freq = ROOT_HZ * 8 * Math.pow(2, semis / 12);
+      const dur = STEP_DUR * 2 * 0.92;
+      const o1 = audioCtx.createOscillator(); o1.type = 'square'; o1.frequency.value = freq;
+      const o2 = audioCtx.createOscillator(); o2.type = 'square'; o2.frequency.value = freq; o2.detune.value = 9;
+      const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(2200, t);
+      lp.frequency.linearRampToValueAtTime(3800, t + 0.05);
+      lp.Q.value = 3.5;
+      const g = envGain(t, 0.12, 0.004, dur);
+      o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(audioMaster);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.32;
+      g.connect(rs); rs.connect(audioReverb);
+      o1.start(t); o1.stop(t + dur + 0.05);
+      o2.start(t); o2.stop(t + dur + 0.05);
+    }
+
+    function scheduleRiser(t, dur) {
+      // 8-bar bandpassed noise sweep, climbing in frequency and volume
+      const samples = Math.max(1, Math.floor(audioCtx.sampleRate * dur));
+      const buf = audioCtx.createBuffer(1, samples, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < samples; i++) d[i] = Math.random() * 2 - 1;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 5;
+      bp.frequency.setValueAtTime(300, t);
+      bp.frequency.exponentialRampToValueAtTime(8500, t + dur);
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.05, t + dur * 0.4);
+      g.gain.linearRampToValueAtTime(0.22, t + dur);
+      src.connect(bp); bp.connect(g); g.connect(audioMaster);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.6;
+      g.connect(rs); rs.connect(audioReverb);
+      src.start(t);
+    }
+    function startPad() {
+      const padGain = audioCtx.createGain(); padGain.gain.value = 0.085;
+      padGain.connect(audioMaster);
+      const f1 = ROOT_HZ * 2;
+      const f2 = ROOT_HZ * 2 * Math.pow(2, 8 / 12);
+      const o1 = audioCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f1;
+      const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f2;
+      o2.detune.value = -6;
+      const og = audioCtx.createGain(); og.gain.value = 0.55;
+      o1.connect(og); o2.connect(og); og.connect(padGain);
+      o1.start(); o2.start();
+      const noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 4, audioCtx.sampleRate);
+      const nd = noiseBuf.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      const ns = audioCtx.createBufferSource(); ns.buffer = noiseBuf; ns.loop = true;
+      const nbp = audioCtx.createBiquadFilter(); nbp.type = 'bandpass'; nbp.frequency.value = 600; nbp.Q.value = 4;
+      const nlfo = audioCtx.createOscillator(); nlfo.type = 'sine'; nlfo.frequency.value = 0.11;
+      const nlfoG = audioCtx.createGain(); nlfoG.gain.value = 280;
+      nlfo.connect(nlfoG); nlfoG.connect(nbp.frequency);
+      const nGain = audioCtx.createGain(); nGain.gain.value = 0.35;
+      ns.connect(nbp); nbp.connect(nGain); nGain.connect(padGain);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.6;
+      nGain.connect(rs); rs.connect(audioReverb);
+      ns.start(); nlfo.start();
+    }
+
+    // =========================================================================
+    // speed streaks — 2D overlay, emanate from truck's screen position with curl
+    // =========================================================================
+    // Rally-style radial speed lines emanating from the road's vanishing point.
+    // Origin is a fixed point near the upper-middle of the screen — the horizon —
+    // not the truck. Streaks fly straight out radially toward the screen edges.
+    const streaks = [];
+
+    function spawnStreak(cx, cy, factor) {
+      const angle = Math.random() * Math.PI * 2;
+      // start near the vanishing point so the line "comes from far away"
+      const startDist = rand(8, 60);
+      const x = cx + Math.cos(angle) * startDist;
+      const y = cy + Math.sin(angle) * startDist;
+      const speed = rand(700, 1500) * (0.55 + factor);
+      streaks.push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        len: rand(0.05, 0.11),
+        life: rand(0.45, 0.95),
+        age: 0,
+      });
+    }
+
+    function updateStreaks(dt, truckSpd, isBoosting) {
+      // factor scales with speed; boost gives extra streak density
+      const baseF = clamp((truckSpd - 18) / 30, 0, 1);
+      const factor = isBoosting ? Math.min(1, baseF + 0.3) : baseF;
+      const cx = innerWidth / 2;
+      const cy = innerHeight * 0.42;           // horizon vanishing point
+
+      const target = Math.floor(factor * (isBoosting ? 150 : 80));
+      let spawnBudget = Math.min(12, Math.max(0, target - streaks.length));
+      while (spawnBudget-- > 0) spawnStreak(cx, cy, factor);
+
+      streakCtx.clearRect(0, 0, innerWidth, innerHeight);
+      if (factor <= 0 && streaks.length === 0) return;
+      streakCtx.lineCap = 'round';
+
+      for (let i = streaks.length - 1; i >= 0; i--) {
+        const s = streaks[i];
+        s.age += dt;
+        // straight radial motion (no curl) — the road rushing past
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        const t = clamp(1 - s.age / s.life, 0, 1);
+        const alpha = t * (0.5 + factor * 0.5);
+        const px = s.x - s.vx * s.len;
+        const py = s.y - s.vy * s.len;
+        // boost: tinted slightly cyan; normal: warm white
+        streakCtx.strokeStyle = isBoosting
+          ? `rgba(190, 235, 255, ${alpha.toFixed(3)})`
+          : `rgba(255, 248, 220, ${alpha.toFixed(3)})`;
+        streakCtx.lineWidth = 1 + factor * 1.8 + (isBoosting ? 0.6 : 0);
+        streakCtx.beginPath();
+        streakCtx.moveTo(px, py);
+        streakCtx.lineTo(s.x, s.y);
+        streakCtx.stroke();
+        if (s.age > s.life || s.x < -40 || s.x > innerWidth + 40 || s.y < -40 || s.y > innerHeight + 40) {
+          streaks.splice(i, 1);
+        }
+      }
+    }
+
+    // =========================================================================
+    // truck physics (curve-based)
+    // =========================================================================
+    let truckS = 0;
+    let truckLateral = 2.5;          // start in right lane
+    let truckSpeed = 14;
+    const TRUCK_MIN_SPEED = 8;
+    const TRUCK_MAX_SPEED = 42;
+    const TRUCK_BOOST_SPEED = 66;
+    const TRUCK_ACCEL = 20;
+    const TRUCK_BRAKE = 32;
+    const TRUCK_DRAG = 4;
+    const STEER_SPEED = 8;
+
+    let bumpVel = 0, bumpY = 0, bodyRoll = 0;
+    let cameraRoll = 0;            // rally-style banking, eased
+    let dropTimer = rand(0.55, 0.85);
+    let gameOver = false;
+    let startTime = performance.now();
+
+    // ---- boost meter ----
+    let boostMeter = 1.0;                 // 0..1
+    const BOOST_DRAIN_PER_SEC = 0.32;     // ~3s of full boost
+    const BOOST_PICKUP_VALUE = 0.45;      // each pickup
+    const BOOST_CRASH_LOSS = 0.6;         // crash empties most of meter
+
+    // HUD elements
+    const hudCarts = document.getElementById('carts');
+    const hudCartsRow = document.getElementById('cartsRow');
+    const hudDist  = document.getElementById('dist');
+    const hudSpeed = document.getElementById('speed');
+    const hudLvl   = document.getElementById('lvl');
+    const hudLvlName = document.getElementById('lvlName');
+    const boostFill = document.getElementById('boostFill');
+    const boostLabel = document.getElementById('boostLabel');
+    const speedoWrap = document.getElementById('speedoWrap');
+    const overlay  = document.getElementById('overlay');
+    const titleEl  = document.getElementById('title');
+    const subtitle = document.getElementById('subtitle');
+    const againBtn = document.getElementById('again');
+    const vignette = document.getElementById('vignette');
+    againBtn.addEventListener('click', () => location.reload());
+
+    function endGame(isWin) {
+      if (gameOver) return;
+      gameOver = true;
+      const seconds = ((performance.now() - startTime) / 1000).toFixed(1);
+      titleEl.textContent = isWin ? 'ALL DELIVERIES MADE' : 'OUT OF CARTS';
+      titleEl.classList.remove('win', 'lose');
+      titleEl.classList.add(isWin ? 'win' : 'lose');
+      if (isWin) {
+        subtitle.innerHTML =
+          `Total time: <strong>${seconds}s</strong> · <strong>${cartsRemaining}</strong> cart${cartsRemaining === 1 ? '' : 's'} left in the truck. ` +
+          (cartsRemaining >= 60 ? "Legendary run." :
+           cartsRemaining >= 30 ? "Solid." :
+           cartsRemaining >  5  ? "Cut it close." :
+                                  "Pure adrenaline.");
+      } else {
+        subtitle.innerHTML = `Ran dry on <strong>STAGE ${levelIdx + 1}</strong> after <strong>${seconds}s</strong>. Should've floored it sooner.`;
+      }
+      overlay.style.display = 'flex';
+    }
+
+    setTimeout(() => document.getElementById('title-card').classList.add('fade'), 100);
+
+    // =========================================================================
+    // initial level load
+    // =========================================================================
+    loadLevel(0);
+    hudLvl.textContent = String(levelIdx + 1);
+    hudLvlName.textContent = LEVELS[levelIdx].name;
+
+    // =========================================================================
+    // main loop
+    // =========================================================================
+    const clock = new THREE.Clock();
+    const _curTan = new THREE.Vector3();
+    const _curRt  = new THREE.Vector3();
+    const _curP   = new THREE.Vector3();
+
+    function advanceLevel() {
+      levelIdx++;
+      if (levelIdx >= LEVELS.length) {
+        endGame(true);
+        return;
+      }
+      levelTransitioning = true;
+      truckS = 0;
+      truckLateral = 2.5;
+      hudLvl.textContent = String(levelIdx + 1);
+      hudLvlName.textContent = LEVELS[levelIdx].name;
+      loadLevel(levelIdx);
+      // brief speed boost for the level-start surge
+      truckSpeed = Math.max(truckSpeed, 18);
+      setTimeout(() => { levelTransitioning = false; }, 600);
+    }
+
+    function tick() {
+      const dt = Math.min(clock.getDelta(), 0.05);
+      let steerInput = 0;
+
+      if (!gameOver) {
+        // throttle — boost requires a non-empty meter and drains it
+        const wantBoost = !!keys[' '] && boostMeter > 0;
+        const accel = keys['w'] || keys['arrowup'];
+        const brake = keys['s'] || keys['arrowdown'];
+        if (wantBoost) {
+          truckSpeed += TRUCK_ACCEL * 1.4 * dt;
+          boostMeter = Math.max(0, boostMeter - BOOST_DRAIN_PER_SEC * dt);
+        } else if (accel) {
+          if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed += TRUCK_ACCEL * dt;
+        } else if (brake) {
+          truckSpeed -= TRUCK_BRAKE * dt;
+        } else {
+          truckSpeed -= TRUCK_DRAG * dt;
+        }
+        // boost falloff: above MAX with no boost, decel back to MAX
+        if (!wantBoost && truckSpeed > TRUCK_MAX_SPEED) {
+          truckSpeed -= 14 * dt;
+          if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed = TRUCK_MAX_SPEED;
+        }
+        truckSpeed = clamp(truckSpeed, TRUCK_MIN_SPEED, TRUCK_BOOST_SPEED);
+
+        // steering (A/← → +lateral=right; D/→ → -lateral=left, per user mapping)
+        if (keys['a'] || keys['arrowleft']) steerInput += 1;
+        if (keys['d'] || keys['arrowright']) steerInput -= 1;
+        truckLateral += steerInput * STEER_SPEED * dt;
+        truckLateral = clamp(truckLateral, -LANE_LIMIT, LANE_LIMIT);
+        bodyRoll += (-steerInput * 0.09 - bodyRoll) * Math.min(1, dt * 8);
+
+        // advance along curve
+        truckS += truckSpeed * dt;
+        if (truckS >= curveLength - 14) {
+          advanceLevel();
+          if (gameOver) return finalize();
+        }
+
+        // bounce
+        bumpVel -= 40 * dt;
+        bumpY += bumpVel * dt;
+        if (bumpY < 0) { bumpY = 0; bumpVel = 0; }
+      }
+
+      // resolve world position from curve + lateral
+      const t = clamp(truckS / curveLength, 0, 1);
+      _curP.copy(pointAt(t));
+      _curTan.copy(tangentAt(t));
+      _curRt.copy(rightFromTangent(_curTan));
+      truck.position.x = _curP.x + _curRt.x * truckLateral;
+      truck.position.z = _curP.z + _curRt.z * truckLateral;
+      truck.position.y = bumpY;
+
+      // truck yaw = tangent heading + small steer-induced yaw + body roll
+      truck.rotation.y = Math.atan2(_curTan.x, _curTan.z) + steerInput * 0.05;
+      truck.rotation.z = bodyRoll;
+
+      // wheel spin
+      const spin = (truckSpeed * dt) / 0.6;
+      for (const w of wheels) w.rotation.x -= spin;
+
+      // obstacle hits (curve-space)
+      if (!gameOver) {
+        for (const o of obstacles) {
+          if (o.hit) continue;
+          const ds = Math.abs((o.t - t) * curveLength);
+          if (ds > 2.5) continue;
+          if (o.type === 'bump') {
+            const half = 1.3;
+            const inGap = (truckLateral - half >= o.gapMinLat) && (truckLateral + half <= o.gapMaxLat);
+            if (!inGap) {
+              o.hit = true;
+              bumpVel = Math.max(7, truckSpeed * 0.4);
+              dropCart();
+            }
+          } else {
+            if (Math.abs(truckLateral - o.lat) < 1.6 && ds < 1.4) {
+              o.hit = true;
+              bumpVel = Math.max(9, truckSpeed * 0.55);
+              dropCart(); dropCart();
+              truckSpeed *= 0.7;
+            }
+          }
+        }
+
+        // constant cart dribble — your clock
+        dropTimer -= dt;
+        if (dropTimer <= 0) {
+          dropTimer = rand(0.55, 0.85);
+          dropCart();
+        }
+
+        // win/lose
+        if (cartsRemaining <= 0) endGame(false);
+        if (cartsRemaining <= 10) hudCartsRow.classList.add('low');
+        else hudCartsRow.classList.remove('low');
+      }
+
+      // ---- traffic update ----
+      for (let i = traffic.length - 1; i >= 0; i--) {
+        const c = traffic[i];
+        if (!c.alive) { levelGroup.remove(c.mesh); traffic.splice(i, 1); continue; }
+        c.s -= c.speed * dt;
+        const ct = clamp(c.s / curveLength, 0, 1);
+        const cp = pointAt(ct);
+        const ctn = tangentAt(ct);
+        const crt = rightFromTangent(ctn);
+        c.mesh.position.x = cp.x + crt.x * c.lat;
+        c.mesh.position.z = cp.z + crt.z * c.lat;
+        c.mesh.rotation.y = Math.atan2(-ctn.x, -ctn.z);
+        // collision with truck
+        if (!gameOver) {
+          const dz = (c.s - truckS); // signed distance along curve (car ahead = positive)
+          if (Math.abs(dz) < 3.2 && Math.abs(c.lat - truckLateral) < 1.8) {
+            // crash: lose a chunk of carts AND boost meter, slow truck, bounce
+            for (let k = 0; k < 6; k++) dropCart();
+            bumpVel = Math.max(8, truckSpeed * 0.6);
+            truckSpeed *= 0.55;
+            boostMeter = Math.max(0, boostMeter - BOOST_CRASH_LOSS);
+            c.alive = false;
+            continue;
+          }
+        }
+        // recycle if car passed behind truck
+        if (c.s < truckS - 20) {
+          c.alive = false;
+        }
+      }
+      // spawn replacement traffic ahead if under target
+      if (!gameOver && !levelTransitioning) {
+        const L = LEVELS[levelIdx];
+        const liveAhead = traffic.filter(c => c.alive && c.s > truckS - 5).length;
+        if (liveAhead < L.trafficCount && truckS < curveLength - 200) {
+          if (Math.random() < dt * 0.8) {
+            spawnTrafficCar(truckS + rand(110, 230));
+          }
+        }
+      }
+
+      // ---- boost pickups: animate + collect ----
+      for (const pu of boostPickups) {
+        if (!pu.alive) continue;
+        pu.t0 += dt;
+        pu.mesh._core.rotation.y += dt * 2.4;
+        pu.mesh._core.rotation.x += dt * 1.6;
+        pu.mesh._core.position.y = 1.4 + Math.sin(pu.t0 * 3) * 0.18;
+        if (!gameOver) {
+          const ds = Math.abs(pu.s - truckS);
+          const dlat = Math.abs(pu.lat - truckLateral);
+          if (ds < 2.2 && dlat < 1.8) {
+            pu.alive = false;
+            pu.mesh.visible = false;
+            boostMeter = Math.min(1.0, boostMeter + BOOST_PICKUP_VALUE);
+          }
+        }
+      }
+
+      // ---- cart stack shuffle (jostle in the bed) ----
+      // damped-spring around each cart's base position, impulsed by truck motion
+      const shuffleImp = Math.abs(bumpVel) * 0.7 + Math.abs(steerInput) * 2.0 + Math.max(0, truckSpeed - 22) * 0.08;
+      const SPRING_K = 140, SPRING_D = 11;
+      const lateralKick = -steerInput * 0.18 * Math.min(1, truckSpeed / 20);
+      for (let i = 0; i < stackCarts.length; i++) {
+        const c = stackCarts[i];
+        if (!c.visible) continue;
+        const ix = (Math.random() - 0.5) * shuffleImp + lateralKick;
+        const iz = (Math.random() - 0.5) * shuffleImp * 0.5 + bumpVel * 0.05;
+        const ir = (Math.random() - 0.5) * shuffleImp * 1.2 + lateralKick * 0.5;
+        c._wobVX += (-SPRING_K * c._wobX - SPRING_D * c._wobVX + ix) * dt;
+        c._wobVZ += (-SPRING_K * c._wobZ - SPRING_D * c._wobVZ + iz) * dt;
+        c._wobVR += (-SPRING_K * c._wobR - SPRING_D * c._wobVR + ir) * dt;
+        c._wobX += c._wobVX * dt;
+        c._wobZ += c._wobVZ * dt;
+        c._wobR += c._wobVR * dt;
+        c._wobX = clamp(c._wobX, -0.14, 0.14);
+        c._wobZ = clamp(c._wobZ, -0.14, 0.14);
+        c._wobR = clamp(c._wobR, -0.22, 0.22);
+        c.position.x = c._baseX + c._wobX;
+        c.position.z = c._baseZ + c._wobZ;
+        c.rotation.y = c._wobR;
+      }
+
+      // ---- dropped carts: tumble physics → snake-follow chain ----
+      truck.updateMatrixWorld();
+      const truckBackLocal = new THREE.Vector3(0, 0, BOX_CZ - BOX_D / 2 - 0.4);
+      truckBackLocal.applyMatrix4(truck.matrixWorld);
+      let leaderX = truckBackLocal.x;
+      let leaderZ = truckBackLocal.z;
+      for (let i = 0; i < trail.length; i++) {
+        const cart = trail[i];
+        if (cart._tumbleT > 0) {
+          // free physics
+          cart._tumbleT -= dt;
+          cart._vy -= 22 * dt;
+          // air drag
+          const drag = Math.pow(0.94, dt * 60);
+          cart._vx *= drag; cart._vz *= drag;
+          cart.position.x += cart._vx * dt;
+          cart.position.y += cart._vy * dt;
+          cart.position.z += cart._vz * dt;
+          cart.rotation.x += cart._wx * dt;
+          cart.rotation.y += cart._wy * dt;
+          cart.rotation.z += cart._wz * dt;
+          if (cart.position.y <= 0.15) {
+            cart.position.y = 0.15;
+            cart._vy *= -0.32;
+            cart._vx *= 0.55; cart._vz *= 0.55;
+            cart._wx *= 0.45; cart._wz *= 0.45;
+            cart._bounces++;
+            // end tumble when bouncing settles
+            if (Math.abs(cart._vy) < 0.5 || cart._bounces > 3) {
+              cart._tumbleT = 0;
+              cart.rotation.x *= 0.25;
+              cart.rotation.z *= 0.25;
+            }
+          }
+        } else {
+          // snake-follow trail behavior, with smoothly-eased orientation
+          if (cart.position.y > 0.15) {
+            cart.position.y += (0.15 - cart.position.y) * Math.min(1, dt * 8);
+          }
+          const dx = leaderX - cart.position.x;
+          const dz = leaderZ - cart.position.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist > TRAIL_SPACING) {
+            const f = (dist - TRAIL_SPACING) / dist;
+            cart.position.x += dx * f;
+            cart.position.z += dz * f;
+            const targetRot = Math.atan2(dx, dz);
+            // smooth rotation toward leader
+            let drot = targetRot - cart.rotation.y;
+            while (drot > Math.PI) drot -= Math.PI * 2;
+            while (drot < -Math.PI) drot += Math.PI * 2;
+            cart.rotation.y += drot * Math.min(1, dt * 5);
+          }
+          // ease out residual x/z tilt
+          cart.rotation.x *= Math.pow(0.6, dt * 60);
+          cart.rotation.z *= Math.pow(0.6, dt * 60);
+        }
+        leaderX = cart.position.x;
+        leaderZ = cart.position.z;
+      }
+      // cull detached far behind
+      for (let i = detached.length - 1; i >= 0; i--) {
+        if (detached[i].position.distanceToSquared(truck.position) > 18000) {
+          scene.remove(detached[i]);
+          detached.splice(i, 1);
+        }
+      }
+
+      // ---- camera follow + curve lean + shake ----
+      // look-ahead tangent so the camera leans into upcoming curves (Outrun trick)
+      const lookAheadM = 24 + truckSpeed * 0.7;
+      const lookAheadT = clamp((truckS + lookAheadM) / curveLength, 0, 1);
+      const aheadTan = tangentAt(lookAheadT);
+      const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
+      const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
+      // higher chase cam so we can see oncoming traffic & the road ahead
+      const camTargetX = truck.position.x - blendTanX * 13.5;
+      const camTargetY = 8.8 + bumpY * 0.4;
+      const camTargetZ = truck.position.z - blendTanZ * 13.5;
+      camera.position.x += (camTargetX - camera.position.x) * 0.14;
+      camera.position.y += (camTargetY - camera.position.y) * 0.10;
+      camera.position.z += (camTargetZ - camera.position.z) * 0.18;
+      // shake
+      const shakeI = clamp((truckSpeed - 18) / 30, 0, 1);
+      const ts = performance.now() * 0.001;
+      const sx = (Math.sin(ts * 47) + Math.sin(ts * 23)) * 0.18 * shakeI;
+      const sy = (Math.sin(ts * 31) + Math.sin(ts * 19)) * 0.12 * shakeI;
+      const sr = (Math.sin(ts * 39) + Math.sin(ts * 13)) * 0.015 * shakeI;
+      camera.position.x += sx;
+      camera.position.y += sy;
+      // look ahead along the (blended) curve so the camera frames the turn
+      camera.lookAt(
+        truck.position.x + blendTanX * 18,
+        2.6 + bumpY * 0.5,
+        truck.position.z + blendTanZ * 18
+      );
+      // rally-style camera bank: roll into the steering direction, eased
+      // plus a small contribution from upcoming curvature so corners pre-tilt
+      const curveBend = (aheadTan.x * _curTan.z - aheadTan.z * _curTan.x);
+      const targetRoll = -steerInput * 0.18 + curveBend * 0.9;
+      cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 4.5);
+      camera.rotation.z += cameraRoll + sr;
+
+      // light tracking
+      shadowTarget.position.copy(truck.position);
+      sun.position.set(truck.position.x + 60, truck.position.y + 90, truck.position.z + 40);
+      // horizon ring follows the truck so it stays "always far away"
+      horizonGroup.position.x = truck.position.x;
+      horizonGroup.position.z = truck.position.z;
+
+      // FX scaling
+      const blur = clamp((truckSpeed - 26) / 22, 0, 1);
+      afterimagePass.uniforms['damp'].value = blur * 0.35;
+      const fovFactor = clamp((truckSpeed - 18) / 30, 0, 1);
+      camera.fov = 62 + fovFactor * 22;
+      camera.updateProjectionMatrix();
+      const vAmt = Math.round(60 + fovFactor * 140);
+      vignette.style.boxShadow = `inset 0 0 ${vAmt}px ${Math.round(30 + fovFactor * 90)}px rgba(0,0,0,${0.22 + fovFactor * 0.32})`;
+
+      updateStreaks(dt, truckSpeed, !!keys[' '] && boostMeter > 0);
+
+      // boost-blast manga burst (one-shot on SPACE press)
+      if (boostBlastTimer > 0) {
+        boostBlastTimer -= dt;
+        const prog = clamp(1 - boostBlastTimer / BOOST_BLAST_DUR, 0, 1);
+        drawBoostBlast(prog);
+        if (boostBlastTimer <= 0) {
+          blastCtx.clearRect(0, 0, innerWidth, innerHeight);
+          blastCanvas.style.opacity = '0';
+        }
+      }
+
+      if (truckSpeed > TRUCK_MAX_SPEED + 1) speedoWrap.classList.add('boost');
+      else speedoWrap.classList.remove('boost');
+
+      hudCarts.textContent = cartsRemaining;
+      hudDist.textContent = Math.max(0, Math.round(curveLength - truckS));
+      hudSpeed.textContent = Math.round(truckSpeed * 2.237);
+      boostFill.style.width = (boostMeter * 100).toFixed(1) + '%';
+      if (boostMeter <= 0.001) {
+        boostFill.classList.add('empty');
+        boostLabel.classList.add('empty');
+        boostLabel.textContent = 'EMPTY — GRAB ⬢';
+      } else {
+        boostFill.classList.remove('empty');
+        boostLabel.classList.remove('empty');
+        boostLabel.textContent = 'BOOST';
+      }
+
+      composer.render();
+      requestAnimationFrame(tick);
+    }
+
+    function finalize() {
+      // run a final render so the end overlay isn't on a frozen frame
+      composer.render();
+    }
+
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
