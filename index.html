@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <title>Cart Run — Beat the Cart Clock</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1920,8 +1920,14 @@
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff;
       font-family: 'Saira Condensed', ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: var(--ui-white); letter-spacing: 0.5px;
+      touch-action: none;                /* kill double-tap zoom + scroll */
+      overscroll-behavior: none;
+    }
+    @supports (height: 100dvh) {
+      html, body { height: 100dvh; }     /* avoid the iOS-Safari toolbar gap */
     }
     #c { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; image-rendering: crisp-edges; }
+    @supports (height: 100dvh) { #c { height: 100dvh; } }
 
     /* ====== top-left: stat panel — Ridge Racer 4 colon-stat style ====== */
     #hudStats {
@@ -2208,6 +2214,141 @@
       text-transform: uppercase;
     }
     #stageRecap button:hover { background: var(--amber); }
+
+    /* =====================================================================
+       MOBILE HUD — PORTRAIT-ONLY LAYOUT
+       Lives at the bottom of styles so it wins over every earlier rule
+       without needing !important on every property. Triggered by either
+       body.mobile-active (JS touch + width sniff) OR a tight media query.
+
+       Layout, with safe-area insets respected:
+         top-left   → cargo (XX OF YY / CARTS), max 42vw
+         top-right  → time + delivery (MM'SS"ms / TIME / N OF M), max 42vw
+         bottom-right → compact speed cluster (### KPH) + single BOOST bar
+         bottom-left  → compact delta (-MM'SS"ms)
+       All other panels hidden during gameplay.
+       ===================================================================== */
+    .mobile-active {
+      --safe-t: env(safe-area-inset-top, 0px);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-l: env(safe-area-inset-left, 0px);
+      --safe-r: env(safe-area-inset-right, 0px);
+    }
+
+    /* Hide all desktop-only HUD on mobile, plus persistent text overlays. */
+    .mobile-active #songFlash,
+    .mobile-active #controlsStrip,
+    .mobile-active #audioLbl,
+    .mobile-active #hudHints,
+    .mobile-active #hudStats,
+    .mobile-active #hudSpeedo,
+    .mobile-active #hudSection,
+    .mobile-active #hudBoost,
+    .mobile-active #scoreBoard,
+    .mobile-active #deliveryBoard,
+    .mobile-active #rallyTL,
+    .mobile-active #rallyTR,
+    .mobile-active #rallyTurn,
+    .mobile-active #rallyBR,
+    .mobile-active #wpStamp,
+    .mobile-active #wpKatakana,
+    .mobile-active #wpEdgeL,
+    .mobile-active #wpEdgeR,
+    .mobile-active #arcStripes,
+    .mobile-active #arcChevrons,
+    .mobile-active #arcSponsor,
+    .mobile-active #arcClock,
+    .mobile-active #arcPos,
+    .mobile-active #driverPip {
+      display: none !important;
+    }
+
+    /* CARGO — top-left */
+    .mobile-active #cargoBoard {
+      top: calc(10px + var(--safe-t));
+      left: calc(10px + var(--safe-l));
+      max-width: 42vw;
+    }
+    .mobile-active #cargoBoard .sb-num        { font-size: 34px; line-height: 0.85; letter-spacing: -1px; text-shadow: 3px 3px 0 #000; }
+    .mobile-active #cargoBoard .sb-num.small  { font-size: 24px; }
+    .mobile-active #cargoBoard .sb-of         { font-size: 14px; margin: 0 3px; }
+    .mobile-active #cargoBoard .sb-lbl        { font-size: 10px; letter-spacing: 2.5px; margin-top: -2px; }
+
+    /* TIME + DELIVERY — top-right (replaces score, lap, sector, etc.) */
+    .mobile-active #mobileTimeBox {
+      display: block;
+      top: calc(10px + var(--safe-t));
+      right: calc(10px + var(--safe-r));
+      max-width: 42vw;
+    }
+    .mobile-active #mobileTimeBox .mtv { font-size: 22px; letter-spacing: 1.5px; text-shadow: 3px 3px 0 #000; }
+    .mobile-active #mobileTimeBox .mtl { font-size:  9px; letter-spacing: 2.5px; margin-top: 1px; text-shadow: 2px 2px 0 #000; }
+    .mobile-active #mobileTimeBox .mts { font-size: 14px; letter-spacing: 1.5px; margin-top: 4px; text-shadow: 2px 2px 0 #000; color: #ffce4a; }
+
+    /* SPEED CLUSTER — bottom-right, compact */
+    .mobile-active #thrustCluster {
+      right: calc(10px + var(--safe-r));
+      bottom: calc(10px + var(--safe-b));
+      gap: 2px;
+      max-width: 45vw;
+      align-items: flex-end;
+    }
+    .mobile-active #thrustCluster .thrust-top { gap: 4px; align-items: baseline; }
+    .mobile-active #thrustCluster .thrust-num {
+      font-size: 38px; line-height: 0.85; letter-spacing: -1px;
+      text-shadow: 3px 3px 0 #000;
+    }
+    .mobile-active #thrustCluster .thrust-unit-pill {
+      font-size: 9px; padding: 1px 4px; border-width: 1px;
+      box-shadow: 1px 1px 0 #000;
+      margin-bottom: 4px;
+    }
+    /* Combined BOOST meter: hide the THRUST row, relabel ENERGY → BOOST */
+    .mobile-active #thrustCluster .thrust-meter-row:has(#thrustBar) { display: none; }
+    .mobile-active #thrustCluster .thrust-meter-row:has(#energyBar) .thrust-meter-label {
+      font-size: 0;                       /* hide original "ENERGY" word */
+      min-width: 40px;
+    }
+    .mobile-active #thrustCluster .thrust-meter-row:has(#energyBar) .thrust-meter-label::after {
+      content: 'BOOST';
+      font-size: 9px; letter-spacing: 2px; color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+    }
+    .mobile-active #thrustCluster .thrust-bar {
+      width: 88px; height: 6px;
+      box-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+      border-width: 1px;
+    }
+
+    /* DELTA — bottom-left, compact */
+    .mobile-active #rallyBL {
+      bottom: calc(10px + var(--safe-b));
+      left:   calc(10px + var(--safe-l));
+      font-size: 14px; letter-spacing: 1.5px;
+      padding: 3px 6px;
+      box-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+      max-width: 40vw;
+    }
+    /* Hide BL during intro + countdown so the start sequence stays clean */
+    body.intro-active.mobile-active #rallyBL,
+    body.countdown-phase.mobile-active #rallyBL { opacity: 0; }
+
+    /* Brief start hint — "DRAG TO STEER · TAP BOOST" — fades out after 2s.
+       JS adds .show then .fade. Don't show it during the intro countdown. */
+    .mobile-active #mobileHint {
+      display: none;
+      bottom: calc(96px + var(--safe-b));
+      left: 50%; transform: translateX(-50%);
+      font-size: 11px; letter-spacing: 2px;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.55);
+      transition: opacity 600ms ease;
+    }
+    .mobile-active #mobileHint.show { display: block; opacity: 0.95; }
+    .mobile-active #mobileHint.show.fade { opacity: 0; }
+
+    /* Countdown should stay visible but smaller in portrait */
+    .mobile-active #countdown { font-size: 24vmin; }
   </style>
 </head>
 <body>
@@ -2506,7 +2647,7 @@
   <div id="introFade"></div>
 
   <!-- mobile: hint only; controls are one-thumb gestures on the road canvas -->
-  <div id="mobileHint">DRAG TO STEER · TAP TO BOOST</div>
+  <div id="mobileHint">DRAG TO STEER · TAP BOOST</div>
 
   <!-- mobile-only: compact TIME / DELIVERY / SCORE readout (replaces full panels) -->
   <div id="mobileTimeBox">
@@ -5947,6 +6088,16 @@
           raceStartMs = performance.now();
           raceTimerRunning = true;
           document.body.classList.remove('countdown-phase');
+          // Mobile: flash the gesture hint for ~2s on the first stage, then fade
+          if (document.body.classList.contains('mobile-active') && !introHasShown) {
+            const hint = document.getElementById('mobileHint');
+            if (hint) {
+              hint.classList.remove('fade');
+              hint.classList.add('show');
+              setTimeout(() => hint.classList.add('fade'), 2000);
+              setTimeout(() => hint.classList.remove('show', 'fade'), 2700);
+            }
+          }
           break;
         case 'go':
           hideCountdown();
@@ -5995,7 +6146,7 @@
         keys['d'] = dx >  STEER_DEADZONE;
         // small visual hint dismiss on first interaction
         const hint = document.getElementById('mobileHint');
-        if (hint) hint.classList.add('fade');
+        if (hint && hint.classList.contains('show')) hint.classList.add('fade');
       }
       function onEnd(e) {
         e.preventDefault();
