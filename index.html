@@ -1377,42 +1377,50 @@
        ===================================================================== */
     #driverPip {
       position: fixed;
-      top: 16px; left: 50%;
-      transform: translateX(-50%);
-      width: 168px;
+      right: 18px;
+      /* Right-middle, sitting above the bottom-right speed cluster. */
+      top: 50%;
+      transform: translateY(-58%);
+      width: 240px;
       pointer-events: none;
       z-index: 4;
       font-family: 'Russo One', sans-serif;
-      text-align: center;
+      text-align: left;
     }
     #driverPip canvas {
       display: block;
-      width: 168px; height: 124px;
+      width: 240px; height: 300px;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      border: 3px solid #fff;
-      background: #11141c;
+      border: 2px solid #2da848;     /* MGS codec phosphor green frame */
+      box-shadow: 0 0 0 3px #0a1a0e, 0 0 14px rgba(45, 168, 72, 0.35);
+      background: #0a1a0e;
     }
     #driverPip .driver-strip {
       display: flex; justify-content: space-between;
-      font-style: italic; font-size: 11px; letter-spacing: 3px;
-      color: #ffce4a;
-      padding: 3px 4px 0;
+      font-family: 'Share Tech Mono', monospace;
+      font-style: normal; font-size: 11px; letter-spacing: 3px;
+      color: #6df068;
+      padding: 4px 4px 0;
+      text-shadow: 0 0 4px rgba(109, 240, 104, 0.4);
     }
-    #driverPip .driver-name { color: #fff; }
+    #driverPip .driver-name { color: #c8ffc4; }
     #driverPip .driver-caption {
-      font-style: italic; font-weight: 400;
-      color: #ffce4a;
-      font-size: 13px; letter-spacing: 2px;
+      font-family: 'Share Tech Mono', monospace;
+      font-style: normal; font-weight: 400;
+      color: #6df068;
+      font-size: 12px; letter-spacing: 2px;
       margin-top: 2px;
       min-height: 16px;
+      text-shadow: 0 0 4px rgba(109, 240, 104, 0.5);
+      padding: 0 4px;
     }
     /* shake on hit */
     @keyframes driverShake {
-      0%, 100% { transform: translateX(-50%) translate(0, 0); }
-      25%      { transform: translateX(-50%) translate(-4px, 1px); }
-      50%      { transform: translateX(-50%) translate(3px, -1px); }
-      75%      { transform: translateX(-50%) translate(-2px, 1px); }
+      0%, 100% { transform: translateY(-58%) translate(0, 0); }
+      25%      { transform: translateY(-58%) translate(-4px, 1px); }
+      50%      { transform: translateY(-58%) translate(3px, -1px); }
+      75%      { transform: translateY(-58%) translate(-2px, 1px); }
     }
     #driverPip.shake { animation: driverShake 180ms steps(4, end) both; }
     /* mobile: hide */
@@ -2562,7 +2570,7 @@
 
   <!-- driver picture-in-picture comms window -->
   <div id="driverPip">
-    <canvas id="driverCanvas" width="84" height="62"></canvas>
+    <canvas id="driverCanvas" width="160" height="200"></canvas>
     <div class="driver-strip">
       <span class="driver-name">DRIVER</span>
       <span id="driverState">FOCUSED</span>
@@ -4302,8 +4310,10 @@
         }
       }
 
-      // billboards (avenue + downtown) — rare but readable
-      if (isAvenue || isDowntown) {
+      // billboards (urban + city kinds) — rare but readable.
+      // Highway / desert / coast / industrial already drop them inline
+      // through the prop loop, so this run is for the dense-urban look.
+      if (isUrban || isCityKind) {
         for (let bs = 60; bs < curveLength - 80; bs += rand(120, 200)) {
           const t = bs / curveLength;
           const p = pointAt(t);
@@ -4375,9 +4385,11 @@
         cartPickups.push({ mesh: pk, s: sPos, lat, alive: true, t0: Math.random() * 10, full });
       }
 
-      // streetlamps — denser for SUBURB/AVENUE, sparser for DOWNTOWN (perf)
-      const lampStep = isDowntown ? 24 : 14;
-      for (let z = 6; z < curveLength; z += lampStep) {
+      // streetlamps — denser for residential/urban, sparser for city kinds (perf)
+      // Pure-rural stages (highway, forest, desert, coast) skip lampposts entirely.
+      const skipLamps = isHighway || isForest || isDesert || isCoast;
+      const lampStep = isCityKind ? 24 : 14;
+      for (let z = 6; !skipLamps && z < curveLength; z += lampStep) {
         const t = z / curveLength;
         const p = pointAt(t);
         const tn = tangentAt(t);
@@ -4395,7 +4407,7 @@
           // Muted lamp heads so they don't compete with neon pickup glow.
           const lamp = new THREE.Mesh(
             new THREE.BoxGeometry(0.56, 0.32, 0.56),
-            new THREE.MeshBasicMaterial({ color: isDowntown ? 0xa8895a : (isAvenue ? 0x886848 : 0x8a8a82) })
+            new THREE.MeshBasicMaterial({ color: isCityKind ? 0xa8895a : (isUrban ? 0x886848 : 0x8a8a82) })
           );
           lamp.position.set(p.x + rt.x * side * (off - 0.3), 7.9, p.z + rt.z * side * (off - 0.3));
           levelGroup.add(lamp);
@@ -5955,6 +5967,9 @@
         type  = 'thread';
         boostGain = 0.20;       // +20%
         topKph    = 4;
+        setDriverState('surprised', 0.7, 'NICE!');
+      } else if (minD <= closeDist) {
+        setDriverState('determined', 0.5, 'CLOSE!');
       }
 
       // Combo multiplier shapes ALL three rewards (score / boost / top speed).
@@ -6222,17 +6237,29 @@
     // pixel-art renderer — palette + draw helpers
     const DRIVER_PALETTE = {
       skin:   '#f3c79a',
-      skinDk: '#b07a4e',
-      hair:   '#3a2a18',
-      cap:    '#ff7a00',
-      capDk:  '#a84a00',
-      visor:  '#001a3a',
-      mouth:  '#3a1010',
-      eye:    '#1a1a22',
-      eyeBg:  '#fff',
-      brow:   '#1a1a22',
-      bgA:    '#1c2240',
-      bgB:    '#243054',
+      // MGS codec phosphor palette — 7 shades of green from BG to highlight
+      bg0:    '#08130a',   // deepest shadow / background
+      bg1:    '#0e2010',   // background plate
+      bg2:    '#152a18',   // soft side fill
+      sk0:    '#1f4422',   // shadow ridge / hair underplane
+      sk1:    '#2f6a32',   // mid-tone skin shadow
+      sk2:    '#4ca246',   // base skin
+      sk3:    '#7adc70',   // skin highlight (cheek catch)
+      sk4:    '#b8ffae',   // brightest highlight (nose tip / brow ridge)
+      ink:    '#06120a',   // pure-black ink lines
+      // semantic aliases (kept so other code reads cleanly)
+      skin:   '#4ca246',
+      skinDk: '#2f6a32',
+      hair:   '#1f4422',
+      cap:    '#1f4422',   // helmet → dark green silhouette
+      capDk:  '#152a18',
+      visor:  '#06120a',
+      mouth:  '#06120a',
+      eye:    '#06120a',
+      eyeBg:  '#b8ffae',
+      brow:   '#06120a',
+      bgA:    '#0e2010',
+      bgB:    '#152a18',
     };
     function pixel(x, y, c, size = 1) {
       driverCtx.fillStyle = c;
@@ -6242,89 +6269,234 @@
       driverCtx.fillStyle = c;
       driverCtx.fillRect(x, y, w, h);
     }
+    // Detailed MGS-codec style 3/4 portrait on a 160×200 canvas.
+    // Shading uses 5 green shades to fake CRT phosphor depth.
     function drawDriverFace(now) {
       if (!driverCtx) return;
       driverAnimT = now;
-      // background scanline-y plates
-      rectFill(0, 0, 84, 62, DRIVER_PALETTE.bgA);
-      for (let yy = 0; yy < 62; yy += 4) rectFill(0, yy, 84, 2, DRIVER_PALETTE.bgB);
-      // expression knobs
+      const W = 160, H = 200;
+      const P = DRIVER_PALETTE;
+
+      // --- background plate with vertical phosphor falloff ---
+      rectFill(0, 0, W, H, P.bg1);
+      // very soft vertical gradient via stacked bands (no canvas gradients
+      // so the look stays chunky / pixel-faithful)
+      for (let yy = 0; yy < H; yy += 2) {
+        const f = yy / H;
+        const c = f < 0.35 ? P.bg2 : f < 0.7 ? P.bg1 : P.bg0;
+        rectFill(0, yy, W, 1, c);
+      }
+      // diagonal "interlace" texture every 6 px
+      driverCtx.fillStyle = 'rgba(11, 32, 14, 0.45)';
+      for (let yy = 0; yy < H; yy += 6) driverCtx.fillRect(0, yy, W, 1);
+      // soft vignette by darkening edges
+      rectFill(0, 0, 4, H, P.bg0);
+      rectFill(W - 4, 0, 4, H, P.bg0);
+
+      // --- expression-driven knobs ---
       const blinking = (Math.sin(now * 0.5) > 0.985) || (driverState === 'panic' && Math.sin(now * 8) > 0);
-      const breathe = Math.floor(Math.sin(now * 1.3) * 1);
-      const cx = 42, cy = 32 + breathe;
-      // helmet/cap
-      const capColor = driverState === 'angry' ? DRIVER_PALETTE.capDk : DRIVER_PALETTE.cap;
-      rectFill(cx - 22, cy - 22, 44, 8, capColor);
-      rectFill(cx - 26, cy - 16, 52, 4, capColor);
-      // visor strip
-      rectFill(cx - 22, cy - 14, 44, 3, DRIVER_PALETTE.visor);
-      // face oval
-      rectFill(cx - 18, cy - 10, 36, 22, DRIVER_PALETTE.skin);
-      rectFill(cx - 20, cy - 6,  40, 14, DRIVER_PALETTE.skin);
-      rectFill(cx - 18, cy + 12,  36, 2, DRIVER_PALETTE.skinDk);
+      const breathe = Math.floor(Math.sin(now * 1.3));
+      const sweat   = (driverState === 'panic' || driverState === 'concerned' || driverState === 'exhausted');
+      const cx = 80, cy = 92 + breathe;
+
+      // === silhouette behind everything (shoulders + neck) ===
+      // chest plate
+      rectFill(cx - 56, cy + 56, 112, 44, P.sk0);
+      rectFill(cx - 64, cy + 64, 128, 36, P.sk0);
+      rectFill(cx - 60, cy + 56, 120, 2,  P.bg0); // collar shadow
       // neck
-      rectFill(cx - 8, cy + 14, 16, 6, DRIVER_PALETTE.skin);
-      // eyes
+      rectFill(cx - 10, cy + 38, 20, 22, P.sk1);
+      rectFill(cx - 12, cy + 44, 24, 16, P.sk1);
+      rectFill(cx - 12, cy + 56, 24, 2,  P.bg0); // neck/collar gap
+      // jaw shadow
+      rectFill(cx - 18, cy + 32, 36, 6, P.sk1);
+      rectFill(cx - 14, cy + 38, 28, 4, P.sk1);
+
+      // === HEAD: cap → hair → face ovals → highlights ===
+      const capColor = driverState === 'angry' || driverState === 'determined' ? P.capDk : P.cap;
+
+      // hair under cap (back of head)
+      rectFill(cx - 32, cy - 30, 64, 14, P.sk0);     // hair mass
+      rectFill(cx - 36, cy - 22, 72, 10, P.sk0);
+      rectFill(cx - 28, cy - 32, 56, 4,  P.sk0);
+
+      // cap / helmet (rounded top, brim)
+      rectFill(cx - 30, cy - 38, 60, 14, capColor);   // crown
+      rectFill(cx - 34, cy - 28, 68, 8,  capColor);   // brim
+      rectFill(cx - 30, cy - 40, 60, 2,  P.capDk);    // crown peak shadow
+      rectFill(cx - 34, cy - 22, 68, 2,  P.bg0);      // under-brim shadow
+      // brim highlight strip (catch light)
+      rectFill(cx - 18, cy - 38, 32, 2, P.sk2);
+
+      // face primary oval (chunky stepped curve)
+      const faceTop = cy - 18, faceLeft = cx - 26;
+      rectFill(faceLeft + 2,  faceTop,      48, 6,  P.sk2);
+      rectFill(faceLeft,      faceTop + 6,  52, 8,  P.sk2);
+      rectFill(faceLeft - 2,  faceTop + 14, 56, 14, P.sk2);
+      rectFill(faceLeft,      faceTop + 28, 52, 6,  P.sk2);
+      rectFill(faceLeft + 4,  faceTop + 34, 44, 4,  P.sk2);
+      // chin
+      rectFill(cx - 14, faceTop + 38, 28, 4, P.sk2);
+      rectFill(cx - 10, faceTop + 42, 20, 2, P.sk1);
+
+      // cheek shadow on the right side (3/4 light)
+      rectFill(cx + 8,  faceTop + 14, 16, 10, P.sk1);
+      rectFill(cx + 6,  faceTop + 24, 18, 8,  P.sk1);
+      rectFill(cx + 12, faceTop + 34, 12, 4,  P.sk1);
+      // cheek highlight catch on left side
+      rectFill(cx - 22, faceTop + 18, 8,  6,  P.sk3);
+      rectFill(cx - 24, faceTop + 24, 6,  6,  P.sk3);
+
+      // brow ridge highlight + temple shadow
+      rectFill(cx - 24, faceTop + 6,  16, 2, P.sk3);
+      rectFill(cx + 8,  faceTop + 6,  16, 2, P.sk1);
+
+      // ear (just a chunky right-side notch)
+      rectFill(cx + 22, faceTop + 14, 4, 8, P.sk2);
+      rectFill(cx + 24, faceTop + 18, 2, 4, P.sk1);
+
+      // nose: shadow ridge + tiny tip highlight
+      const nx = cx - 2;
+      rectFill(nx,     faceTop + 12, 4, 14, P.sk1);
+      rectFill(nx + 4, faceTop + 18, 2,  6, P.bg0);   // far-side nose shadow
+      rectFill(nx - 1, faceTop + 22, 2,  2, P.sk3);   // nose tip highlight
+      // nose bottom shadow
+      rectFill(nx - 2, faceTop + 26, 8,  2, P.sk1);
+
+      // --- EYES ---
+      const ey = faceTop + 14;
       if (blinking) {
-        rectFill(cx - 11, cy - 3, 6, 1, DRIVER_PALETTE.eye);
-        rectFill(cx + 5,  cy - 3, 6, 1, DRIVER_PALETTE.eye);
+        rectFill(cx - 20, ey + 4, 12, 2, P.ink);
+        rectFill(cx +  8, ey + 4, 12, 2, P.ink);
       } else {
-        // eye whites
-        rectFill(cx - 12, cy - 4, 7, 4, DRIVER_PALETTE.eyeBg);
-        rectFill(cx + 5,  cy - 4, 7, 4, DRIVER_PALETTE.eyeBg);
-        // pupils — squint/wide depending on state
-        let pxOff = 0, pyOff = 0, pw = 2, ph = 2;
-        if (driverState === 'angry')   { pyOff = 1; ph = 2; pw = 3; }
-        if (driverState === 'panic')   { pw = 1; ph = 1; }
-        if (driverState === 'concerned'){ pyOff = 1; }
-        if (driverState === 'relieved'){ pyOff = 1; }
-        rectFill(cx - 9 + pxOff,  cy - 3 + pyOff, pw, ph, DRIVER_PALETTE.eye);
-        rectFill(cx + 7 + pxOff,  cy - 3 + pyOff, pw, ph, DRIVER_PALETTE.eye);
+        // sockets (slight inset shadow)
+        rectFill(cx - 22, ey + 2, 16, 8, P.sk0);
+        rectFill(cx +  6, ey + 2, 16, 8, P.sk0);
+        // whites
+        rectFill(cx - 20, ey + 3, 12, 6, P.eyeBg);
+        rectFill(cx +  8, ey + 3, 12, 6, P.eyeBg);
+        // pupils — wider/squint depending on state
+        let pxL = 0, pxR = 0, pyOff = 0, pw = 4, ph = 4;
+        if (driverState === 'angry' || driverState === 'determined') { pyOff = 2; ph = 3; pw = 5; }
+        else if (driverState === 'panic')      { pw = 2; ph = 2; pyOff = 1; }
+        else if (driverState === 'surprised')  { pw = 3; ph = 5; pyOff = 0; }
+        else if (driverState === 'concerned')  { pyOff = 2; pw = 3; }
+        else if (driverState === 'relieved')   { pyOff = 3; ph = 2; pw = 5; }
+        else if (driverState === 'smug')       { pyOff = 3; ph = 2; pw = 5; pxL = 2; pxR = 2; }
+        else if (driverState === 'exhausted')  { pyOff = 3; ph = 1; pw = 5; }
+        else if (driverState === 'happy')      { pyOff = 3; ph = 2; pw = 5; }
+        rectFill(cx - 18 + pxL, ey + 4 + pyOff, pw, ph, P.eye);
+        rectFill(cx + 10 + pxR, ey + 4 + pyOff, pw, ph, P.eye);
+        // catch-light specular
+        if (driverState !== 'panic' && driverState !== 'angry') {
+          rectFill(cx - 17 + pxL, ey + 4 + pyOff, 1, 1, P.eyeBg);
+          rectFill(cx + 11 + pxR, ey + 4 + pyOff, 1, 1, P.eyeBg);
+        }
       }
-      // brows (state-driven)
-      if (driverState === 'angry') {
-        // angled inward & down
-        rectFill(cx - 12, cy - 7, 5, 1, DRIVER_PALETTE.brow);
-        rectFill(cx - 11, cy - 6, 4, 1, DRIVER_PALETTE.brow);
-        rectFill(cx + 7,  cy - 7, 5, 1, DRIVER_PALETTE.brow);
-        rectFill(cx + 7,  cy - 6, 4, 1, DRIVER_PALETTE.brow);
+
+      // --- BROWS ---
+      const by = ey - 1;
+      if (driverState === 'angry' || driverState === 'determined') {
+        rectFill(cx - 22, by - 2, 14, 2, P.brow);
+        rectFill(cx - 20, by,     12, 2, P.brow);
+        rectFill(cx +  8, by - 2, 14, 2, P.brow);
+        rectFill(cx + 10, by,     12, 2, P.brow);
       } else if (driverState === 'concerned' || driverState === 'panic') {
-        // raised at center
-        rectFill(cx - 12, cy - 6, 6, 1, DRIVER_PALETTE.brow);
-        rectFill(cx + 6,  cy - 6, 6, 1, DRIVER_PALETTE.brow);
+        rectFill(cx - 22, by - 1, 14, 2, P.brow);
+        rectFill(cx - 22, by - 3,  4, 2, P.brow);
+        rectFill(cx +  8, by - 1, 14, 2, P.brow);
+        rectFill(cx + 18, by - 3,  4, 2, P.brow);
       } else if (driverState === 'happy' || driverState === 'relieved') {
-        rectFill(cx - 12, cy - 8, 5, 1, DRIVER_PALETTE.brow);
-        rectFill(cx + 7,  cy - 8, 5, 1, DRIVER_PALETTE.brow);
-      } else { // focused
-        rectFill(cx - 12, cy - 7, 6, 1, DRIVER_PALETTE.brow);
-        rectFill(cx + 6,  cy - 7, 6, 1, DRIVER_PALETTE.brow);
+        rectFill(cx - 22, by - 4, 12, 2, P.brow);
+        rectFill(cx + 10, by - 4, 12, 2, P.brow);
+      } else if (driverState === 'smug') {
+        rectFill(cx - 22, by - 2, 12, 2, P.brow);
+        rectFill(cx - 22, by - 4,  6, 2, P.brow);
+        rectFill(cx + 10, by - 2, 12, 2, P.brow);
+        rectFill(cx + 16, by - 4,  6, 2, P.brow);
+      } else if (driverState === 'surprised') {
+        rectFill(cx - 22, by - 5, 14, 2, P.brow);
+        rectFill(cx +  8, by - 5, 14, 2, P.brow);
+      } else if (driverState === 'exhausted') {
+        rectFill(cx - 22, by + 1, 14, 1, P.brow);
+        rectFill(cx +  8, by + 1, 14, 1, P.brow);
+      } else { // focused (default)
+        rectFill(cx - 22, by - 1, 14, 2, P.brow);
+        rectFill(cx +  8, by - 1, 14, 2, P.brow);
       }
-      // mouth (state-driven)
-      const my = cy + 6;
-      driverCtx.fillStyle = DRIVER_PALETTE.mouth;
-      if (driverState === 'happy') {
-        rectFill(cx - 4, my,     8, 1, DRIVER_PALETTE.mouth);
-        rectFill(cx - 5, my - 1, 1, 1, DRIVER_PALETTE.mouth);
-        rectFill(cx + 4, my - 1, 1, 1, DRIVER_PALETTE.mouth);
-      } else if (driverState === 'angry') {
-        rectFill(cx - 5, my, 10, 2, DRIVER_PALETTE.mouth);
-        rectFill(cx - 6, my - 1, 2, 1, DRIVER_PALETTE.mouth);
-        rectFill(cx + 5, my - 1, 2, 1, DRIVER_PALETTE.mouth);
+
+      // --- MOUTH ---
+      const my = faceTop + 30;
+      if (driverState === 'happy' || driverState === 'relieved') {
+        // grin
+        rectFill(cx - 8, my,     16, 2, P.mouth);
+        rectFill(cx - 10, my - 2, 2, 2, P.mouth);
+        rectFill(cx +  8, my - 2, 2, 2, P.mouth);
+        rectFill(cx - 6, my + 2, 12, 1, P.sk1);
+      } else if (driverState === 'angry' || driverState === 'determined') {
+        // hard scowl + teeth
+        rectFill(cx - 10, my,     20, 3, P.mouth);
+        rectFill(cx - 12, my - 1,  3, 2, P.mouth);
+        rectFill(cx + 10, my - 1,  3, 2, P.mouth);
+        rectFill(cx -  8, my + 1, 16, 1, P.eyeBg); // teeth line
       } else if (driverState === 'panic') {
-        rectFill(cx - 3, my, 7, 3, DRIVER_PALETTE.mouth); // wide-open O
-        rectFill(cx - 2, my - 1, 5, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx - 7, my,      14, 6, P.mouth);
+        rectFill(cx - 5, my - 2,  10, 2, P.mouth);
+        rectFill(cx - 5, my + 6,  10, 1, P.mouth);
+      } else if (driverState === 'surprised') {
+        rectFill(cx - 5, my,      10, 5, P.mouth);
+        rectFill(cx - 4, my - 1,   8, 1, P.mouth);
       } else if (driverState === 'concerned') {
-        rectFill(cx - 4, my + 1, 9, 1, DRIVER_PALETTE.mouth);
-        rectFill(cx - 5, my, 2, 1, DRIVER_PALETTE.mouth);
-        rectFill(cx + 4, my, 2, 1, DRIVER_PALETTE.mouth);
-      } else if (driverState === 'relieved') {
-        rectFill(cx - 4, my, 8, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx - 8, my + 2, 18, 2, P.mouth);
+        rectFill(cx - 10, my + 1, 3, 1, P.mouth);
+        rectFill(cx +  8, my + 1, 3, 1, P.mouth);
+      } else if (driverState === 'smug') {
+        rectFill(cx - 6, my,     16, 2, P.mouth);
+        rectFill(cx +  9, my - 2, 2, 2, P.mouth);  // one-sided lift
+      } else if (driverState === 'exhausted') {
+        rectFill(cx - 8, my + 2, 16, 1, P.mouth);
       } else { // focused
-        rectFill(cx - 4, my + 1, 8, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx - 8, my + 1, 16, 2, P.mouth);
       }
-      // small CRT scanline overlay across the canvas
-      driverCtx.fillStyle = 'rgba(0,0,0,0.18)';
-      for (let yy = 0; yy < 62; yy += 2) driverCtx.fillRect(0, yy, 84, 1);
+
+      // --- expression accents ---
+      if (sweat) {
+        // sweat drop on the temple (animated drip)
+        const dx = cx + 24;
+        const dy = ey + 2 + (Math.floor(now * 4) % 6);
+        rectFill(dx,     dy,     2, 4, P.sk4);
+        rectFill(dx - 1, dy + 1, 1, 2, P.sk4);
+      }
+      if (driverState === 'angry' || driverState === 'panic') {
+        // forehead vein/scowl marks
+        rectFill(cx - 4, faceTop + 8, 2, 4, P.sk1);
+        rectFill(cx + 2, faceTop + 8, 2, 3, P.sk1);
+      }
+
+      // --- HUD overlay: signal bars + frame ticks (codec window chrome) ---
+      // top-left signal indicator
+      const sigOn = (Math.floor(now * 2) % 2) === 0;
+      driverCtx.fillStyle = P.sk3;
+      driverCtx.fillRect(8,  8, 3, 6);
+      driverCtx.fillRect(13, 6, 3, 8);
+      driverCtx.fillStyle = sigOn ? P.sk4 : P.sk0;
+      driverCtx.fillRect(18, 4, 3, 10);
+      // tick marks bottom-right (looks like a frequency dial)
+      driverCtx.fillStyle = P.sk2;
+      for (let i = 0; i < 6; i++) driverCtx.fillRect(W - 28 + i * 4, H - 10, 2, 4);
+      // small "REC" dot top-right
+      driverCtx.fillStyle = ((Math.floor(now * 1.5) % 2) === 0) ? P.sk4 : P.sk1;
+      driverCtx.fillRect(W - 12, 8, 4, 4);
+
+      // --- scanline + chromatic-flicker overlay ---
+      driverCtx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      for (let yy = 0; yy < H; yy += 2) driverCtx.fillRect(0, yy, W, 1);
+      // very occasional horizontal glitch bar
+      if (Math.random() < 0.02) {
+        const gy = (Math.floor(now * 60) % H);
+        driverCtx.fillStyle = 'rgba(180, 255, 170, 0.18)';
+        driverCtx.fillRect(0, gy, W, 2);
+      }
     }
 
     // periodic driver-state evaluation (called every frame)
@@ -6336,10 +6508,16 @@
       } else {
         const ratio = cartsRemaining / MAX_CARTS;
         let s;
+        // Speed + boost shape ambient emotion above the cart-ratio default
+        const fast = truckSpeed > TRUCK_MAX_SPEED + 4;     // top-speed bonus territory
+        const chained = _dodgeCombo >= 3;
         if (ratio < 0.25)      s = 'panic';
-        else if (ratio < 0.50) s = 'concerned';
+        else if (ratio < 0.45) s = 'concerned';
+        else if (boostActive)  s = chained ? 'smug' : 'happy';
+        else if (chained)      s = 'determined';
+        else if (fast)         s = 'determined';
         else if (ratio < 0.80) s = 'focused';
-        else                   s = boostActive ? 'happy' : 'focused';
+        else                   s = 'focused';
         if (s !== driverState) {
           driverState = s;
           if (driverStateEl) driverStateEl.textContent = s.toUpperCase();
