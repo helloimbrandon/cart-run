@@ -5059,36 +5059,42 @@
       }
       try {
         _recordStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { width: 1280, height: 720, frameRate: 60 },
+          video: { width: 1280, height: 720, frameRate: 30 },   // 30fps is plenty + smaller files
           audio: true,
           preferCurrentTab: true,
         });
         _recordChunks = [];
-        // pick a supported codec
-        const mime = (function pickMime() {
-          const candidates = [
-            'video/webm;codecs=vp9,opus',
-            'video/webm;codecs=vp8,opus',
-            'video/webm;codecs=vp9',
-            'video/webm',
-          ];
-          for (const m of candidates) if (MediaRecorder.isTypeSupported(m)) return m;
-          return '';
-        })();
+        // Prefer MP4 (H.264 / AAC) when supported, fall back to WebM.
+        const candidates = [
+          'video/mp4;codecs=avc1.42E01E,mp4a.40.2',  // H.264 baseline + AAC LC
+          'video/mp4;codecs=avc1.640028,mp4a.40.2',  // H.264 high + AAC LC
+          'video/mp4;codecs=h264,aac',
+          'video/mp4',
+          'video/webm;codecs=vp9,opus',
+          'video/webm;codecs=vp8,opus',
+          'video/webm',
+        ];
+        const mime = candidates.find(m => {
+          try { return MediaRecorder.isTypeSupported(m); } catch { return false; }
+        }) || '';
+        const isMp4 = mime.startsWith('video/mp4');
         _mediaRecorder = new MediaRecorder(_recordStream, mime ? {
           mimeType: mime,
-          videoBitsPerSecond: 6_000_000,
+          videoBitsPerSecond: 2_000_000,   // ~15 MB/min at 720p, fits well under 50MB
+          audioBitsPerSecond: 128_000,
         } : {});
         _mediaRecorder.ondataavailable = (e) => {
           if (e.data && e.data.size > 0) _recordChunks.push(e.data);
         };
         _mediaRecorder.onstop = () => {
-          const blob = new Blob(_recordChunks, { type: 'video/webm' });
+          const blobType = isMp4 ? 'video/mp4' : 'video/webm';
+          const ext = isMp4 ? 'mp4' : 'webm';
+          const blob = new Blob(_recordChunks, { type: blobType });
           const url = URL.createObjectURL(blob);
           const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
           const a = document.createElement('a');
           a.href = url;
-          a.download = `cart-run-${stamp}.webm`;
+          a.download = `cart-run-${stamp}.${ext}`;
           a.click();
           setTimeout(() => URL.revokeObjectURL(url), 60_000);
           if (_recordStream) {
@@ -5098,7 +5104,8 @@
           if (_recIndicator) _recIndicator.classList.remove('active');
           clearInterval(_recordTimerHandle);
           _recordTimerHandle = null;
-          bark('SAVED');
+          const mb = (blob.size / (1024 * 1024)).toFixed(1);
+          bark(`SAVED ${mb}MB`);
         };
         // auto-stop if user revokes screen share
         _recordStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
@@ -5113,7 +5120,7 @@
           const ss = String(s % 60).padStart(2, '0');
           if (_recTimeEl) _recTimeEl.textContent = `${mm}:${ss}`;
         }, 500);
-        bark('RECORDING');
+        bark(isMp4 ? 'RECORDING MP4' : 'RECORDING WEBM');
       } catch (e) {
         console.warn('record start failed', e);
         bark('REC CANCELLED');
