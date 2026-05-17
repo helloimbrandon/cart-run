@@ -3128,6 +3128,9 @@
       trail.unshift(cart);
       if (trail.length > MAX_TRAIL_LEN) {
         const tail = trail.pop();
+        tail._fadeT = 4.5;        // start a 4.5s fade-out
+        // pre-mark materials transparent so we can lower opacity gradually
+        tail.traverse(o => { if (o.isMesh && o.material) o.material.transparent = true; });
         detached.push(tail);
       }
       // subtle clack — but skip when many drops in a row (avoid audio spam)
@@ -3614,29 +3617,35 @@
       return g;
     }
     function makeBoostPickup() {
-      // BIG glowing yellow octahedron in a double ring — instantly readable
+      // CYAN BOOST pickup — silhouette/colour clearly different from the GREEN
+      // cart-restock pickup. Stretched bipyramid shape (reads as a power bolt)
+      // surrounded by a cyan double ring + cyan beam column.
       const g = new THREE.Group();
+      // Stretched octahedron — taller than wide → "power crystal / bolt"
       const core = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.85, 0),
-        new THREE.MeshBasicMaterial({ color: 0xffe44a })
+        new THREE.OctahedronGeometry(0.95, 0),
+        new THREE.MeshBasicMaterial({ color: 0xffe44a })   // bright yellow crystal core
       );
-      core.position.y = 1.8;
+      core.scale.set(0.7, 1.5, 0.7);
+      core.position.y = 1.9;
       g.add(core);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0xfff5a0 });
+      // outer ring — CYAN to distinguish from green cart-restock pickups
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff });
       const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.14, 8, 24), ringMat);
       ringOuter.rotation.x = Math.PI / 2;
       ringOuter.position.y = 0.4;
       g.add(ringOuter);
       const ringInner = new THREE.Mesh(
         new THREE.TorusGeometry(0.95, 0.08, 8, 22),
-        new THREE.MeshBasicMaterial({ color: 0xfffac0 })
+        new THREE.MeshBasicMaterial({ color: 0xa8f0ff })
       );
       ringInner.rotation.x = Math.PI / 2;
       ringInner.position.y = 0.52;
       g.add(ringInner);
+      // beam column in cyan
       const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.32, 0.32, 2.4, 8),
-        new THREE.MeshBasicMaterial({ color: 0xfff5a0, transparent: true, opacity: 0.36 })
+        new THREE.CylinderGeometry(0.32, 0.32, 2.6, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.34 })
       );
       beam.position.y = 1.4;
       g.add(beam);
@@ -3650,10 +3659,10 @@
       // Larger, more vehicle-shaped silhouette + dark soft ground shadow so
       // traffic instantly reads as "grounded car" vs "floating pickup".
       const g = new THREE.Group();
-      // ground shadow — flat dark plane just above the road
+      // Stronger ground shadow — wider + darker so cars feel planted on the road.
       const shadow = new THREE.Mesh(
-        new THREE.PlaneGeometry(3.2, 5.0),
-        new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0.45 })
+        new THREE.PlaneGeometry(3.6, 5.6),
+        new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0.62 })
       );
       shadow.rotation.x = -Math.PI / 2;
       shadow.position.y = 0.06;
@@ -3663,7 +3672,8 @@
       body.position.y = 0.85; g.add(body);
       const top = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.75, 2.8), new THREE.MeshLambertMaterial({ color }));
       top.position.set(0, 1.55, -0.3); g.add(top);
-      const winMat = new THREE.MeshBasicMaterial({ color: 0x1a3a55 });
+      // Darker, near-black windows — strong silhouette contrast vs neon pickups.
+      const winMat = new THREE.MeshBasicMaterial({ color: 0x0a0f1c });
       const front = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 0.05), winMat);
       front.position.set(0, 1.55, 1.13); g.add(front);
       const back = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 0.05), winMat);
@@ -4070,9 +4080,10 @@
           pole.castShadow = true;
           levelGroup.add(pole);
           // lamp head at top (lit at dusk levels)
+          // Muted lamp heads so they don't compete with neon pickup glow.
           const lamp = new THREE.Mesh(
             new THREE.BoxGeometry(0.56, 0.32, 0.56),
-            new THREE.MeshBasicMaterial({ color: isDowntown ? 0xfff5b0 : (isAvenue ? 0xffd9a0 : 0xddddcc) })
+            new THREE.MeshBasicMaterial({ color: isDowntown ? 0xa8895a : (isAvenue ? 0x886848 : 0x8a8a82) })
           );
           lamp.position.set(p.x + rt.x * side * (off - 0.3), 7.9, p.z + rt.z * side * (off - 0.3));
           levelGroup.add(lamp);
@@ -6460,10 +6471,18 @@
         leaderX = cart.position.x;
         leaderZ = cart.position.z;
       }
-      // cull detached far behind
+      // dropped carts that fell out of the trail — fade over ~4.5s then cull.
+      // Distance-cull as a safety net so we never leak meshes if the player loops.
       for (let i = detached.length - 1; i >= 0; i--) {
-        if (detached[i].position.distanceToSquared(truck.position) > 18000) {
-          scene.remove(detached[i]);
+        const d = detached[i];
+        if (d._fadeT === undefined) d._fadeT = 4.5;
+        d._fadeT -= dt;
+        if (d._fadeT <= 1.8) {
+          const op = Math.max(0, d._fadeT / 1.8);
+          d.traverse(o => { if (o.isMesh && o.material) o.material.opacity = op; });
+        }
+        if (d._fadeT <= 0 || d.position.distanceToSquared(truck.position) > 18000) {
+          scene.remove(d);
           detached.splice(i, 1);
         }
       }
