@@ -1334,6 +1334,236 @@
     .mobile-active #mobileHint { bottom: 60px; font-size: 11px; }
 
     /* =====================================================================
+       POLISH PASS — glow purge + arcade-size recap + HUD unification
+       (One italic-white-on-yellow-label sportsbrut system. Hard drop
+        shadows only — no 0-blur glow on anything.)
+       ===================================================================== */
+
+    /* ---- glow purge: pin every text/box shadow to hard drops only ---- */
+    #rallyBL                          { text-shadow: 4px 4px 0 #000 !important; }
+    #countdown                        { text-shadow: 12px 12px 0 var(--arc-navy) !important; }
+    #countdown.go                     { text-shadow: 14px 14px 0 var(--arc-navy) !important; }
+    #stageRecap .rank-badge           { text-shadow: 6px 6px 0 var(--arc-navy) !important; }
+    .callout-text                     { text-shadow: 4px 4px 0 var(--callout-color, #ff7a00), 7px 7px 0 #001a3a !important; }
+    .thrust-num                       { text-shadow: 7px 7px 0 #000 !important; }
+    .scoreboard .sb-num               { text-shadow: 5px 5px 0 #000 !important; }
+    .scoreboard .sb-of                { text-shadow: 3px 3px 0 #000 !important; }
+    .scoreboard .sb-lbl               { text-shadow: 2px 2px 0 #000 !important; }
+    #rallyTR .val                     { text-shadow: 4px 4px 0 #000 !important; }
+    #scoreBoard .sb-score             { text-shadow: 6px 6px 0 #000 !important; }
+    #scoreBoard .sb-lbl               { text-shadow: 2px 2px 0 #000 !important; }
+    #rallyTurn .arrow                 { text-shadow: 4px 4px 0 #000 !important; }
+    /* WipEout cluster + boards: kill any leftover bloom from shadows */
+    .thrust-unit-pill                 { box-shadow: 4px 4px 0 #000 !important; }
+    .thrust-bar                       { box-shadow: 4px 4px 0 rgba(0,0,0,0.55) !important; }
+    .callout-tab                      { box-shadow: 6px 6px 0 rgba(0,0,0,0.65) !important; }
+    .speed-box, .gear-box             { box-shadow: 8px 8px 0 rgba(0,0,0,0.55) !important; }
+
+    /* ---- UI UNIFICATION — all readouts share italic-white + yellow labels ---- */
+
+    /* TOP-LEFT cargo / delivery — bigger label, integrated backing */
+    #cargoBoard, #deliveryBoard {
+      background: rgba(0, 0, 0, 0.35);
+      border-left: 4px solid #ffce4a;
+      padding: 6px 14px 8px 16px;
+    }
+    #cargoBoard    { top: 16px;  left: 16px; }
+    #deliveryBoard { top: 150px; left: 16px; }
+    .scoreboard .sb-lbl {
+      font-size: 22px !important;
+      letter-spacing: 4px !important;
+      margin-top: 2px !important;
+    }
+    .scoreboard .sb-num { font-style: italic; }
+
+    /* TOP-RIGHT score — arcade scoreboard treatment */
+    #scoreBoard {
+      top: 16px; right: 16px;
+      background: rgba(0, 0, 0, 0.35);
+      border-right: 4px solid #ffce4a;
+      padding: 6px 16px 8px 14px;
+      text-align: right;
+    }
+    #scoreBoard .sb-score {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 76px;
+      color: #fff;
+      letter-spacing: 1px;
+      line-height: 0.85;
+    }
+    #scoreBoard .sb-lbl {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 22px;
+      letter-spacing: 4px;
+      color: #ffce4a;
+      margin-top: 4px;
+    }
+    /* race info panel slides further down under bigger SCORE */
+    #rallyTR { top: 158px !important; }
+
+    /* TOP-RIGHT race info — bring closer to speed-cluster language */
+    #rallyTR {
+      background: rgba(0, 0, 0, 0.35) !important;
+      border: none !important;
+      border-right: 4px solid #ffce4a !important;
+      padding: 6px 16px 8px 14px !important;
+      box-shadow: none !important;
+      gap: 2px !important;
+    }
+    #rallyTR .lbl {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 18px !important;
+      letter-spacing: 3px !important;
+      color: #ffce4a !important;
+      font-weight: 400 !important;
+    }
+    #rallyTR .val {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 44px !important;
+      letter-spacing: 1px !important;
+      color: #fff !important;
+    }
+    #rallyTR .row:nth-child(3) .val { font-size: 56px !important; }
+
+    /* TOP-CENTER turn — chunkier pill */
+    #rallyTurn {
+      background: rgba(0, 0, 0, 0.35) !important;
+      border: none !important;
+      border-top: 4px solid #ffce4a !important;
+      padding: 6px 24px 10px !important;
+      box-shadow: none !important;
+    }
+    #rallyTurn .lbl {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 18px !important;
+      letter-spacing: 4px !important;
+      color: #ffce4a !important;
+      font-weight: 400 !important;
+    }
+    #rallyTurn .arrow {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 64px !important;
+      line-height: 0.9 !important;
+      color: #fff !important;
+    }
+
+    /* BOTTOM-LEFT delta — match other boards */
+    #rallyBL {
+      background: rgba(0, 0, 0, 0.35) !important;
+      border: none !important;
+      border-left: 4px solid #2ce053 !important;
+      padding: 6px 18px 8px 14px !important;
+      box-shadow: none !important;
+      font-family: 'Russo One', sans-serif !important;
+      font-style: italic !important;
+      font-size: 46px !important;
+      letter-spacing: 2px !important;
+    }
+
+    /* THRUST cluster — drop-shadow plate so it reads over bright bgs */
+    #thrustCluster {
+      filter: drop-shadow(0 6px 0 rgba(0,0,0,0.45));
+    }
+    .thrust-bar { height: 26px !important; border-width: 3px !important; }
+
+    /* ---- ARCADE RECAP — much larger desktop scoreboard ---- */
+    #stageRecap .recap-bar {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 22px !important;
+      letter-spacing: 8px !important;
+      color: #ffce4a !important;
+      margin-bottom: 16px !important;
+    }
+    #stageRecap .recap-header {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 130px !important;
+      letter-spacing: 6px !important;
+      color: #fff !important;
+      text-shadow: 7px 7px 0 #001a3a !important;
+      margin-bottom: 14px !important;
+      line-height: 0.9 !important;
+    }
+    #stageRecap .rank-badge {
+      font-size: 220px !important;
+      letter-spacing: 0 !important;
+      margin: -14px 0 14px !important;
+    }
+    #stageRecap .recap-ruler { width: min(50vw, 720px) !important; height: 3px !important; }
+    #stageRecap .recap-stats {
+      border-left-width: 5px !important;
+      padding: 14px 24px !important;
+      gap: 10px !important;
+      min-width: 540px !important;
+      margin-bottom: 36px !important;
+    }
+    #stageRecap .recap-stats .stat-row {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 38px !important;
+      letter-spacing: 3px !important;
+    }
+    #stageRecap .recap-stats .stat-row .stat-label {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      color: #ffce4a;
+      min-width: 200px !important;
+      font-size: 26px !important;
+      letter-spacing: 4px !important;
+    }
+    #stageRecap .recap-stats .stat-row .stat-colon {
+      color: #ffce4a !important;
+      margin: 0 8px !important;
+    }
+    #stageRecap .recap-stats .stat-row .stat-value {
+      text-shadow: 4px 4px 0 #000 !important;
+    }
+    #stageRecap .recap-stats .stat-row.total {
+      font-size: 64px !important;
+      margin-top: 14px !important;
+      padding-top: 14px !important;
+    }
+    #stageRecap .recap-stats .stat-row.total .stat-label { font-size: 32px !important; }
+    #stageRecap button {
+      padding: 18px 48px !important;
+      font-family: 'Russo One', sans-serif !important;
+      font-style: italic !important;
+      font-size: 28px !important;
+      letter-spacing: 8px !important;
+      border-width: 3px !important;
+      box-shadow: 8px 8px 0 rgba(0,0,0,0.55) !important;
+    }
+
+    /* mobile: keep recap legible but scale back */
+    .mobile-active #stageRecap .recap-header { font-size: 60px !important; }
+    .mobile-active #stageRecap .rank-badge   { font-size: 130px !important; }
+    .mobile-active #stageRecap .recap-stats  { min-width: 0 !important; padding: 8px 14px !important; }
+    .mobile-active #stageRecap .recap-stats .stat-row { font-size: 20px !important; }
+    .mobile-active #stageRecap .recap-stats .stat-row .stat-label { font-size: 14px !important; min-width: 90px !important; }
+    .mobile-active #stageRecap .recap-stats .stat-row.total { font-size: 30px !important; }
+    .mobile-active #stageRecap button { font-size: 16px !important; padding: 10px 22px !important; }
+
+    /* mobile board sizing tweaks for the new bigger labels */
+    .mobile-active #cargoBoard, .mobile-active #deliveryBoard {
+      padding: 4px 10px 6px 12px;
+      border-left-width: 3px;
+    }
+    .mobile-active #scoreBoard {
+      padding: 4px 10px 6px 10px;
+      border-right-width: 3px;
+    }
+    .mobile-active #scoreBoard .sb-score { font-size: 30px !important; }
+    .mobile-active #scoreBoard .sb-lbl   { font-size: 12px !important; }
+    .mobile-active .scoreboard .sb-lbl { font-size: 13px !important; letter-spacing: 2px !important; }
+
+    /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
        stepped corners, drop-shadows, exaggerated gear/speed. Layered as
        overrides so existing JS doesn't break.
@@ -2732,6 +2962,10 @@
 
     function dropCart() {
       if (cartsRemaining <= 0) return;
+      // safety windows: no cart loss during intro / recap / game-over
+      if (typeof introState !== 'undefined' && introState) return;
+      if (typeof stageRecap !== 'undefined' && stageRecap) return;
+      if (typeof gameOver === 'boolean' && gameOver) return;
       cartsRemaining--;
       updateStackVisibility();
       const cart = makeCartMesh();
