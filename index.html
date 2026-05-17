@@ -2215,6 +2215,79 @@
     }
     #stageRecap button:hover { background: var(--amber); }
 
+    /* ====== Replay-results stamp-in styling ====== */
+    /* Each row starts hidden and snaps in via .in. Bonus row flashes. */
+    #stageRecap .recap-stats .stat-row {
+      opacity: 0;
+      transform: translateX(-12px) scale(0.95);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+    #stageRecap .recap-stats .stat-row.in {
+      opacity: 1; transform: translateX(0) scale(1);
+    }
+    #stageRecap .recap-stats .stat-row[data-row="bonus"].in {
+      animation: recapBonusFlash 380ms ease-out both;
+      color: var(--yellow);
+    }
+    @keyframes recapBonusFlash {
+      0%   { color: #fff; transform: scale(1); }
+      40%  { color: #ffce4a; transform: scale(1.08); }
+      100% { color: #ffce4a; transform: scale(1); }
+    }
+    /* FINAL SCORE block — big chunky italic number at the top */
+    #stageRecap .recap-finalwrap {
+      display: flex; flex-direction: column; align-items: center;
+      margin-top: -22px; margin-bottom: 28px;
+      opacity: 0; transform: translateY(-12px);
+      transition: opacity 240ms ease, transform 240ms ease;
+    }
+    #stageRecap .recap-finalwrap.in { opacity: 1; transform: translateY(0); }
+    #stageRecap .recap-finallbl {
+      font-family: 'Russo One', sans-serif; font-style: italic;
+      font-size: 18px; letter-spacing: 6px; color: var(--yellow);
+      text-shadow: 3px 3px 0 #000;
+    }
+    #stageRecap .recap-finalval {
+      font-family: 'Russo One', sans-serif; font-style: italic;
+      font-size: 84px; line-height: 0.9; letter-spacing: 4px;
+      color: #fff;
+      text-shadow: 6px 6px 0 #1a1a3a, 0 0 18px rgba(255,206,74,0.25);
+    }
+    /* Rank badge slams in at the end */
+    #stageRecap .rank-badge {
+      opacity: 0; transform: scale(2.2) rotate(-6deg);
+      transition: opacity 80ms linear, transform 220ms cubic-bezier(0.3, 1.5, 0.3, 1);
+    }
+    #stageRecap .rank-badge.in {
+      opacity: 1; transform: scale(1) rotate(0deg);
+    }
+    /* Continue button + hint hidden until tally finishes */
+    #stageRecap #recapContinue,
+    #stageRecap #recapHint {
+      opacity: 0; pointer-events: none;
+      transition: opacity 240ms ease;
+    }
+    #stageRecap.tally-done #recapContinue,
+    #stageRecap.tally-done #recapHint {
+      opacity: 1; pointer-events: auto;
+    }
+    #stageRecap .recap-hint {
+      margin-top: 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; letter-spacing: 3px;
+      color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+      animation: recapHintBlink 1.2s ease-in-out infinite;
+    }
+    @keyframes recapHintBlink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+    /* Mobile-only: shrink the FINAL SCORE so it doesn't crowd the rank slam */
+    .mobile-active #stageRecap .recap-finallbl { font-size: 12px !important; letter-spacing: 4px !important; }
+    .mobile-active #stageRecap .recap-finalval { font-size: 52px !important; letter-spacing: 2px !important; text-shadow: 4px 4px 0 #1a1a3a !important; }
+    .mobile-active #stageRecap .recap-hint     { font-size: 11px !important; letter-spacing: 2px !important; }
+
     /* =====================================================================
        MOBILE HUD — PORTRAIT-ONLY LAYOUT
        Lives at the bottom of styles so it wins over every earlier rule
@@ -2679,16 +2752,22 @@
   <div id="stageRecap">
     <div class="recap-bar" id="recapBar">DELIVERY COMPLETE</div>
     <div class="recap-header" id="recapHeader">STAGE 1</div>
-    <div class="rank-badge a" id="recapRank">A</div>
+    <div class="recap-finalwrap" id="recapFinalWrap">
+      <div class="recap-finallbl">FINAL SCORE</div>
+      <div class="recap-finalval" id="recapTotal">0000000</div>
+    </div>
     <div class="recap-ruler"></div>
     <div class="recap-stats">
-      <div class="stat-row"><span class="stat-label">TIME</span><span class="stat-colon">:</span><span class="stat-value" id="recapTime">0.0</span><span class="stat-suffix">SEC</span></div>
-      <div class="stat-row"><span class="stat-label">DODGED</span><span class="stat-colon">:</span><span class="stat-value" id="recapDodges">0</span></div>
-      <div class="stat-row"><span class="stat-label">SPILLED</span><span class="stat-colon">:</span><span class="stat-value" id="recapSpilled">0</span><span class="stat-suffix">CARTS</span></div>
-      <div class="stat-row"><span class="stat-label">GAINED</span><span class="stat-colon">:</span><span class="stat-value" id="recapGained">0</span><span class="stat-suffix">PTS</span></div>
-      <div class="stat-row total"><span class="stat-label">TOTAL</span><span class="stat-colon">:</span><span class="stat-value" id="recapTotal">0</span></div>
+      <div class="stat-row" data-row="time">      <span class="stat-label">TIME</span>        <span class="stat-colon">:</span><span class="stat-value" id="recapTime">00'00"00</span></div>
+      <div class="stat-row" data-row="carts">     <span class="stat-label">CARTS</span>       <span class="stat-colon">:</span><span class="stat-value" id="recapCarts">0 OF 0</span></div>
+      <div class="stat-row" data-row="delivery">  <span class="stat-label">DELIVERIES</span>  <span class="stat-colon">:</span><span class="stat-value" id="recapDeliv">0 OF 0</span></div>
+      <div class="stat-row" data-row="near">      <span class="stat-label">NEAR MISSES</span><span class="stat-colon">:</span><span class="stat-value" id="recapDodges">0</span></div>
+      <div class="stat-row" data-row="chain">     <span class="stat-label">BEST CHAIN</span> <span class="stat-colon">:</span><span class="stat-value" id="recapChain">×0</span></div>
+      <div class="stat-row" data-row="bonus">     <span class="stat-label">BONUS</span>       <span class="stat-colon">:</span><span class="stat-value" id="recapBonus">+0</span></div>
     </div>
+    <div class="rank-badge a" id="recapRank">A</div>
     <button id="recapContinue">CONTINUE →</button>
+    <div class="recap-hint" id="recapHint">SPACE / TAP TO CONTINUE · R TO RETRY</div>
   </div>
 
   <script type="importmap">
@@ -5470,7 +5549,10 @@
     let stageStartScore = 0;
     let stageStartCarts = MAX_CARTS;
     let stageStartTime = 0;
+    let stageNearMisses = 0;              // ticked by scoreDodge() for the results screen
+    let stageBestChain  = 0;
     function addScore(n) { score += n; }
+    function _resetStageStyleStats() { stageNearMisses = 0; stageBestChain = 0; }
 
     // HUD elements (new RR4/AC3-style layout)
     const hudCarts    = document.getElementById('carts');
@@ -5627,6 +5709,8 @@
       const pts  = base * mult;
       addScore(pts);
       stageDodges++;
+      stageNearMisses++;
+      if (mult > stageBestChain) stageBestChain = mult;
 
       const subtext = mult > 1
         ? `+${pts} · CHAIN ×${mult}`
@@ -6309,6 +6393,7 @@
     stageStartScore = score;
     stageStartCarts = cartsRemaining;
     stageStartTime = performance.now();
+    _resetStageStyleStats();
 
     // =========================================================================
     // main loop
@@ -6319,60 +6404,308 @@
     const _curP   = new THREE.Vector3();
 
     let stageRecap = false;
+
+    // -----------------------------------------------------------------
+    // End-of-stage replay + results state machine
+    //   'finish' (~1.0s) → FINISH callout, truck coasts
+    //   'orbit'  (~5.0s) → cycle of 5 replay shots around the truck
+    //   'tally'  (~3.0s) → recap panel + per-row reveal + score tick
+    //   'done'           → CONTINUE prompt active
+    // -----------------------------------------------------------------
+    let _replayPhase   = null;
+    let _replayT       = 0;
+    let _replayShot    = 0;
+    let _replayShotT   = 0;
+    let _replayStats   = null;
+    let _replayTickers = [];   // setTimeout handles, cleared on skip/teardown
+
+    const REPLAY_SHOTS = [
+      { dur: 1.2, type: 'chase'  },
+      { dur: 1.4, type: 'orbit', start: 0,             end: Math.PI * 0.85, radius: 12, height: 6.2 },
+      { dur: 1.0, type: 'low'    },
+      { dur: 1.0, type: 'side'   },
+      { dur: 1.4, type: 'hero'   },
+    ];
+    const REPLAY_TOTAL_SHOT_DUR = REPLAY_SHOTS.reduce((a, s) => a + s.dur, 0);
+
+    function _clearReplayTickers() {
+      for (const h of _replayTickers) clearTimeout(h);
+      _replayTickers.length = 0;
+    }
+
+    function _computeRank(elapsed, cartsLeft, near) {
+      const par = 110000;
+      const cartFrac = cartsLeft / MAX_CARTS;
+      // generous-to-tight ramp
+      if (cartFrac >= 0.90 && elapsed < par         && near >= 4)  return 'S';
+      if (cartFrac >= 0.75 && elapsed < par * 1.20)                return 'A';
+      if (cartFrac >= 0.50)                                        return 'B';
+      if (cartsLeft > 5)                                           return 'C';
+      return 'D';
+    }
+
     function endStage() {
       if (stageRecap || gameOver) return;
       stageRecap = true;
-      bark('CHECKPOINT');
-      try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
-      setDriverState('relieved', 1.6, 'CHECKPOINT!');
-      // record this stage's time for the rally HUD
-      const ms = performance.now() - stageStartTime;
-      lastStageTime = ms;
-      const wasBest = (bestStageTimes[levelIdx] == null || ms < bestStageTimes[levelIdx]);
-      const prevBest = bestStageTimes[levelIdx];
-      if (wasBest) bestStageTimes[levelIdx] = ms;
-      // arcade callout for stage-end checkpoint (the rank callout follows below)
-      const sign = wasBest ? '-' : '+';
-      const delta = wasBest && prevBest != null ? Math.abs(ms - prevBest) : Math.abs(ms - (prevBest || ms));
-      arcadeCallout('STAGE CLEAR', {
-        type: 'checkpoint', pos: 'ct', size: 'l',
-        subtext: `${sign}${fmtRally(delta)}`,
-        holdMs: 1100,
-      });
-      // glitch the time digit briefly
-      reanim(document.getElementById('rTime'), 'anim-glitch');
-      const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
-      const spilled = stageStartCarts - cartsRemaining;
-      const gained  = score - stageStartScore;
-      // compute rank
-      const elapsed = performance.now() - stageStartTime;
-      const par = 110000; // ~110s par per stage (was 30s — now stages are 2x longer)
-      let rank = 'C';
-      if (cartsRemaining >= MAX_CARTS - 10 && elapsed < par)             rank = 'S';
-      else if (cartsRemaining >= MAX_CARTS - 30 && elapsed < par * 1.2)  rank = 'A';
-      else if (cartsRemaining >= MAX_CARTS - 60)                          rank = 'B';
-      // bonus points for rank
-      const rankBonus = { S: 500, A: 250, B: 100, C: 25 }[rank];
+      _replayPhase = 'finish';
+      _replayT = 0;
+      _replaySkipReady = performance.now() + 600;  // grace window before any skip input registers
+
+      const elapsed  = performance.now() - stageStartTime;
+      const spilled  = stageStartCarts - cartsRemaining;
+      const gained   = score - stageStartScore;
+      const rank     = _computeRank(elapsed, cartsRemaining, stageNearMisses);
+      const rankBonus = { S: 500, A: 250, B: 100, C: 25, D: 0 }[rank];
       addScore(rankBonus);
 
-      document.getElementById('recapHeader').textContent = `STAGE ${levelIdx + 1}`;
-      document.getElementById('recapBar').textContent    = `DELIVERY COMPLETE · ${LEVELS[levelIdx].name}`;
+      _replayStats = {
+        elapsed,
+        spilled,
+        cartsRemaining,
+        maxCarts: MAX_CARTS,
+        gained,
+        rank,
+        rankBonus,
+        nearMisses: stageNearMisses,
+        bestChain: stageBestChain,
+        deliveriesDone: levelIdx + 1,
+        deliveriesTotal: LEVELS.length,
+        finalScore: score,
+        stageIdx: levelIdx,
+      };
+      lastStageTime = elapsed;
+      if (bestStageTimes[levelIdx] == null || elapsed < bestStageTimes[levelIdx]) {
+        bestStageTimes[levelIdx] = elapsed;
+      }
+
+      // FINISH callout + voice
+      arcadeCallout('FINISH', {
+        type: 'restock', pos: 'ct', size: 'l',
+        holdMs: 1200,
+        subtext: `STAGE ${levelIdx + 1} CLEAR`,
+      });
+      bark('FINISH');
+      try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
+      setDriverState('relieved', 1.8, 'FINISH!');
+      reanim(document.getElementById('rTime'), 'anim-glitch');
+    }
+
+    // Drive the replay state machine each frame while stageRecap is on.
+    function tickReplay(dt) {
+      if (!_replayPhase) return;
+      _replayT += dt;
+
+      // truck coasts forward during finish + orbit
+      if (_replayPhase === 'finish' || _replayPhase === 'orbit') {
+        truckSpeed *= 0.985;
+        truckSpeed = Math.max(truckSpeed, 6);
+        truckS += truckSpeed * dt;
+        truckS = Math.min(truckS, curveLength - 4);
+      }
+
+      if (_replayPhase === 'finish' && _replayT >= 1.0) {
+        _replayPhase = 'orbit';
+        _replayT = 0;
+        _replayShot = 0;
+        _replayShotT = 0;
+        return;
+      }
+      if (_replayPhase === 'orbit') {
+        _replayShotT += dt;
+        const shot = REPLAY_SHOTS[_replayShot];
+        if (_replayShotT >= shot.dur) {
+          _replayShot++;
+          _replayShotT = 0;
+          if (_replayShot >= REPLAY_SHOTS.length) {
+            _enterTallyPhase();
+          }
+        }
+      }
+    }
+
+    function _enterTallyPhase() {
+      _replayPhase = 'tally';
+      _replayT = 0;
+      showResultsPanel(_replayStats);
+    }
+
+    function applyReplayCamera(dt) {
+      const tp = truck.position;
+      let pos, look;
+      // Heading from the live curve tangent so cameras frame correctly even
+      // as the truck coasts forward in finish/orbit.
+      const heading = Math.atan2(_curTan.x, _curTan.z);
+      const fwdX = _curTan.x, fwdZ = _curTan.z;
+      const rtX  = _curRt.x,  rtZ  = _curRt.z;
+
+      if (_replayPhase === 'finish') {
+        // raised rear chase, slightly higher than gameplay
+        pos = new THREE.Vector3(tp.x - fwdX * 11, tp.y + 7.5, tp.z - fwdZ * 11);
+        look = new THREE.Vector3(tp.x, tp.y + 1.6, tp.z);
+      } else if (_replayPhase === 'orbit') {
+        const shot = REPLAY_SHOTS[_replayShot];
+        const u = shot.dur > 0 ? _replayShotT / shot.dur : 0;
+        switch (shot.type) {
+          case 'chase':
+            pos = new THREE.Vector3(tp.x - fwdX * 12, tp.y + 8, tp.z - fwdZ * 12);
+            break;
+          case 'orbit': {
+            const ang = heading + shot.start + (shot.end - shot.start) * u;
+            pos = new THREE.Vector3(
+              tp.x + Math.sin(ang) * shot.radius,
+              tp.y + shot.height,
+              tp.z + Math.cos(ang) * shot.radius,
+            );
+            break;
+          }
+          case 'low':
+            pos = new THREE.Vector3(tp.x + fwdX * 7 + rtX * 3, tp.y + 1.7, tp.z + fwdZ * 7 + rtZ * 3);
+            break;
+          case 'side':
+            // side tracking that lingers on the cart-cargo
+            pos = new THREE.Vector3(tp.x + rtX * 9, tp.y + 3.6, tp.z + rtZ * 9);
+            break;
+          case 'hero':
+            pos = new THREE.Vector3(tp.x - fwdX * 6 + rtX * 3, tp.y + 7.5, tp.z - fwdZ * 6 + rtZ * 3);
+            break;
+        }
+        look = new THREE.Vector3(tp.x, tp.y + 1.6, tp.z);
+      } else {
+        // tally / done — hold the hero shot
+        pos = new THREE.Vector3(tp.x - fwdX * 6 + rtX * 3, tp.y + 7.5, tp.z - fwdZ * 6 + rtZ * 3);
+        look = new THREE.Vector3(tp.x, tp.y + 1.6, tp.z);
+      }
+
+      // smooth lerp + slight handheld jitter for the PS1 replay feel
+      camera.position.x += (pos.x - camera.position.x) * 0.20;
+      camera.position.y += (pos.y - camera.position.y) * 0.16;
+      camera.position.z += (pos.z - camera.position.z) * 0.20;
+      const ts = performance.now() * 0.001;
+      camera.position.x += Math.sin(ts * 11.0) * 0.08;
+      camera.position.y += Math.sin(ts * 9.3)  * 0.06;
+      camera.lookAt(look);
+      camera.rotation.z = Math.sin(ts * 7.0) * 0.012;
+    }
+
+    // -----------------------------------------------------------------
+    // Tally / results panel — chunky stamp-in, score ticks upward.
+    // -----------------------------------------------------------------
+    function showResultsPanel(s) {
+      const root = document.getElementById('stageRecap');
+      root.classList.remove('show', 'tally-done');
+      // populate static fields
+      document.getElementById('recapBar').textContent    = `DELIVERY COMPLETE · ${LEVELS[s.stageIdx].name}`;
+      document.getElementById('recapHeader').textContent = `STAGE ${s.stageIdx + 1}`;
+      document.getElementById('recapTime').textContent   = '00\'00"00';
+      document.getElementById('recapCarts').textContent  = '0 OF 0';
+      document.getElementById('recapDeliv').textContent  = `0 OF ${s.deliveriesTotal}`;
+      document.getElementById('recapDodges').textContent = '0';
+      document.getElementById('recapChain').textContent  = '×0';
+      document.getElementById('recapBonus').textContent  = '+0';
+      document.getElementById('recapTotal').textContent  = '0000000';
+      // reset stamp-in classes
+      const wrap = document.getElementById('recapFinalWrap');
+      wrap.classList.remove('in');
       const rankEl = document.getElementById('recapRank');
-      rankEl.textContent = rank;
-      rankEl.className = 'rank-badge ' + rank.toLowerCase();
-      document.getElementById('recapTime').textContent   = seconds;
-      document.getElementById('recapDodges').textContent = stageDodges;
-      document.getElementById('recapSpilled').textContent= spilled;
-      document.getElementById('recapGained').textContent = gained + rankBonus;
-      document.getElementById('recapTotal').textContent  = score;
-      document.getElementById('stageRecap').classList.add('show');
-      // big arcade callout for the rank
-      arcadeCallout(`RANK ${rank}`, { type: rank === 'S' ? 'restock' : rank === 'A' ? 'checkpoint' : 'jump', pos: 'ct', size: 'l', holdMs: 1100, subtext: `+${rankBonus} BONUS` });
+      rankEl.textContent = s.rank;
+      rankEl.className = 'rank-badge ' + s.rank.toLowerCase();
+      for (const row of root.querySelectorAll('.stat-row')) row.classList.remove('in');
+      // show
+      root.classList.add('show');
+
+      _clearReplayTickers();
+      const schedule = (t, fn) => _replayTickers.push(setTimeout(fn, t));
+
+      // FINAL SCORE block slides in immediately
+      schedule(80,  () => wrap.classList.add('in'));
+
+      // Per-row reveal cadence
+      const rowOrder = ['time', 'carts', 'delivery', 'near', 'chain', 'bonus'];
+      const ROW_STEP = 280;
+      rowOrder.forEach((key, i) => {
+        schedule(180 + i * ROW_STEP, () => {
+          const row = root.querySelector(`.stat-row[data-row="${key}"]`);
+          if (row) row.classList.add('in');
+          try { sfxClack(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          // set the value when the row pops in
+          if (key === 'time')     document.getElementById('recapTime').textContent  = fmtRally(s.elapsed);
+          if (key === 'carts')    document.getElementById('recapCarts').textContent = `${s.cartsRemaining} OF ${s.maxCarts}`;
+          if (key === 'delivery') document.getElementById('recapDeliv').textContent = `${s.deliveriesDone} OF ${s.deliveriesTotal}`;
+          if (key === 'near')     document.getElementById('recapDodges').textContent = String(s.nearMisses);
+          if (key === 'chain')    document.getElementById('recapChain').textContent  = `×${s.bestChain || 0}`;
+          if (key === 'bonus') {
+            document.getElementById('recapBonus').textContent = `+${s.rankBonus}`;
+            try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          }
+        });
+      });
+
+      // Final score ticks upward over ~700ms after the last row
+      const totalStart = 180 + rowOrder.length * ROW_STEP + 120;
+      const TICK_DURATION = 700;
+      const TICK_FRAMES = 14;
+      schedule(totalStart, () => {
+        const target = s.finalScore;
+        let frame = 0;
+        const step = () => {
+          frame++;
+          const u = Math.min(1, frame / TICK_FRAMES);
+          const v = Math.round(target * u);
+          document.getElementById('recapTotal').textContent = String(v).padStart(7, '0');
+          try { sfxClack(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          if (frame < TICK_FRAMES) _replayTickers.push(setTimeout(step, TICK_DURATION / TICK_FRAMES));
+        };
+        step();
+      });
+
+      // Rank stamp + continue prompt
+      const rankAt = totalStart + TICK_DURATION + 60;
+      schedule(rankAt, () => {
+        rankEl.classList.add('in');
+        try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+        try { raveVocal(audioCtx ? audioCtx.currentTime : 0, s.rank === 'S' || s.rank === 'A' ? 'GO' : 'YEAH'); } catch(_) {}
+        bark(`RANK ${s.rank}`);
+      });
+      schedule(rankAt + 420, () => {
+        root.classList.add('tally-done');
+        _replayPhase = 'done';
+      });
+    }
+
+    // Skip / fast-forward the replay or tally on any input once we're past
+    // the initial 600ms grace window so the player can't accidentally skip
+    // their own FINISH callout.
+    let _replaySkipReady = 0;
+    function skipReplay() {
+      if (!_replayPhase || performance.now() < _replaySkipReady) return;
+      if (_replayPhase === 'finish' || _replayPhase === 'orbit') {
+        _enterTallyPhase();
+      } else if (_replayPhase === 'tally') {
+        // complete the tally instantly
+        _clearReplayTickers();
+        const s = _replayStats;
+        const root = document.getElementById('stageRecap');
+        document.getElementById('recapFinalWrap').classList.add('in');
+        for (const row of root.querySelectorAll('.stat-row')) row.classList.add('in');
+        document.getElementById('recapTime').textContent  = fmtRally(s.elapsed);
+        document.getElementById('recapCarts').textContent = `${s.cartsRemaining} OF ${s.maxCarts}`;
+        document.getElementById('recapDeliv').textContent = `${s.deliveriesDone} OF ${s.deliveriesTotal}`;
+        document.getElementById('recapDodges').textContent = String(s.nearMisses);
+        document.getElementById('recapChain').textContent  = `×${s.bestChain || 0}`;
+        document.getElementById('recapBonus').textContent  = `+${s.rankBonus}`;
+        document.getElementById('recapTotal').textContent  = String(s.finalScore).padStart(7, '0');
+        document.getElementById('recapRank').classList.add('in');
+        root.classList.add('tally-done');
+        _replayPhase = 'done';
+      }
     }
 
     function continueToNextStage() {
-      document.getElementById('stageRecap').classList.remove('show');
+      _clearReplayTickers();
+      document.getElementById('stageRecap').classList.remove('show', 'tally-done');
       stageRecap = false;
+      _replayPhase = null;
+      _replayStats = null;
       levelIdx++;
       if (levelIdx >= LEVELS.length) {
         endGame(true);
@@ -6382,6 +6715,7 @@
       truckS = 0;
       truckLateral = 2.5;
       stageDodges = 0;
+      _resetStageStyleStats();
       stageStartScore = score;
       stageStartCarts = cartsRemaining;
       stageStartTime = performance.now();
@@ -6393,6 +6727,57 @@
     }
     document.getElementById('recapContinue').addEventListener('click', continueToNextStage);
 
+    // Inputs while the replay/results sequence is active.
+    //  - During finish/orbit: any input skips to tally
+    //  - During tally:        any input completes the tally instantly
+    //  - When done:           SPACE/ENTER/tap → continue, R → retry stage
+    addEventListener('keydown', (e) => {
+      if (!_replayPhase) return;
+      const k = e.key.toLowerCase();
+      if (_replayPhase === 'done') {
+        if (k === ' ' || k === 'enter') { e.preventDefault(); continueToNextStage(); }
+        else if (k === 'r')             { e.preventDefault(); retryStage(); }
+      } else {
+        if (k === ' ' || k === 'enter' || k === 'r') { e.preventDefault(); skipReplay(); }
+      }
+    });
+    function _onReplayTap(e) {
+      if (!_replayPhase) return;
+      // ignore taps that landed on the continue button itself (it has its own click)
+      const tgt = e.target;
+      if (tgt && tgt.id === 'recapContinue') return;
+      if (_replayPhase === 'done') continueToNextStage();
+      else skipReplay();
+    }
+    addEventListener('touchend', _onReplayTap, { passive: true });
+    // desktop click-to-skip — but only when the panel is showing so we don't
+    // intercept gameplay clicks
+    document.getElementById('stageRecap').addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'recapContinue') return;
+      if (_replayPhase) {
+        if (_replayPhase === 'done') continueToNextStage();
+        else skipReplay();
+      }
+    });
+
+    function retryStage() {
+      // Restart the current stage: rewind truck, reset stats, replay intro.
+      _clearReplayTickers();
+      document.getElementById('stageRecap').classList.remove('show', 'tally-done');
+      stageRecap = false;
+      _replayPhase = null;
+      _replayStats = null;
+      score = stageStartScore;   // roll back this stage's gains
+      cartsRemaining = stageStartCarts;
+      stageDodges = 0;
+      _resetStageStyleStats();
+      truckS = 0;
+      truckLateral = 2.5;
+      stageStartTime = performance.now();
+      loadLevel(levelIdx);
+      truckSpeed = Math.max(truckSpeed, 20);
+    }
+
     function tick() {
       const dt = Math.min(clock.getDelta(), 0.05);
       let steerInput = 0;
@@ -6400,6 +6785,11 @@
       // ---- stage intro plays before gameplay resumes ----
       if (introState) {
         runIntro(dt);
+      }
+
+      // ---- end-of-stage replay + tally state machine ----
+      if (_replayPhase) {
+        tickReplay(dt);
       }
 
       if (!gameOver && !stageRecap && !introState) {
@@ -6804,6 +7194,10 @@
       }
 
       // ---- camera follow + curve lean + shake ----
+      if (_replayPhase) {
+        // During the end-of-stage replay/results, an orbital rig takes over.
+        applyReplayCamera(dt);
+      } else {
       // look-ahead tangent so the camera leans into upcoming curves (Outrun trick)
       const lookAheadM = 24 + truckSpeed * 0.7;
       const lookAheadT = clamp((truckS + lookAheadM) / curveLength, 0, 1);
@@ -6840,6 +7234,7 @@
       const targetRoll = -steerInput * 0.18 + curveBend * 0.9;
       cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 4.5);
       camera.rotation.z += cameraRoll + sr;
+      } // end !replayPhase chase-cam branch
 
       // light tracking
       shadowTarget.position.copy(truck.position);
