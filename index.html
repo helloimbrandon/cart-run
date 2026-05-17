@@ -1416,6 +1416,28 @@
     /* mobile shows a simpler line */
     .mobile-active #controlsStrip { font-size: 9px; letter-spacing: 2px; bottom: 4px; }
 
+    /* ---- REC indicator (R-key toggled WebM capture) ---- */
+    #recIndicator {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      display: none;
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 13px; letter-spacing: 4px;
+      color: #fff;
+      padding: 4px 10px;
+      background: rgba(0,0,0,0.4);
+      z-index: 7;
+      white-space: nowrap;
+    }
+    #recIndicator::before {
+      content: '●'; color: #ff3030; margin-right: 8px;
+      animation: recDot 0.7s ease-in-out infinite alternate;
+    }
+    @keyframes recDot { from { opacity: 1; } to { opacity: 0.35; } }
+    #recIndicator.active { display: block; }
+    .mobile-active #recIndicator { display: none !important; }
+
     /* =====================================================================
        POLISH PASS — glow purge + arcade-size recap + HUD unification
        (One italic-white-on-yellow-label sportsbrut system. Hard drop
@@ -2280,8 +2302,10 @@
   <div id="controlsStrip">
     <b>WASD</b>STEER<span class="sep">|</span>
     <b>SPACE</b>BOOST<span class="sep">|</span>
-    <b>M</b>MUTE
+    <b>M</b>MUTE<span class="sep">|</span>
+    <b>R</b>RECORD
   </div>
+  <div id="recIndicator">REC <span id="recTime">00:00</span></div>
 
   <!-- driver picture-in-picture comms window -->
   <div id="driverPip">
@@ -4342,6 +4366,7 @@
     addEventListener('keydown', e => {
       const wasDown = keys[e.key.toLowerCase()];
       keys[e.key.toLowerCase()] = true;
+      if (e.key.toLowerCase() === 'r' && !wasDown) toggleRecord();
       if (e.code === 'Space') {
         e.preventDefault();
         // press-to-fire: tap only, must be fully charged
@@ -4992,6 +5017,106 @@
       el.classList.add('show');
       clearTimeout(el._t);
       el._t = setTimeout(() => el.classList.remove('show'), 1400);
+    }
+
+    // ===================================================================
+    //  WEBM record mode — R toggles tab capture (720p, video + audio).
+    //  Uses getDisplayMedia so HUD overlays, SFX, and music all land in
+    //  the recording. User picks "this tab" + "share audio" in the
+    //  browser prompt. Saves to a timestamped .webm download.
+    // ===================================================================
+    let _mediaRecorder = null;
+    let _recordChunks = [];
+    let _recordStream = null;
+    let _recordStart = 0;
+    let _recordTimerHandle = null;
+    const _recIndicator = document.getElementById('recIndicator');
+    const _recTimeEl    = document.getElementById('recTime');
+
+    async function toggleRecord() {
+      if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+        stopRecording();
+      } else {
+        await startRecording();
+      }
+    }
+
+    async function startRecording() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || typeof MediaRecorder === 'undefined') {
+        bark('REC UNSUPPORTED');
+        return;
+      }
+      try {
+        _recordStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { width: 1280, height: 720, frameRate: 60 },
+          audio: true,
+          preferCurrentTab: true,
+        });
+        _recordChunks = [];
+        // pick a supported codec
+        const mime = (function pickMime() {
+          const candidates = [
+            'video/webm;codecs=vp9,opus',
+            'video/webm;codecs=vp8,opus',
+            'video/webm;codecs=vp9',
+            'video/webm',
+          ];
+          for (const m of candidates) if (MediaRecorder.isTypeSupported(m)) return m;
+          return '';
+        })();
+        _mediaRecorder = new MediaRecorder(_recordStream, mime ? {
+          mimeType: mime,
+          videoBitsPerSecond: 6_000_000,
+        } : {});
+        _mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) _recordChunks.push(e.data);
+        };
+        _mediaRecorder.onstop = () => {
+          const blob = new Blob(_recordChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `cart-run-${stamp}.webm`;
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          if (_recordStream) {
+            _recordStream.getTracks().forEach(t => t.stop());
+            _recordStream = null;
+          }
+          if (_recIndicator) _recIndicator.classList.remove('active');
+          clearInterval(_recordTimerHandle);
+          _recordTimerHandle = null;
+          bark('SAVED');
+        };
+        // auto-stop if user revokes screen share
+        _recordStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
+        _mediaRecorder.start(1000); // 1s timeslice
+        _recordStart = performance.now();
+        if (_recIndicator) _recIndicator.classList.add('active');
+        // tick the timer label
+        clearInterval(_recordTimerHandle);
+        _recordTimerHandle = setInterval(() => {
+          const s = Math.floor((performance.now() - _recordStart) / 1000);
+          const mm = String(Math.floor(s / 60)).padStart(2, '0');
+          const ss = String(s % 60).padStart(2, '0');
+          if (_recTimeEl) _recTimeEl.textContent = `${mm}:${ss}`;
+        }, 500);
+        bark('RECORDING');
+      } catch (e) {
+        console.warn('record start failed', e);
+        bark('REC CANCELLED');
+      }
+    }
+
+    function stopRecording() {
+      if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+        _mediaRecorder.stop();
+      } else if (_recordStream) {
+        _recordStream.getTracks().forEach(t => t.stop());
+        _recordStream = null;
+        if (_recIndicator) _recIndicator.classList.remove('active');
+      }
     }
 
     function startPad() {
