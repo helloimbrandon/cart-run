@@ -1717,11 +1717,7 @@
   <!-- Motion-graphic overlays -->
   <div id="crashEdge"></div>
   <div id="wrongWay">WRONG WAY</div>
-  <div id="checkpointBubble">
-    <div class="cp-tab">SECTOR</div>
-    <div class="cp-label">CHECKPOINT</div>
-    <div class="cp-time" id="checkpointTime">+00'00"00</div>
-  </div>
+  <!-- (#checkpointBubble removed — replaced by arcadeCallout('STAGE CLEAR'/'CHECKPOINT')) -->
   <div id="stageTitle">
     <div class="stage-tab" id="stageTitleTab">STAGE 1</div>
     <div class="stage-name" id="stageTitleName">SUBURB</div>
@@ -4561,7 +4557,12 @@
       overlay.style.display = 'flex';
     }
 
-    setTimeout(() => document.getElementById('title-card').classList.add('fade'), 100);
+    // (legacy #title-card removed — no fade timer needed)
+
+    // mid-stage checkpoint tracking — MUST be declared before loadLevel(0)
+    // (loadLevel → startIntro → resetCheckpoints uses _cpHit)
+    let _cpHit = [];
+    function resetCheckpoints() { _cpHit = []; }
 
     // =========================================================================
     // initial level load
@@ -4581,10 +4582,6 @@
     const _curRt  = new THREE.Vector3();
     const _curP   = new THREE.Vector3();
 
-    // mid-stage checkpoint tracking
-    let _cpHit = [];
-    function resetCheckpoints() { _cpHit = []; }
-
     let stageRecap = false;
     function endStage() {
       if (stageRecap || gameOver) return;
@@ -4595,20 +4592,16 @@
       const ms = performance.now() - stageStartTime;
       lastStageTime = ms;
       const wasBest = (bestStageTimes[levelIdx] == null || ms < bestStageTimes[levelIdx]);
+      const prevBest = bestStageTimes[levelIdx];
       if (wasBest) bestStageTimes[levelIdx] = ms;
-      // motion-graphic: snap-in checkpoint bubble with split time
-      const bubble = document.getElementById('checkpointBubble');
-      const cpTime = document.getElementById('checkpointTime');
-      if (bubble && cpTime) {
-        const prevBest = bestStageTimes[levelIdx];
-        const sign = wasBest ? '-' : '+';
-        const delta = wasBest && prevBest != null ? 0 : Math.abs(ms - (prevBest || ms));
-        cpTime.textContent = `${sign}${fmtRally(delta)}`;
-        bubble.classList.remove('show', 'anim-pop');
-        void bubble.offsetWidth;
-        bubble.classList.add('show', 'anim-pop');
-        setTimeout(() => bubble.classList.remove('show'), 1700);
-      }
+      // arcade callout for stage-end checkpoint (the rank callout follows below)
+      const sign = wasBest ? '-' : '+';
+      const delta = wasBest && prevBest != null ? Math.abs(ms - prevBest) : Math.abs(ms - (prevBest || ms));
+      arcadeCallout('STAGE CLEAR', {
+        type: 'checkpoint', pos: 'ct', size: 'l',
+        subtext: `${sign}${fmtRally(delta)}`,
+        holdMs: 1100,
+      });
       // glitch the time digit briefly
       reanim(document.getElementById('rTime'), 'anim-glitch');
       const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
