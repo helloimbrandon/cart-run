@@ -824,6 +824,131 @@
     .anim-pos-pop { animation: impactPulse 360ms ease-out both; }
 
     /* =====================================================================
+       ARCADE CALLOUTS — Capcom/SNK combo-text energy adapted to PS1 racing
+       ===================================================================== */
+    .arcade-callout {
+      position: fixed;
+      pointer-events: none;
+      z-index: 7;
+      display: flex; align-items: center; gap: 14px;
+      transform-origin: center left;
+      opacity: 0;
+    }
+    /* default placement = lower-right (drifts up + left on exit) */
+    .arcade-callout.pos-lr { right: 22vw; bottom: 30%; }
+    .arcade-callout.pos-lt { left: 22vw;  bottom: 30%; }
+    .arcade-callout.pos-up { right: 38vw; top: 16%;    }
+    .arcade-callout.pos-ct { left: 50%; top: 38%; transform: translate(-50%, -50%); transform-origin: center center; }
+
+    .arcade-callout.hit {
+      animation:
+        calloutSlam   200ms cubic-bezier(0.25, 1.75, 0.5, 1) both,
+        calloutShake  120ms steps(4, end) 200ms both;
+    }
+    .arcade-callout.exit { animation: calloutExit 240ms ease-in both; }
+
+    @keyframes calloutSlam {
+      0%   { transform: translateX(160px) translateY(20px) rotate(-3deg) scale(0.55); opacity: 0; }
+      55%  { transform: translateX(-10px) translateY(-3px) rotate(-3deg) scale(1.08); opacity: 1; }
+      80%  { transform: translateX(4px)   translateY(1px)  rotate(-3deg) scale(0.97); }
+      100% { transform: translateX(0)     translateY(0)    rotate(-3deg) scale(1); opacity: 1; }
+    }
+    @keyframes calloutShake {
+      0%, 100% { transform: translateX(0)   translateY(0) rotate(-3deg) scale(1); }
+      25%      { transform: translateX(-4px) translateY(-1px) rotate(-4deg); }
+      50%      { transform: translateX(4px)  translateY( 2px) rotate(-2deg); }
+      75%      { transform: translateX(-3px) translateY( 1px) rotate(-3deg); }
+    }
+    @keyframes calloutExit {
+      0%   { opacity: 1; transform: translateX(0) translateY(0) rotate(-3deg) scale(1); }
+      100% { opacity: 0; transform: translateX(-46px) translateY(-50px) rotate(-6deg) scale(0.92); }
+    }
+
+    /* center-position variant uses scale-pop (no rotate) */
+    .arcade-callout.pos-ct.hit {
+      animation:
+        calloutSlamCenter 220ms cubic-bezier(0.25, 1.75, 0.5, 1) both,
+        calloutShake      120ms steps(4, end) 220ms both;
+    }
+    @keyframes calloutSlamCenter {
+      0%   { transform: translate(-50%, -50%) scale(0.35); opacity: 0; }
+      55%  { transform: translate(-50%, -50%) scale(1.18); opacity: 1; }
+      80%  { transform: translate(-50%, -50%) scale(0.96); }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    /* parts */
+    .callout-tab {
+      display: flex; align-items: center; justify-content: center;
+      width: 50px; height: 50px;
+      border: 3px solid #fff;
+      background: var(--callout-color, #ff7a00);
+      color: #001a3a;
+      font-family: 'Russo One', sans-serif;
+      font-size: 30px; font-weight: 400;
+      box-shadow: 5px 5px 0 rgba(0,0,0,0.6);
+      flex-shrink: 0;
+    }
+    .callout-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+    .callout-text {
+      font-family: 'Russo One', sans-serif;
+      font-size: 46px;
+      font-style: italic;
+      letter-spacing: 3px;
+      color: #fff;
+      text-shadow:
+        4px 4px 0 var(--callout-color, #ff7a00),
+        7px 7px 0 #001a3a;
+      line-height: 0.95;
+      white-space: nowrap;
+    }
+    .callout-text.size-l { font-size: 64px; letter-spacing: 4px; }
+    .callout-text.size-s { font-size: 32px; letter-spacing: 2px; }
+    .callout-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 18px; letter-spacing: 2px;
+      color: var(--callout-color, #ff7a00);
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    /* speed-line burst that lives behind the text */
+    .callout-burst {
+      position: absolute; left: -20px; top: 50%;
+      width: 86px; height: 86px;
+      transform: translateY(-50%);
+      pointer-events: none;
+      z-index: -1;
+      filter: drop-shadow(0 0 8px rgba(0,0,0,0.4));
+    }
+    .callout-burst::before, .callout-burst::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        conic-gradient(from 0deg,
+          var(--callout-color, #ff7a00) 0deg, var(--callout-color, #ff7a00) 4deg,
+          transparent 4deg, transparent 22deg,
+          var(--callout-color, #ff7a00) 22deg, var(--callout-color, #ff7a00) 26deg,
+          transparent 26deg, transparent 44deg);
+      opacity: 0.85;
+      animation: burstSpin 1.2s linear infinite;
+    }
+    .callout-burst::after {
+      transform: scale(0.6);
+      animation-duration: 0.9s;
+      animation-direction: reverse;
+      opacity: 0.55;
+    }
+    @keyframes burstSpin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* combo intensifier: larger + brighter at chain count > 1 */
+    .arcade-callout[data-combo="2"] .callout-text { font-size: 56px; }
+    .arcade-callout[data-combo="3"] .callout-text { font-size: 68px; color: var(--callout-color, #ff7a00); text-shadow: 5px 5px 0 #000, 8px 8px 0 #001a3a; }
+    .arcade-callout[data-combo="3"] .callout-burst::before { animation-duration: 0.6s; }
+
+    /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
        stepped corners, drop-shadows, exaggerated gear/speed. Layered as
        overrides so existing JS doesn't break.
@@ -1293,6 +1418,22 @@
       z-index: 4;
     }
 
+    /* ====== rank badge inside recap modal ====== */
+    #stageRecap .rank-badge {
+      font-family: 'Russo One', sans-serif;
+      font-size: 160px;
+      line-height: 1;
+      color: var(--arc-amber);
+      text-shadow: 6px 6px 0 var(--arc-navy), 0 0 24px rgba(255,206,74,0.45);
+      font-style: italic;
+      letter-spacing: 4px;
+      margin: -10px 0 8px;
+    }
+    #stageRecap .rank-badge.s  { color: #ffe46b; }
+    #stageRecap .rank-badge.a  { color: #2ce053; }
+    #stageRecap .rank-badge.b  { color: #2de7ff; }
+    #stageRecap .rank-badge.c  { color: #ff7a00; }
+
     /* ====== stage recap modal ====== */
     #stageRecap {
       position: fixed; inset: 0; z-index: 10;
@@ -1600,6 +1741,7 @@
   <div id="stageRecap">
     <div class="recap-bar" id="recapBar">DELIVERY COMPLETE</div>
     <div class="recap-header" id="recapHeader">STAGE 1</div>
+    <div class="rank-badge a" id="recapRank">A</div>
     <div class="recap-ruler"></div>
     <div class="recap-stats">
       <div class="stat-row"><span class="stat-label">TIME</span><span class="stat-colon">:</span><span class="stat-value" id="recapTime">0.0</span><span class="stat-suffix">SEC</span></div>
@@ -2198,39 +2340,50 @@
     const LEVELS = [
       {
         name: 'SUBURB',
+        // ~1800m, gentle S in three sections
         points: [
-          [0, 0, 0], [0, 0, 200], [-22, 0, 380], [12, 0, 560], [-6, 0, 740], [0, 0, 900],
+          [0,0,0], [0,0,300], [-18,0,560], [10,0,820], [-12,0,1080],
+          [22,0,1320], [-8,0,1560], [0,0,1800],
         ],
+        // mid-stage checkpoint distances
+        checkpoints: [620, 1240],
         skyColor: 0x9fd7ff, fogColor: 0x9fd7ff, fogNear: 70, fogFar: 320,
         sunColor: 0xfff2d8, hemiSky: 0xb0d8ff, hemiGround: 0x6b8a4a,
         grassColor: 0x6dab4a, roadColor: 0x3b3b3b,
         mountainNear: 0x7d9aba, mountainFar: 0x546890,
         houseDensity: 0.85, treeDensity: 0.5, mailboxDensity: 0.4,
-        bumps: 3, potholes: 2, trafficCount: 3, parkedCarChance: 0.15,
+        bumps: 5, potholes: 4, trafficCount: 4, parkedCarChance: 0.15,
       },
       {
         name: 'AVENUE',
+        // ~2400m, sharper bends in three sections
         points: [
-          [0, 0, 0], [0, 0, 200], [45, 0, 380], [55, 0, 560], [-20, 0, 760], [-30, 0, 960], [-5, 0, 1180],
+          [0,0,0], [0,0,300], [45,0,560], [60,0,820], [20,0,1080],
+          [-25,0,1340], [-40,0,1600], [-15,0,1860], [15,0,2120], [0,0,2400],
         ],
+        checkpoints: [800, 1600],
         skyColor: 0xff9866, fogColor: 0xff8a6a, fogNear: 60, fogFar: 280,
         sunColor: 0xffd8a8, hemiSky: 0xffb070, hemiGround: 0x7a4a30,
         grassColor: 0x4a8a3a, roadColor: 0x2a2a2a,
         mountainNear: 0xb86a4a, mountainFar: 0x6a3a3a,
         houseDensity: 0.7, treeDensity: 0.35, mailboxDensity: 0.25,
-        bumps: 5, potholes: 4, trafficCount: 6, parkedCarChance: 0.22,
+        bumps: 8, potholes: 6, trafficCount: 7, parkedCarChance: 0.22,
       },
       {
         name: 'DOWNTOWN',
+        // ~2800m, tight serpentine in three sections
         points: [
-          [0, 0, 0], [25, 0, 180], [-30, 0, 340], [40, 0, 520], [-45, 0, 700], [25, 0, 880], [0, 0, 1080], [0, 0, 1300],
+          [0,0,0], [25,0,260], [-30,0,500], [40,0,740], [-45,0,980],
+          [25,0,1220], [-25,0,1460], [40,0,1700], [-40,0,1940],
+          [25,0,2180], [0,0,2440], [0,0,2800],
         ],
+        checkpoints: [930, 1860],
         skyColor: 0x3a2a55, fogColor: 0x40305a, fogNear: 55, fogFar: 240,
         sunColor: 0xc8b0ff, hemiSky: 0x6a4a90, hemiGround: 0x1a1a2a,
         grassColor: 0x3a4a3a, roadColor: 0x1f1f1f,
         mountainNear: 0x4a3a6a, mountainFar: 0x2a1f44,
         houseDensity: 0.95, treeDensity: 0.15, mailboxDensity: 0.1,
-        bumps: 6, potholes: 6, trafficCount: 10, parkedCarChance: 0.35,
+        bumps: 10, potholes: 8, trafficCount: 12, parkedCarChance: 0.35,
       },
     ];
 
@@ -2249,6 +2402,7 @@
     const obstacles = [];          // {type, t, gapMinLat, gapMaxLat, lat, hit}
     const traffic = [];            // {mesh, s, lat}
     const boostPickups = [];       // {mesh, s, lat, alive, t0}
+    const cartPickups  = [];       // {mesh, s, lat, alive, t0, full}
     let storeMesh = null;
     let levelTransitioning = false;
 
@@ -2503,6 +2657,36 @@
       return g;
     }
 
+    function makeCartPickup() {
+      // floating yellow cart icon + green "+1" tag + bright ring
+      const g = new THREE.Group();
+      const cart = makeCartMesh();
+      cart.scale.set(0.65, 0.65, 0.65);
+      cart.position.y = 0.8;
+      g.add(cart);
+      // +1 plate
+      const sign = makeTextSign('+1', 1.0, 0.55, '#2ce053', '#001a3a');
+      sign.position.set(0, 1.85, 0);
+      g.add(sign);
+      // green glow ring
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.85, 0.08, 6, 18),
+        new THREE.MeshBasicMaterial({ color: 0x2ce053 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.25;
+      g.add(ring);
+      // beam
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.18, 0.18, 1.6, 8),
+        new THREE.MeshBasicMaterial({ color: 0x88ff9a, transparent: true, opacity: 0.28 })
+      );
+      beam.position.y = 0.95;
+      g.add(beam);
+      g._core = cart;
+      g._sign = sign;
+      return g;
+    }
     function makeBoostPickup() {
       // glowing yellow octahedron in a ring, hovering above the road
       const g = new THREE.Group();
@@ -2663,6 +2847,7 @@
       detached.length = 0;
       traffic.length = 0;
       boostPickups.length = 0;
+      cartPickups.length = 0;
       storeMesh = null;
     }
 
@@ -2889,6 +3074,31 @@
         pk.position.set(p.x + rt.x * lat, 0, p.z + rt.z * lat);
         levelGroup.add(pk);
         boostPickups.push({ mesh: pk, s: sPos, lat, alive: true, t0: Math.random() * 10 });
+      }
+
+      // CART REFILL pickups — placed slightly off the racing line so the
+      // player chooses safe-fast vs risky-restock. One rare "FULL LOAD"
+      // sits before the final stretch.
+      const cartCount = 8 + idx * 2; // 8, 10, 12
+      for (let i = 0; i < cartCount; i++) {
+        // bias toward middle/final thirds so they're recovery opportunities
+        const tBias = 0.18 + (i + 0.5) / cartCount * 0.78;
+        const sPos = tBias * curveLength + rand(-25, 25);
+        const lat = (i % 2 === 0 ? -2.8 : 2.8) + rand(-0.8, 0.8);
+        const t = clamp(sPos / curveLength, 0, 1);
+        const p = pointAt(t);
+        const tn = tangentAt(t);
+        const rt = rightFromTangent(tn);
+        const pk = makeCartPickup();
+        // mark the one closest to 75% as the rare "FULL LOAD"
+        const full = (i === Math.floor(cartCount * 0.75));
+        if (full) {
+          pk._sign.position.y += 0.3;
+          pk._sign.scale.set(1.3, 1.3, 1.3);
+        }
+        pk.position.set(p.x + rt.x * lat, 0, p.z + rt.z * lat);
+        levelGroup.add(pk);
+        cartPickups.push({ mesh: pk, s: sPos, lat, alive: true, t0: Math.random() * 10, full });
       }
 
       // streetlamps every 14m (denser, more populated feel)
@@ -3195,6 +3405,7 @@
             raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
           } catch(_) {}
           bark('BOOST');
+          arcadeCallout('BOOST', { type: 'boost', pos: 'lt', holdMs: 600 });
           // type/motion: speed digit punches, gear flickers
           const speedEl = document.getElementById('rKmh');
           const gearEl  = document.getElementById('rGear');
@@ -3912,6 +4123,69 @@
       void el.offsetWidth;
       el.classList.add(klass);
     }
+
+    // ----- Arcade callout (Capcom/SNK combo-text energy) -----
+    const CALLOUT_THEMES = {
+      jump:       { color: '#ff7a00', glyph: '★', sound: 'sfxBump' },
+      drift:      { color: '#00d4ff', glyph: '◇', sound: 'sfxBump' },
+      restock:    { color: '#2ce053', glyph: '+', sound: 'sfxPickup' },
+      checkpoint: { color: '#2de7ff', glyph: '✦', sound: 'sfxPickup' },
+      boost:      { color: '#ff7a00', glyph: '➤', sound: 'sfxBoost' },
+      warning:    { color: '#ff3a30', glyph: '!', sound: 'sfxCrash' },
+      combo:      { color: '#ffce4a', glyph: '×', sound: 'sfxPickup' },
+    };
+    let _comboStreak = { lastType: null, count: 0, lastT: 0 };
+
+    function arcadeCallout(text, opts) {
+      opts = opts || {};
+      const type = opts.type || 'jump';
+      const theme = CALLOUT_THEMES[type] || CALLOUT_THEMES.jump;
+      // combo tracking
+      const now = performance.now();
+      if (type === _comboStreak.lastType && now - _comboStreak.lastT < 2400) {
+        _comboStreak.count++;
+      } else {
+        _comboStreak.count = 1;
+        _comboStreak.lastType = type;
+      }
+      _comboStreak.lastT = now;
+      const combo = Math.min(3, _comboStreak.count);
+
+      const root = document.createElement('div');
+      root.className = `arcade-callout pos-${opts.pos || 'lr'}`;
+      root.style.setProperty('--callout-color', theme.color);
+      if (combo > 1) root.setAttribute('data-combo', String(combo));
+
+      const subHtml = opts.subtext ? `<div class="callout-sub">${opts.subtext}</div>` : '';
+      const comboHtml = combo > 1 ? ` <span style="font-family:'Share Tech Mono',monospace;color:${theme.color};font-size:34px;text-shadow:2px 2px 0 #000;margin-left:6px;">×${combo}</span>` : '';
+      const sizeClass = opts.size === 'l' ? 'size-l' : opts.size === 's' ? 'size-s' : '';
+      root.innerHTML = `
+        <div class="callout-burst"></div>
+        <div class="callout-tab">${opts.glyph || theme.glyph}</div>
+        <div class="callout-stack">
+          <div class="callout-text ${sizeClass}">${text}${comboHtml}</div>
+          ${subHtml}
+        </div>
+      `;
+      document.body.appendChild(root);
+      // trigger animation
+      requestAnimationFrame(() => root.classList.add('hit'));
+      const holdMs = opts.holdMs || 700;
+      setTimeout(() => {
+        root.classList.add('exit');
+        setTimeout(() => root.remove(), 260);
+      }, holdMs);
+      // arcade sound effect
+      if (audioCtx && theme.sound && typeof window[theme.sound] === 'function') {
+        try { window[theme.sound](audioCtx.currentTime); } catch(_) {}
+      } else if (audioCtx) {
+        // direct call (functions are module-scope, not global)
+        try {
+          const fn = ({sfxBump, sfxPickup, sfxBoost, sfxCrash})[theme.sound];
+          if (fn) fn(audioCtx.currentTime);
+        } catch(_) {}
+      }
+    }
     let _lastSection = 'A';
     function maybeGlitchSection() {
       if (typeof currentSection !== 'undefined' && currentSection !== _lastSection) {
@@ -4120,6 +4394,7 @@
       introFadeEl.classList.add('show');
       raceTimerRunning = false;
       countdownEl.classList.remove('show', 'go');
+      resetCheckpoints();
       // populate + animate the single stage title (no other title overlay competes)
       const L = LEVELS[levelIdx];
       const stTab  = document.getElementById('stageTitleTab');
@@ -4306,6 +4581,10 @@
     const _curRt  = new THREE.Vector3();
     const _curP   = new THREE.Vector3();
 
+    // mid-stage checkpoint tracking
+    let _cpHit = [];
+    function resetCheckpoints() { _cpHit = []; }
+
     let stageRecap = false;
     function endStage() {
       if (stageRecap || gameOver) return;
@@ -4335,14 +4614,30 @@
       const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
       const spilled = stageStartCarts - cartsRemaining;
       const gained  = score - stageStartScore;
+      // compute rank
+      const elapsed = performance.now() - stageStartTime;
+      const par = 110000; // ~110s par per stage (was 30s — now stages are 2x longer)
+      let rank = 'C';
+      if (cartsRemaining >= MAX_CARTS - 10 && elapsed < par)             rank = 'S';
+      else if (cartsRemaining >= MAX_CARTS - 30 && elapsed < par * 1.2)  rank = 'A';
+      else if (cartsRemaining >= MAX_CARTS - 60)                          rank = 'B';
+      // bonus points for rank
+      const rankBonus = { S: 500, A: 250, B: 100, C: 25 }[rank];
+      addScore(rankBonus);
+
       document.getElementById('recapHeader').textContent = `STAGE ${levelIdx + 1}`;
       document.getElementById('recapBar').textContent    = `DELIVERY COMPLETE · ${LEVELS[levelIdx].name}`;
+      const rankEl = document.getElementById('recapRank');
+      rankEl.textContent = rank;
+      rankEl.className = 'rank-badge ' + rank.toLowerCase();
       document.getElementById('recapTime').textContent   = seconds;
       document.getElementById('recapDodges').textContent = stageDodges;
       document.getElementById('recapSpilled').textContent= spilled;
-      document.getElementById('recapGained').textContent = gained;
+      document.getElementById('recapGained').textContent = gained + rankBonus;
       document.getElementById('recapTotal').textContent  = score;
       document.getElementById('stageRecap').classList.add('show');
+      // big arcade callout for the rank
+      arcadeCallout(`RANK ${rank}`, { type: rank === 'S' ? 'restock' : rank === 'A' ? 'checkpoint' : 'jump', pos: 'ct', size: 'l', holdMs: 1100, subtext: `+${rankBonus} BONUS` });
     }
 
     function continueToNextStage() {
@@ -4474,6 +4769,31 @@
           dropCart();
         }
 
+        // mid-stage checkpoints
+        const Lcur = LEVELS[levelIdx];
+        if (Lcur.checkpoints) {
+          for (let ci = 0; ci < Lcur.checkpoints.length; ci++) {
+            if (!_cpHit[ci] && truckS >= Lcur.checkpoints[ci]) {
+              _cpHit[ci] = true;
+              const elapsedMs = performance.now() - raceStartMs;
+              arcadeCallout('CHECKPOINT', {
+                type: 'checkpoint',
+                pos: 'ct',
+                size: 'l',
+                subtext: fmtRally(elapsedMs),
+                holdMs: 900
+              });
+              // checkpoint reward: +6 carts (recovery moment)
+              const before = cartsRemaining;
+              cartsRemaining = Math.min(MAX_CARTS, cartsRemaining + 6);
+              if (cartsRemaining > before) reanim(hudCarts, 'flash-value');
+              addScore(80);
+              try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+              bark('CHECK');
+            }
+          }
+        }
+
         // win/lose
         if (cartsRemaining <= 0) endGame(false);
         if (cartsRemaining <= 10) hudCartsRow.classList.add('low');
@@ -4523,6 +4843,7 @@
             addScore(-40);
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
+            arcadeCallout('WATCH IT', { type: 'warning', pos: 'lr', holdMs: 700 });
             // type/motion: red-edge flash + glitch
             const edge = document.getElementById('crashEdge');
             if (edge) {
@@ -4541,7 +4862,7 @@
             c.passed = true;
             addScore(c.points + 60);
             stageDodges++;
-            bark('NICE JUMP');
+            arcadeCallout('NICE JUMP', { type: 'jump', subtext: `+${c.points + 60}`, pos: 'lr' });
           }
           // score on safe pass (only fires once per vehicle)
           if (!c.passed) {
@@ -4591,7 +4912,48 @@
             boostMeter = Math.min(1.0, boostMeter + BOOST_PICKUP_VALUE);
             try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             addScore(25);
-            if (!prevFull && boostMeter >= 0.999) bark('PRIMED');
+            if (!prevFull && boostMeter >= 0.999) {
+              arcadeCallout('PRIMED', { type: 'boost', pos: 'lt', size: 's' });
+            }
+          }
+        }
+      }
+
+      // ---- cart REFILL pickups ----
+      for (const pu of cartPickups) {
+        if (!pu.alive) continue;
+        pu.t0 += dt;
+        pu.mesh._core.rotation.y += dt * 2.0;
+        pu.mesh.position.y = Math.sin(pu.t0 * 2.4) * 0.15;
+        if (!gameOver && !stageRecap && !introState) {
+          const ds = Math.abs(pu.s - truckS);
+          const dlat = Math.abs(pu.lat - truckLateral);
+          if (ds < 2.2 && dlat < 1.8) {
+            pu.alive = false;
+            pu.mesh.visible = false;
+            if (pu.full) {
+              // FULL LOAD — restore to max
+              const restored = MAX_CARTS - cartsRemaining;
+              cartsRemaining = MAX_CARTS;
+              addScore(50 + restored * 5);
+              arcadeCallout('FULL LOAD', { type: 'restock', pos: 'lr', size: 'l', subtext: `+${restored} CARTS`, holdMs: 900 });
+            } else {
+              // standard +1 cart
+              const before = cartsRemaining;
+              cartsRemaining = Math.min(MAX_CARTS, cartsRemaining + 1);
+              if (cartsRemaining > before) {
+                addScore(20);
+                arcadeCallout('+1 CART', { type: 'restock', pos: 'lr', subtext: 'RESTOCK', holdMs: 700 });
+              } else {
+                // already full → convert to score + boost
+                addScore(40);
+                boostMeter = Math.min(1, boostMeter + 0.15);
+                arcadeCallout('BONUS', { type: 'combo', pos: 'lr', subtext: '+40', size: 's' });
+              }
+            }
+            try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+            // green flash on the cart count
+            reanim(hudCarts, 'flash-value');
           }
         }
       }
