@@ -2908,8 +2908,34 @@
       showBark(text);
       if (window.speechSynthesis) {
         const u = new SpeechSynthesisUtterance(text);
-        u.rate = 1.75; u.pitch = 1.55; u.volume = 0.6;
+        u.rate = 0.85;     // SLOWER so the words land
+        u.pitch = 1.0;     // natural pitch (was 1.55)
+        u.volume = 1.0;    // MAX volume
         try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch(_) {}
+      }
+      // synthetic reverb-tail pad underneath the voice so it has a "hall" halo
+      if (audioCtx && audioReverb) {
+        const t = audioCtx.currentTime + 0.02;
+        // approx speech length: ~0.18s per char at rate 0.85
+        const dur = Math.min(2.2, Math.max(0.6, String(text).length * 0.18));
+        // a soft low pad — root + 5th — heavy reverb send
+        const pad = audioCtx.createGain();
+        pad.gain.setValueAtTime(0, t);
+        pad.gain.linearRampToValueAtTime(0.085, t + 0.08);
+        pad.gain.setValueAtTime(0.085, t + dur - 0.2);
+        pad.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        for (const interval of [0, 7]) {
+          const o = audioCtx.createOscillator();
+          o.type = 'sine';
+          o.frequency.value = ROOT_HZ * 4 * Math.pow(2, interval / 12);
+          o.connect(pad);
+          o.start(t); o.stop(t + dur + 0.1);
+        }
+        const rs = audioCtx.createGain(); rs.gain.value = 1.2;
+        pad.connect(rs); rs.connect(audioReverb);
+        // also send a tiny copy of pad direct so the halo is audible
+        const dry = audioCtx.createGain(); dry.gain.value = 0.4;
+        pad.connect(dry); dry.connect(audioMaster);
       }
     }
     function showBark(text) {
