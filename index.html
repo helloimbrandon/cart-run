@@ -1559,12 +1559,15 @@
     <span class="pipe">|</span><b>SPACE</b> A-G FIRE
     <span class="pipe">|</span><b>M</b> MUTE
     <span class="pipe">|</span>
-    <span class="audio" id="audioLbl">DEEP HOUSE 124 BPM · GENESIS FM</span>
+    <span class="audio" id="audioLbl">BIG STEPPER · PRESS ANY KEY</span>
     <span class="pipe">|</span>
   </div>
 
   <!-- voice bark subtitle -->
   <div id="bark"></div>
+
+  <!-- BIG STEPPER (the game's music) — loaded on first user gesture -->
+  <audio id="bigStepper" src="audio/big-stepper.mp3" loop preload="auto"></audio>
 
   <!-- ====================================================================
        ARCADE HUD (new) — replaces the thin telemetry look
@@ -3490,24 +3493,30 @@
       audioReverb.connect(revGain);
       revGain.connect(audioMaster);
 
-      startPad();
       startEngineSFX();
+      // (procedural pad + drum scheduler disabled — replaced by BIG STEPPER MP3)
 
-      nextNoteTime = audioCtx.currentTime + 0.12;
-      stepCounter = 0;
-      schedulerHandle = setInterval(audioScheduler, SCHED_MS);
+      // BIG STEPPER — actual game music
+      const music = document.getElementById('bigStepper');
+      if (music) {
+        music.volume = 0.62;
+        music.loop = true;
+        music.muted = audioMuted;
+        const p = music.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {/* will retry on next gesture */});
+      }
 
       const lbl = document.getElementById('audioLbl');
-      if (lbl) lbl.textContent = 'DEEP HOUSE · 124 BPM · GENESIS FM';
+      if (lbl) lbl.textContent = 'BIG STEPPER (B.FOY)';
     }
     function toggleMute() {
       if (!audioStarted) return;
       audioMuted = !audioMuted;
       audioMaster.gain.setTargetAtTime(audioMuted ? 0 : 0.5, audioCtx.currentTime, 0.03);
+      const music = document.getElementById('bigStepper');
+      if (music) music.muted = audioMuted;
       const lbl = document.getElementById('audioLbl');
-      if (lbl) lbl.textContent = audioMuted
-        ? 'MUTED · M TO UNMUTE'
-        : 'DEEP HOUSE · 124 BPM · GENESIS FM';
+      if (lbl) lbl.textContent = audioMuted ? 'MUTED · M TO UNMUTE' : 'BIG STEPPER (B.FOY)';
     }
     function makeBitcrusher(bits) {
       const ws = audioCtx.createWaveShaper();
