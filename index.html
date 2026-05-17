@@ -6909,7 +6909,8 @@
     stageStartCarts = cartsRemaining;
     stageStartTime = performance.now();
     _resetStageStyleStats();
-    _resetReplayBuffer();
+    // (_replayBuffer is initialized empty further down; no reset call needed
+    //  here — calling it before the `const` would hit a TDZ error.)
 
     // =========================================================================
     // main loop
