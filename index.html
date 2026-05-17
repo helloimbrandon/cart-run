@@ -1334,38 +1334,97 @@
     .mobile-active #mobileHint { bottom: 60px; font-size: 11px; }
 
     /* =====================================================================
+       DRIVER PIP — small retro comms window. Canvas-drawn face reacts to
+       game state. No external assets.
+       ===================================================================== */
+    #driverPip {
+      position: fixed;
+      top: 16px; left: 50%;
+      transform: translateX(-50%);
+      width: 168px;
+      pointer-events: none;
+      z-index: 4;
+      font-family: 'Russo One', sans-serif;
+      text-align: center;
+    }
+    #driverPip canvas {
+      display: block;
+      width: 168px; height: 124px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 3px solid #fff;
+      background: #11141c;
+    }
+    #driverPip .driver-strip {
+      display: flex; justify-content: space-between;
+      font-style: italic; font-size: 11px; letter-spacing: 3px;
+      color: #ffce4a;
+      padding: 3px 4px 0;
+    }
+    #driverPip .driver-name { color: #fff; }
+    #driverPip .driver-caption {
+      font-style: italic; font-weight: 400;
+      color: #ffce4a;
+      font-size: 13px; letter-spacing: 2px;
+      margin-top: 2px;
+      min-height: 16px;
+    }
+    /* shake on hit */
+    @keyframes driverShake {
+      0%, 100% { transform: translateX(-50%) translate(0, 0); }
+      25%      { transform: translateX(-50%) translate(-4px, 1px); }
+      50%      { transform: translateX(-50%) translate(3px, -1px); }
+      75%      { transform: translateX(-50%) translate(-2px, 1px); }
+    }
+    #driverPip.shake { animation: driverShake 180ms steps(4, end) both; }
+    /* mobile: hide */
+    .mobile-active #driverPip { display: none !important; }
+
+    /* =====================================================================
        POLISH PASS — glow purge + arcade-size recap + HUD unification
        (One italic-white-on-yellow-label sportsbrut system. Hard drop
         shadows only — no 0-blur glow on anything.)
        ===================================================================== */
 
-    /* ---- glow purge: pin every text/box shadow to hard drops only ---- */
-    #rallyBL                          { text-shadow: 4px 4px 0 #000 !important; }
-    #countdown                        { text-shadow: 12px 12px 0 var(--arc-navy) !important; }
-    #countdown.go                     { text-shadow: 14px 14px 0 var(--arc-navy) !important; }
-    #stageRecap .rank-badge           { text-shadow: 6px 6px 0 var(--arc-navy) !important; }
-    .callout-text                     { text-shadow: 4px 4px 0 var(--callout-color, #ff7a00), 7px 7px 0 #001a3a !important; }
-    .thrust-num                       { text-shadow: 7px 7px 0 #000 !important; }
-    .scoreboard .sb-num               { text-shadow: 5px 5px 0 #000 !important; }
-    .scoreboard .sb-of                { text-shadow: 3px 3px 0 #000 !important; }
-    .scoreboard .sb-lbl               { text-shadow: 2px 2px 0 #000 !important; }
-    #rallyTR .val                     { text-shadow: 4px 4px 0 #000 !important; }
-    #scoreBoard .sb-score             { text-shadow: 6px 6px 0 #000 !important; }
-    #scoreBoard .sb-lbl               { text-shadow: 2px 2px 0 #000 !important; }
-    #rallyTurn .arrow                 { text-shadow: 4px 4px 0 #000 !important; }
-    /* WipEout cluster + boards: kill any leftover bloom from shadows */
-    .thrust-unit-pill                 { box-shadow: 4px 4px 0 #000 !important; }
-    .thrust-bar                       { box-shadow: 4px 4px 0 rgba(0,0,0,0.55) !important; }
+    /* ---- UI minimal: floating text only, no shadows, no backgrounds ---- */
+    #rallyBL,
+    #rallyTR .val,
+    #rallyTR .lbl,
+    #rallyTurn .arrow,
+    #rallyTurn .lbl,
+    .scoreboard .sb-num,
+    .scoreboard .sb-of,
+    .scoreboard .sb-lbl,
+    #scoreBoard .sb-score,
+    #scoreBoard .sb-lbl,
+    .thrust-num,
+    .thrust-meter-label,
+    .callout-text,
+    .callout-sub,
+    #countdown,
+    #countdown.go {
+      text-shadow: none !important;
+    }
+    /* keep hard offset shadow on the recap title + rank because the modal is
+       a full-screen overlay where readability needs the depth */
+    #stageRecap .rank-badge { text-shadow: 6px 6px 0 var(--arc-navy) !important; }
+    #stageRecap .recap-header { text-shadow: 7px 7px 0 #001a3a !important; }
+
+    /* box-shadows: keep only on the recap CTA + arcade callouts (those are
+       arcade-hit moments). Strip from all in-race panels. */
+    .thrust-unit-pill                 { box-shadow: none !important; }
+    .thrust-bar                       { box-shadow: none !important; }
+    .speed-box, .gear-box             { box-shadow: none !important; }
+    #thrustCluster                    { filter: none !important; }
     .callout-tab                      { box-shadow: 6px 6px 0 rgba(0,0,0,0.65) !important; }
-    .speed-box, .gear-box             { box-shadow: 8px 8px 0 rgba(0,0,0,0.55) !important; }
 
     /* ---- UI UNIFICATION — all readouts share italic-white + yellow labels ---- */
 
-    /* TOP-LEFT cargo / delivery — bigger label, integrated backing */
+    /* TOP-LEFT cargo / delivery — pure floating text */
     #cargoBoard, #deliveryBoard {
-      background: rgba(0, 0, 0, 0.35);
-      border-left: 4px solid #ffce4a;
-      padding: 6px 14px 8px 16px;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
     }
     #cargoBoard    { top: 16px;  left: 16px; }
     #deliveryBoard { top: 150px; left: 16px; }
@@ -1376,12 +1435,12 @@
     }
     .scoreboard .sb-num { font-style: italic; }
 
-    /* TOP-RIGHT score — arcade scoreboard treatment */
+    /* TOP-RIGHT score — pure floating text */
     #scoreBoard {
       top: 16px; right: 16px;
-      background: rgba(0, 0, 0, 0.35);
-      border-right: 4px solid #ffce4a;
-      padding: 6px 16px 8px 14px;
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
       text-align: right;
     }
     #scoreBoard .sb-score {
@@ -1403,14 +1462,14 @@
     /* race info panel slides further down under bigger SCORE */
     #rallyTR { top: 158px !important; }
 
-    /* TOP-RIGHT race info — bring closer to speed-cluster language */
+    /* TOP-RIGHT race info — pure floating */
     #rallyTR {
-      background: rgba(0, 0, 0, 0.35) !important;
+      background: transparent !important;
       border: none !important;
-      border-right: 4px solid #ffce4a !important;
-      padding: 6px 16px 8px 14px !important;
+      padding: 0 !important;
       box-shadow: none !important;
       gap: 2px !important;
+      min-width: 0 !important;
     }
     #rallyTR .lbl {
       font-family: 'Russo One', sans-serif;
@@ -1429,13 +1488,13 @@
     }
     #rallyTR .row:nth-child(3) .val { font-size: 56px !important; }
 
-    /* TOP-CENTER turn — chunkier pill */
+    /* TOP-CENTER turn — pure floating */
     #rallyTurn {
-      background: rgba(0, 0, 0, 0.35) !important;
+      background: transparent !important;
       border: none !important;
-      border-top: 4px solid #ffce4a !important;
-      padding: 6px 24px 10px !important;
+      padding: 0 !important;
       box-shadow: none !important;
+      gap: 8px !important;
     }
     #rallyTurn .lbl {
       font-family: 'Russo One', sans-serif;
@@ -1453,12 +1512,11 @@
       color: #fff !important;
     }
 
-    /* BOTTOM-LEFT delta — match other boards */
+    /* BOTTOM-LEFT delta — pure floating */
     #rallyBL {
-      background: rgba(0, 0, 0, 0.35) !important;
+      background: transparent !important;
       border: none !important;
-      border-left: 4px solid #2ce053 !important;
-      padding: 6px 18px 8px 14px !important;
+      padding: 0 !important;
       box-shadow: none !important;
       font-family: 'Russo One', sans-serif !important;
       font-style: italic !important;
@@ -2180,6 +2238,16 @@
 
   <!-- voice bark subtitle -->
   <div id="bark"></div>
+
+  <!-- driver picture-in-picture comms window -->
+  <div id="driverPip">
+    <canvas id="driverCanvas" width="84" height="62"></canvas>
+    <div class="driver-strip">
+      <span class="driver-name">DRIVER</span>
+      <span id="driverState">FOCUSED</span>
+    </div>
+    <div class="driver-caption" id="driverCaption">&nbsp;</div>
+  </div>
 
   <!-- music element (Brandon's playlist) — fires on first user gesture, advances on `ended` -->
   <audio id="bigStepper" preload="auto"></audio>
@@ -4078,6 +4146,7 @@
           } catch(_) {}
           bark('BOOST');
           arcadeCallout('BOOST', { type: 'boost', pos: 'lt', holdMs: 600 });
+          setDriverState('happy', 1.5, 'LET\'S GO!');
           // type/motion: speed digit punches, gear flickers
           const speedEl = document.getElementById('rKmh');
           const gearEl  = document.getElementById('rGear');
@@ -4167,6 +4236,8 @@
       revGain.connect(audioMaster);
 
       startEngineSFX();
+      // load the SFX bank — procedurally-generated retro WAVs (CC0 by algorithm)
+      loadSFXBank();
       // (procedural pad + drum scheduler disabled — replaced by BIG STEPPER MP3)
 
       // ---- BRANDON's playlist (advances on `ended`, cycles forever) ----
@@ -4472,6 +4543,27 @@
     window.loadSample = (n, u) => loadSample(n, u);
     window.playSample = (n, o) => playSample(n, o);
 
+    // ----- SFX sample bank (loaded once on audio start) -----
+    let _sfxBankReady = false;
+    async function loadSFXBank() {
+      const bank = [
+        ['pickup',     'audio/sfx/pickup.wav'],
+        ['restock',    'audio/sfx/restock.wav'],
+        ['crash',      'audio/sfx/crash.wav'],
+        ['bump',       'audio/sfx/bump.wav'],
+        ['clack',      'audio/sfx/clack.wav'],
+        ['boost',      'audio/sfx/boost.wav'],
+        ['beep',       'audio/sfx/beep.wav'],
+        ['checkpoint', 'audio/sfx/checkpoint.wav'],
+        ['warning',    'audio/sfx/warning.wav'],
+      ];
+      await Promise.all(bank.map(([n, u]) => loadSample(n, u)));
+      _sfxBankReady = true;
+    }
+    function useSample(name) {
+      return _sfxBankReady && _samples[name];
+    }
+
     // ----- SFX -----
     let engineOsc = null, engineGain = null, engineLP = null;
     function startEngineSFX() {
@@ -4493,6 +4585,7 @@
     }
     function sfxClack(t) {
       if (!audioCtx) return;
+      if (useSample('clack')) { playSample('clack', { gain: 0.55, bp: 2400 }); return; }
       const buf = audioCtx.createBuffer(1, 320, audioCtx.sampleRate);
       const d = buf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 40);
@@ -4504,6 +4597,7 @@
     }
     function sfxPickup(t) {
       if (!audioCtx) return;
+      if (useSample('pickup')) { playSample('pickup', { gain: 0.6, bp: 2200 }); return; }
       const notes = [600, 900, 1350];
       for (let i = 0; i < notes.length; i++) {
         const tt = t + i * 0.06;
@@ -4515,6 +4609,7 @@
     }
     function sfxBoost(t) {
       if (!audioCtx) return;
+      if (useSample('boost')) { playSample('boost', { gain: 0.7, bp: 1800 }); return; }
       const dur = 0.5;
       const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
       const d = buf.getChannelData(0);
@@ -4536,6 +4631,7 @@
     }
     function sfxCrash(t) {
       if (!audioCtx) return;
+      if (useSample('crash')) { playSample('crash', { gain: 0.75, bp: 1500 }); return; }
       const o = audioCtx.createOscillator(); o.type = 'sine';
       o.frequency.setValueAtTime(140, t);
       o.frequency.exponentialRampToValueAtTime(40, t + 0.32);
@@ -4553,6 +4649,7 @@
     }
     function sfxBump(t) {
       if (!audioCtx) return;
+      if (useSample('bump')) { playSample('bump', { gain: 0.55, bp: 2000 }); return; }
       const o = audioCtx.createOscillator(); o.type = 'triangle';
       o.frequency.setValueAtTime(180, t);
       o.frequency.exponentialRampToValueAtTime(80, t + 0.1);
@@ -5005,6 +5102,173 @@
       else                 { arcTurnPad.textContent = '▶'; if (mag > 0.18) arcTurnPad.classList.add('hard'); else arcTurnPad.classList.add('warn'); }
     }
 
+    // ===================================================================
+    //  DRIVER PIP — pixel-art canvas face that reacts to game state.
+    //  Expressions: happy / focused / concerned / panic / angry / relieved
+    // ===================================================================
+    const driverCanvas = document.getElementById('driverCanvas');
+    const driverCtx = driverCanvas ? driverCanvas.getContext('2d') : null;
+    const driverStateEl = document.getElementById('driverState');
+    const driverCaptionEl = document.getElementById('driverCaption');
+    const driverPipEl = document.getElementById('driverPip');
+    let driverState = 'focused';
+    let driverStateTimer = 0;     // forced-state hold time
+    let driverAnimT = 0;          // accumulating time for blink/breathe
+    let _lastDriverDraw = 0;
+    let _captionUntil = 0;
+
+    function setDriverState(s, holdSec, caption) {
+      driverState = s;
+      driverStateTimer = Math.max(driverStateTimer, holdSec || 0);
+      if (driverStateEl) driverStateEl.textContent = s.toUpperCase();
+      if (caption && driverCaptionEl) {
+        driverCaptionEl.textContent = caption;
+        _captionUntil = performance.now() + 1400;
+      }
+    }
+    function driverHit() {
+      driverPipEl && driverPipEl.classList.remove('shake');
+      void driverPipEl && driverPipEl.offsetWidth;
+      driverPipEl && driverPipEl.classList.add('shake');
+    }
+    // pixel-art renderer — palette + draw helpers
+    const DRIVER_PALETTE = {
+      skin:   '#f3c79a',
+      skinDk: '#b07a4e',
+      hair:   '#3a2a18',
+      cap:    '#ff7a00',
+      capDk:  '#a84a00',
+      visor:  '#001a3a',
+      mouth:  '#3a1010',
+      eye:    '#1a1a22',
+      eyeBg:  '#fff',
+      brow:   '#1a1a22',
+      bgA:    '#1c2240',
+      bgB:    '#243054',
+    };
+    function pixel(x, y, c, size = 1) {
+      driverCtx.fillStyle = c;
+      driverCtx.fillRect(x, y, size, size);
+    }
+    function rectFill(x, y, w, h, c) {
+      driverCtx.fillStyle = c;
+      driverCtx.fillRect(x, y, w, h);
+    }
+    function drawDriverFace(now) {
+      if (!driverCtx) return;
+      driverAnimT = now;
+      // background scanline-y plates
+      rectFill(0, 0, 84, 62, DRIVER_PALETTE.bgA);
+      for (let yy = 0; yy < 62; yy += 4) rectFill(0, yy, 84, 2, DRIVER_PALETTE.bgB);
+      // expression knobs
+      const blinking = (Math.sin(now * 0.5) > 0.985) || (driverState === 'panic' && Math.sin(now * 8) > 0);
+      const breathe = Math.floor(Math.sin(now * 1.3) * 1);
+      const cx = 42, cy = 32 + breathe;
+      // helmet/cap
+      const capColor = driverState === 'angry' ? DRIVER_PALETTE.capDk : DRIVER_PALETTE.cap;
+      rectFill(cx - 22, cy - 22, 44, 8, capColor);
+      rectFill(cx - 26, cy - 16, 52, 4, capColor);
+      // visor strip
+      rectFill(cx - 22, cy - 14, 44, 3, DRIVER_PALETTE.visor);
+      // face oval
+      rectFill(cx - 18, cy - 10, 36, 22, DRIVER_PALETTE.skin);
+      rectFill(cx - 20, cy - 6,  40, 14, DRIVER_PALETTE.skin);
+      rectFill(cx - 18, cy + 12,  36, 2, DRIVER_PALETTE.skinDk);
+      // neck
+      rectFill(cx - 8, cy + 14, 16, 6, DRIVER_PALETTE.skin);
+      // eyes
+      if (blinking) {
+        rectFill(cx - 11, cy - 3, 6, 1, DRIVER_PALETTE.eye);
+        rectFill(cx + 5,  cy - 3, 6, 1, DRIVER_PALETTE.eye);
+      } else {
+        // eye whites
+        rectFill(cx - 12, cy - 4, 7, 4, DRIVER_PALETTE.eyeBg);
+        rectFill(cx + 5,  cy - 4, 7, 4, DRIVER_PALETTE.eyeBg);
+        // pupils — squint/wide depending on state
+        let pxOff = 0, pyOff = 0, pw = 2, ph = 2;
+        if (driverState === 'angry')   { pyOff = 1; ph = 2; pw = 3; }
+        if (driverState === 'panic')   { pw = 1; ph = 1; }
+        if (driverState === 'concerned'){ pyOff = 1; }
+        if (driverState === 'relieved'){ pyOff = 1; }
+        rectFill(cx - 9 + pxOff,  cy - 3 + pyOff, pw, ph, DRIVER_PALETTE.eye);
+        rectFill(cx + 7 + pxOff,  cy - 3 + pyOff, pw, ph, DRIVER_PALETTE.eye);
+      }
+      // brows (state-driven)
+      if (driverState === 'angry') {
+        // angled inward & down
+        rectFill(cx - 12, cy - 7, 5, 1, DRIVER_PALETTE.brow);
+        rectFill(cx - 11, cy - 6, 4, 1, DRIVER_PALETTE.brow);
+        rectFill(cx + 7,  cy - 7, 5, 1, DRIVER_PALETTE.brow);
+        rectFill(cx + 7,  cy - 6, 4, 1, DRIVER_PALETTE.brow);
+      } else if (driverState === 'concerned' || driverState === 'panic') {
+        // raised at center
+        rectFill(cx - 12, cy - 6, 6, 1, DRIVER_PALETTE.brow);
+        rectFill(cx + 6,  cy - 6, 6, 1, DRIVER_PALETTE.brow);
+      } else if (driverState === 'happy' || driverState === 'relieved') {
+        rectFill(cx - 12, cy - 8, 5, 1, DRIVER_PALETTE.brow);
+        rectFill(cx + 7,  cy - 8, 5, 1, DRIVER_PALETTE.brow);
+      } else { // focused
+        rectFill(cx - 12, cy - 7, 6, 1, DRIVER_PALETTE.brow);
+        rectFill(cx + 6,  cy - 7, 6, 1, DRIVER_PALETTE.brow);
+      }
+      // mouth (state-driven)
+      const my = cy + 6;
+      driverCtx.fillStyle = DRIVER_PALETTE.mouth;
+      if (driverState === 'happy') {
+        rectFill(cx - 4, my,     8, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx - 5, my - 1, 1, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx + 4, my - 1, 1, 1, DRIVER_PALETTE.mouth);
+      } else if (driverState === 'angry') {
+        rectFill(cx - 5, my, 10, 2, DRIVER_PALETTE.mouth);
+        rectFill(cx - 6, my - 1, 2, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx + 5, my - 1, 2, 1, DRIVER_PALETTE.mouth);
+      } else if (driverState === 'panic') {
+        rectFill(cx - 3, my, 7, 3, DRIVER_PALETTE.mouth); // wide-open O
+        rectFill(cx - 2, my - 1, 5, 1, DRIVER_PALETTE.mouth);
+      } else if (driverState === 'concerned') {
+        rectFill(cx - 4, my + 1, 9, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx - 5, my, 2, 1, DRIVER_PALETTE.mouth);
+        rectFill(cx + 4, my, 2, 1, DRIVER_PALETTE.mouth);
+      } else if (driverState === 'relieved') {
+        rectFill(cx - 4, my, 8, 1, DRIVER_PALETTE.mouth);
+      } else { // focused
+        rectFill(cx - 4, my + 1, 8, 1, DRIVER_PALETTE.mouth);
+      }
+      // small CRT scanline overlay across the canvas
+      driverCtx.fillStyle = 'rgba(0,0,0,0.18)';
+      for (let yy = 0; yy < 62; yy += 2) driverCtx.fillRect(0, yy, 84, 1);
+    }
+
+    // periodic driver-state evaluation (called every frame)
+    function tickDriver(now, dt) {
+      if (!driverCtx) return;
+      // hold an event-driven state briefly, then re-evaluate
+      if (driverStateTimer > 0) {
+        driverStateTimer -= dt;
+      } else {
+        const ratio = cartsRemaining / MAX_CARTS;
+        let s;
+        if (ratio < 0.25)      s = 'panic';
+        else if (ratio < 0.50) s = 'concerned';
+        else if (ratio < 0.80) s = 'focused';
+        else                   s = boostActive ? 'happy' : 'focused';
+        if (s !== driverState) {
+          driverState = s;
+          if (driverStateEl) driverStateEl.textContent = s.toUpperCase();
+        }
+      }
+      // clear caption after timeout
+      if (_captionUntil && now >= _captionUntil) {
+        if (driverCaptionEl) driverCaptionEl.textContent = ' ';
+        _captionUntil = 0;
+      }
+      // throttle to 30fps redraws
+      if (now - _lastDriverDraw > 0.033) {
+        drawDriverFace(now);
+        _lastDriverDraw = now;
+      }
+    }
+
     // ----- WipEout-style scoreboard + thrust cluster -----
     const cargoCurEl   = document.getElementById('cargoCur');
     const cargoMaxEl   = document.getElementById('cargoMax');
@@ -5388,6 +5652,7 @@
       stageRecap = true;
       bark('CHECKPOINT');
       try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
+      setDriverState('relieved', 1.6, 'CHECKPOINT!');
       // record this stage's time for the rally HUD
       const ms = performance.now() - stageStartTime;
       lastStageTime = ms;
@@ -5637,6 +5902,9 @@
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
             arcadeCallout('WATCH IT', { type: 'warning', pos: 'lr', holdMs: 700 });
+            // driver: brief angry + shake
+            setDriverState('angry', 1.2, 'WATCH IT!');
+            driverHit();
             // type/motion: red-edge flash + glitch
             const edge = document.getElementById('crashEdge');
             if (edge) {
@@ -5730,6 +5998,7 @@
               cartsRemaining = MAX_CARTS;
               addScore(50 + restored * 5);
               arcadeCallout('FULL LOAD', { type: 'restock', pos: 'lr', size: 'l', subtext: `+${restored} CARTS`, holdMs: 900 });
+              setDriverState('happy', 1.4, 'FULL LOAD!');
             } else {
               // standard +1 cart
               const before = cartsRemaining;
@@ -5737,6 +6006,7 @@
               if (cartsRemaining > before) {
                 addScore(20);
                 arcadeCallout('+1 CART', { type: 'restock', pos: 'lr', subtext: 'RESTOCK', holdMs: 700 });
+              setDriverState('relieved', 1.0, 'RESTOCK!');
               } else {
                 // already full → convert to score + boost
                 addScore(40);
@@ -5946,6 +6216,9 @@
 
       // engine drone follows speed
       if (audioStarted) updateEngineSFX(truckSpeed);
+
+      // driver PIP: pixel-art face reacts to cart count, boost, hits
+      tickDriver(performance.now() / 1000, dt);
 
       // PS1 rally HUD (translucent panels, white numbers, cyan arc)
       updateRallyHUD();
