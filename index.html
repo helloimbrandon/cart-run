@@ -536,34 +536,30 @@
     #rallyTurn .lbl { font-size: 12px; letter-spacing: 2px; color: var(--rally-label); }
     #rallyTurn .arrow { font-size: 26px; line-height: 1; color: var(--rally-white); }
 
-    /* top-right: lap/time + huge italic position */
+    /* top-right: plain PS1 race info panel (LAP / POS / TIME) */
     #rallyTR {
       position: fixed; top: 14px; right: 14px;
-      display: flex; align-items: flex-end; gap: 10px;
-    }
-    #rallyTR .info {
       background: var(--rally-purple);
       border: 1px solid var(--rally-purple-edge);
       border-radius: 3px;
-      padding: 6px 14px;
-      text-align: right;
+      padding: 8px 14px;
+      min-width: 220px;
+      display: flex; flex-direction: column; gap: 3px;
     }
-    #rallyTR .info .header {
-      font-size: 12px; letter-spacing: 2px; color: var(--rally-label);
+    #rallyTR .row {
+      display: grid; grid-template-columns: 56px 1fr;
+      align-items: baseline;
     }
-    #rallyTR .info .time {
+    #rallyTR .lbl {
+      font-family: 'Saira Condensed', sans-serif;
+      font-size: 13px; letter-spacing: 1.5px; font-weight: 700;
+      color: var(--rally-label);
+    }
+    #rallyTR .val {
       font-family: 'Share Tech Mono', monospace;
-      font-size: 32px; font-weight: 700;
+      font-size: 24px; font-weight: 700;
       color: var(--rally-white);
-      letter-spacing: 3px; line-height: 1.08;
-    }
-    #rallyTR .pos {
-      font-family: 'Russo One', sans-serif;
-      font-size: 88px;
-      color: var(--rally-white);
-      font-style: italic;
-      line-height: 0.85;
-      text-shadow: 4px 4px 0 rgba(60, 40, 110, 0.95);
+      text-align: right; letter-spacing: 1.5px;
     }
 
     /* bottom-left: green LCD delta */
@@ -611,54 +607,38 @@
     /* mobile cleanup */
     .mobile-active #rallyTL { font-size: 11px; min-width: 0; padding: 4px 8px; }
     .mobile-active #rallyTL .row { grid-template-columns: 60px 1fr; }
-    .mobile-active #rallyTR .pos { font-size: 56px; }
-    .mobile-active #rallyTR .info .time { font-size: 22px; }
+    .mobile-active #rallyTR { min-width: 0; padding: 4px 8px; }
+    .mobile-active #rallyTR .row { grid-template-columns: 38px 1fr; }
+    .mobile-active #rallyTR .lbl { font-size: 10px; letter-spacing: 1px; }
+    .mobile-active #rallyTR .val { font-size: 16px; }
     .mobile-active #rallyBR .gauge-svg { width: 160px; height: 92px; }
-    .mobile-active #rallyBR .gauge-info .gear { font-size: 54px; }
+    .mobile-active #rallyBR .gauge-info .gear { font-size: 44px; }
 
     /* =====================================================================
        TYPE + MOTION SYSTEM v3 — chunky shadowed digits, arcade motion
        (snapIn / panelPop / flicker / impactPulse / crashFlash / tickerShift)
        ===================================================================== */
 
-    /* --- chunky text-shadow treatment for the level-1 race numbers --- */
-    #rTime {
-      font-size: 36px;
-      letter-spacing: 4px;
-      text-shadow:
-        2px 0 0 #000, -2px 0 0 #000,
-        0 2px 0 #000, 0 -2px 0 #000,
-        4px 4px 0 rgba(60, 40, 110, 0.95);
-    }
-    #rPos {
-      font-size: 104px;
-      letter-spacing: -2px;
-      text-shadow:
-        3px 0 0 #000, -3px 0 0 #000,
-        0 3px 0 #000, 0 -3px 0 #000,
-        6px 6px 0 rgba(60, 40, 110, 1);
-    }
+    /* --- simpler PS1-arcade shadows on the level-1 race numbers --- */
+    /* (no multi-axis outlines — those felt like a modern retro UI kit) */
+    #rTime, #rPos, #rLap { text-shadow: 2px 2px 0 #000; }
     #rallyBR .gauge-info .gear {
-      font-size: 96px;
-      text-shadow:
-        3px 0 0 rgba(0,0,0,0.95), -3px 0 0 rgba(0,0,0,0.95),
-        0 3px 0 rgba(0,0,0,0.95), 0 -3px 0 rgba(0,0,0,0.95),
-        5px 5px 0 rgba(0, 0, 0, 0.7);
+      font-size: 72px;
+      font-style: italic;
+      text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.7);
     }
     #rallyBR .gauge-info .kmh #rKmh {
       font-size: 18px;
       letter-spacing: 2px;
     }
     #rallyBL {
-      font-size: 34px;
-      letter-spacing: 4px;
-      text-shadow:
-        0 0 14px rgba(44, 224, 83, 0.55),
-        2px 2px 0 #000;
+      font-size: 30px;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(44, 224, 83, 0.45), 2px 2px 0 #000;
     }
     #rallyTL .row .val { font-size: 16px; letter-spacing: 1.5px; }
     #rallyTurn .arrow {
-      font-size: 30px;
+      font-size: 26px;
       text-shadow: 2px 2px 0 rgba(0,0,0,0.7);
     }
 
@@ -1466,13 +1446,11 @@
     <span class="arrow" id="rTurnArrow">▲</span>
   </div>
 
-  <!-- top-right: lap / time + huge italic stage position -->
+  <!-- top-right: LAP / POS / TIME — plain PS1 race info box -->
   <div id="rallyTR" class="rally">
-    <div class="info">
-      <div class="header">LAP <span id="rLap">1/3</span> · POS</div>
-      <div class="time" id="rTime">00'00"00</div>
-    </div>
-    <div class="pos" id="rPos">1</div>
+    <div class="row"><span class="lbl">LAP</span><span class="val" id="rLap">1/3</span></div>
+    <div class="row"><span class="lbl">POS</span><span class="val" id="rPos">1</span></div>
+    <div class="row"><span class="lbl">TIME</span><span class="val" id="rTime">00'00"00</span></div>
   </div>
 
   <!-- bottom-left: green LCD delta -->
