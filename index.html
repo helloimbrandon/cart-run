@@ -2282,20 +2282,31 @@
     }
     #mainMenu.show { display: block; }
 
-    /* abstract green-grid background — perspective city/circuit pattern.
-       Two stacked gradients give a low-fi grid. CSS animation scrolls it. */
+    /* Matrix-ish vertical green text streaks behind the menu, layered with
+       a soft radial vignette so the title panel reads cleanly. */
     #menuGridBG {
       position: absolute; inset: 0;
       background:
-        repeating-linear-gradient(0deg,   rgba(40,200,100,0.10) 0px, rgba(40,200,100,0.10) 1px, transparent 1px, transparent 28px),
-        repeating-linear-gradient(90deg,  rgba(40,200,100,0.08) 0px, rgba(40,200,100,0.08) 1px, transparent 1px, transparent 28px),
-        radial-gradient(ellipse at 50% 70%, rgba(20,80,40,0.55) 0%, rgba(0,0,0,0.95) 75%);
-      animation: menuGridScroll 24s linear infinite;
-      filter: blur(0.4px);
+        /* short angled "dash" rows that look like falling text columns */
+        repeating-linear-gradient(105deg,
+          rgba(40,200,90,0.18) 0px, rgba(40,200,90,0.18) 2px,
+          transparent 2px, transparent 5px,
+          rgba(20,140,60,0.14) 5px, rgba(20,140,60,0.14) 7px,
+          transparent 7px, transparent 14px),
+        repeating-linear-gradient(85deg,
+          rgba(50,220,110,0.10) 0px, rgba(50,220,110,0.10) 1px,
+          transparent 1px, transparent 11px),
+        /* vertical column "rain" stripes */
+        repeating-linear-gradient(90deg,
+          rgba(20,80,40,0.20) 0px, rgba(20,80,40,0.20) 1px,
+          transparent 1px, transparent 28px),
+        radial-gradient(ellipse at 50% 60%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.95) 85%),
+        #02080a;
+      animation: menuGridScroll 9s linear infinite;
     }
     @keyframes menuGridScroll {
-      0%   { background-position: 0 0, 0 0, 0 0; }
-      100% { background-position: 0 280px, 280px 0, 0 0; }
+      0%   { background-position: 0 0,    0 0,    0 0,    0 0,    0 0; }
+      100% { background-position: 0 360px, 0 480px, 0 0,    0 0,    0 0; }
     }
 
     /* low-poly rotating cart sits behind the menu */
@@ -2317,28 +2328,53 @@
       mix-blend-mode: multiply;
     }
 
-    /* title block — chunky, low-res */
+    /* Chunky dark-green title panel with a ghost echo behind the word.
+       Modeled after late-PS1 "Key CONFIG" boot screens. */
     #mainMenu .menu-title-row {
-      position: absolute; top: 32px; left: 36px;
+      position: absolute; top: 36px; left: 40px;
       pointer-events: none;
       z-index: 4;
+      padding: 18px 32px 14px;
+      background: #1a4a22;
+      border: 4px solid #0a2a12;
+      box-shadow:
+        6px 6px 0 #051a0c,
+        inset 0 0 0 2px #0e3018,
+        inset 2px 2px 0 rgba(255,255,255,0.06);
+      border-radius: 6px;
+      min-width: 280px;
     }
     #mainMenu .menu-sub {
-      font-size: 14px; letter-spacing: 5px;
-      color: #5cd87a;
-      text-shadow: 2px 2px 0 #0a3a18;
-      margin-bottom: 4px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; letter-spacing: 4px;
+      color: #d8ff90;
+      text-shadow: 1px 1px 0 #0a2010;
+      margin-bottom: -4px;
+      position: relative;
+      z-index: 2;
     }
     #mainMenu .menu-title {
       font-family: 'Russo One', sans-serif;
       font-style: italic;
-      font-size: 120px; line-height: 0.9;
-      letter-spacing: 8px;
-      color: #b8ffae;
+      font-size: 72px; line-height: 0.95;
+      letter-spacing: 4px;
+      color: #d8ff90;
       text-shadow:
-        5px 5px 0 #0a3a18,
-        10px 10px 0 #051a0c,
-        0 0 22px rgba(150, 255, 170, 0.35);
+        2px 2px 0 #0a2010,
+        4px 4px 0 #051a0c,
+        0 0 14px rgba(200, 255, 160, 0.45);
+      position: relative;
+      z-index: 2;
+    }
+    /* ghost echo of the title behind it */
+    #mainMenu .menu-title::after {
+      content: 'CART';
+      position: absolute; top: 6px; left: 12px;
+      color: rgba(60, 140, 80, 0.45);
+      letter-spacing: 4px;
+      filter: blur(0.3px);
+      z-index: -1;
+      pointer-events: none;
     }
 
     /* option list — left aligned, chunky, selected has triangle cursor */
@@ -2352,26 +2388,27 @@
       min-width: 340px;
     }
     #mainMenu .menu-options .opt {
-      font-family: 'Russo One', sans-serif;
-      font-style: italic;
-      font-size: 30px; letter-spacing: 6px;
-      color: #5cd87a;
+      font-family: 'Share Tech Mono', monospace;
+      font-style: normal;
+      font-size: 36px; letter-spacing: 7px;
+      color: #d8ff90;
       text-shadow: 3px 3px 0 #051a0c;
-      padding: 6px 14px 6px 38px;
+      padding: 6px 14px 6px 48px;
       position: relative;
       transition: color 80ms steps(3, end);
     }
     #mainMenu .menu-options .opt.sel {
-      color: #ffffe8;
-      text-shadow: 3px 3px 0 #051a0c, 0 0 14px rgba(180, 255, 200, 0.5);
+      color: #f8ffe0;
+      text-shadow: 3px 3px 0 #051a0c, 0 0 14px rgba(200, 255, 160, 0.55);
       animation: menuSelPulse 600ms steps(4, end) infinite;
     }
     #mainMenu .menu-options .opt.sel::before {
       content: '▶';
-      position: absolute; left: 6px; top: 50%;
+      position: absolute; left: 12px; top: 50%;
       transform: translateY(-50%);
-      color: #ffb036;
-      text-shadow: 2px 2px 0 #1a0a00;
+      color: #50d878;
+      text-shadow: 2px 2px 0 #0a2010;
+      font-size: 32px;
       animation: menuCursorBlink 420ms steps(3, end) infinite;
     }
     @keyframes menuSelPulse {
@@ -2392,18 +2429,22 @@
     }
     #mainMenu .menu-options .opt.sel .opt-val { color: #ffefb8; }
 
-    /* status bar across the bottom — PS1 config screen look */
+    /* status bar across the bottom — green-bordered config strip with
+       dot-leader monospace text, matching the reference. */
     #mainMenu .menu-statusbar {
-      position: absolute; bottom: 18px; left: 56px; right: 56px;
+      position: absolute; bottom: 18px; left: 40px; right: 40px;
       font-family: 'Share Tech Mono', monospace;
-      font-size: 12px; letter-spacing: 3px;
-      color: #6df068;
+      font-size: 16px; letter-spacing: 3px;
+      color: #d8ff90;
       text-shadow: 1px 1px 0 #021008;
-      padding: 6px 12px;
-      background: rgba(20, 60, 28, 0.55);
-      border: 1px solid rgba(120, 240, 130, 0.35);
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+      padding: 10px 16px;
+      background: #1a4a22;
+      border: 3px solid #0a2a12;
+      box-shadow: inset 0 0 0 2px #0e3018, 4px 4px 0 #051a0c;
       z-index: 4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* full-screen confirm flash */
@@ -4024,11 +4065,14 @@
     function _updateMenuStatus() {
       const s = document.getElementById('menuStatus');
       if (!s) return;
-      s.textContent =
-        `VERSION 0.04 · SOUND: ${_settings.sound ? 'ON' : 'OFF'} · ` +
-        `MUSIC: ${_settings.music ? 'ON' : 'OFF'} · ` +
-        `CONTROL: ${_settings.control} · ` +
-        `CRT: ${_settings.crt ? 'ON' : 'OFF'} · PRESS START`;
+      // PS1 config-style: dot-leader rows
+      const pad = (lbl, val, dots = 6) => `${lbl}${'.'.repeat(dots)}${val}`;
+      s.innerHTML =
+        `${pad('SOUND',   _settings.sound ? 'ON' : 'OFF')}   ` +
+        `${pad('MUSIC',   _settings.music ? 'ON' : 'OFF')}   ` +
+        `${pad('CRT',     _settings.crt   ? 'ON' : 'OFF')}   ` +
+        `${pad('CONTROL', _settings.control)}   ` +
+        `VER..0.04`;
     }
     function _renderMenuOptions() {
       const root = document.getElementById('menuOptions');
@@ -4701,6 +4745,35 @@
       hl.position.set(0, 0.9, 0.82); g.add(hl);
       const tl = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.04), new THREE.MeshBasicMaterial({ color: 0xcc2020 }));
       tl.position.set(0, 0.9, -0.82); g.add(tl);
+      // Hi-vis safety flag — tall pole + fluorescent orange pennant so the
+      // bike isn't a tiny silhouette you discover at the last second.
+      const pole = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.04, 0.04, 2.5, 6),
+        new THREE.MeshLambertMaterial({ color: 0x222 })
+      );
+      pole.position.set(0, 3.2, -0.1);
+      g.add(pole);
+      const flag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.34, 0.05),
+        new THREE.MeshBasicMaterial({ color: 0xff5a3a })
+      );
+      flag.position.set(0.28, 3.9, -0.1);
+      g.add(flag);
+      // beacon dot on top of the helmet (glowing red so it pops at distance)
+      const beacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 8, 6),
+        new THREE.MeshBasicMaterial({ color: 0xff3a30 })
+      );
+      beacon.position.set(0, 2.4, -0.05);
+      g.add(beacon);
+      // ground shadow disc so it reads as "on the road"
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(0.85, 14),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = 0.04;
+      g.add(shadow);
       setShadows(g, true, true);
       return g;
     }
@@ -4793,62 +4866,324 @@
       g._rotor = rotor;
       g._tail  = tail;
       g._shadow = shadow;
+      g._kind = 'heli';
       return g;
     }
 
+    // ----- variant air vehicles: jet, ufo, bird, balloon -----
+    function makeJet() {
+      const g = new THREE.Group();
+      const fuselage = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.55, 0.55, 5.8, 10),
+        new THREE.MeshLambertMaterial({ color: 0xe8e8e8 })
+      );
+      fuselage.rotation.x = Math.PI / 2;
+      g.add(fuselage);
+      // nose cone
+      const nose = new THREE.Mesh(
+        new THREE.ConeGeometry(0.55, 1.4, 10),
+        new THREE.MeshLambertMaterial({ color: 0xc8c8c8 })
+      );
+      nose.rotation.x = -Math.PI / 2;
+      nose.position.z = 3.6;
+      g.add(nose);
+      // wings — broad swept
+      const wing = new THREE.Mesh(
+        new THREE.BoxGeometry(7.0, 0.16, 1.4),
+        new THREE.MeshLambertMaterial({ color: 0xb8b8b8 })
+      );
+      wing.position.set(0, -0.05, -0.4);
+      g.add(wing);
+      // tail fin (vertical)
+      const fin = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16, 1.2, 1.0),
+        new THREE.MeshLambertMaterial({ color: 0xc83030 })
+      );
+      fin.position.set(0, 0.7, -2.4);
+      g.add(fin);
+      // horizontal tail planes
+      const htail = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 0.12, 0.6),
+        new THREE.MeshLambertMaterial({ color: 0xb8b8b8 })
+      );
+      htail.position.set(0, 0.3, -2.4);
+      g.add(htail);
+      // exhaust glow (cyan / orange flicker)
+      const flame = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.34, 0.10, 1.8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffaa30, transparent: true, opacity: 0.85 })
+      );
+      flame.rotation.x = Math.PI / 2;
+      flame.position.z = -3.6;
+      g.add(flame);
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(3.0, 16),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.30, depthWrite: false })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      g._flame = flame;
+      g._shadow = shadow;
+      g._kind = 'jet';
+      return g;
+    }
+    function makeUFO() {
+      const g = new THREE.Group();
+      // saucer base
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(2.6, 1.4, 0.6, 18),
+        new THREE.MeshLambertMaterial({ color: 0xb8b8c8 })
+      );
+      body.position.y = 0.1;
+      g.add(body);
+      const rim = new THREE.Mesh(
+        new THREE.TorusGeometry(2.6, 0.22, 8, 22),
+        new THREE.MeshBasicMaterial({ color: 0xff3a30 })
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.position.y = -0.05;
+      g.add(rim);
+      // dome
+      const dome = new THREE.Mesh(
+        new THREE.SphereGeometry(1.2, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x00ffd4, transparent: true, opacity: 0.7 })
+      );
+      dome.position.y = 0.4;
+      g.add(dome);
+      // ring of blinking lights (cyan/yellow alternating)
+      const ringGroup = new THREE.Group();
+      for (let i = 0; i < 12; i++) {
+        const ang = (i / 12) * Math.PI * 2;
+        const led = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 6, 4),
+          new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffe44a : 0x00d4ff })
+        );
+        led.position.set(Math.sin(ang) * 2.3, -0.05, Math.cos(ang) * 2.3);
+        ringGroup.add(led);
+      }
+      g.add(ringGroup);
+      // tractor beam (downward translucent cone)
+      const beam = new THREE.Mesh(
+        new THREE.ConeGeometry(2.0, 12, 14, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x00ffd4, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false })
+      );
+      beam.position.y = -6.4;
+      g.add(beam);
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(3.4, 18),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      g._rotor = ringGroup;   // spin the LED ring like a rotor for free animation
+      g._shadow = shadow;
+      g._kind = 'ufo';
+      return g;
+    }
+    function makeBird() {
+      // Giant cargo bird — chunky low-poly, two flapping wings.
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(0.9, 10, 8),
+        new THREE.MeshLambertMaterial({ color: 0x3a2a18 })
+      );
+      body.scale.set(1.0, 0.85, 1.7);
+      g.add(body);
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.55, 8, 6),
+        new THREE.MeshLambertMaterial({ color: 0x4a3a28 })
+      );
+      head.position.set(0, 0.45, 1.5);
+      g.add(head);
+      const beak = new THREE.Mesh(
+        new THREE.ConeGeometry(0.18, 0.6, 6),
+        new THREE.MeshLambertMaterial({ color: 0xffce4a })
+      );
+      beak.rotation.x = -Math.PI / 2;
+      beak.position.set(0, 0.40, 2.05);
+      g.add(beak);
+      const eye = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 6, 4),
+        new THREE.MeshBasicMaterial({ color: 0xff3a30 })
+      );
+      eye.position.set(0.18, 0.55, 1.7);
+      g.add(eye);
+      const wingL = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 0.12, 1.1),
+        new THREE.MeshLambertMaterial({ color: 0x2a1808 })
+      );
+      wingL.position.set(-1.6, 0.2, 0);
+      g.add(wingL);
+      const wingR = wingL.clone();
+      wingR.position.x = 1.6;
+      g.add(wingR);
+      // tail
+      const tail = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.10, 0.8),
+        new THREE.MeshLambertMaterial({ color: 0x2a1808 })
+      );
+      tail.position.set(0, 0.05, -1.4);
+      g.add(tail);
+      // carrying a small box of carts under the talons
+      const sack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.4, 0.9),
+        new THREE.MeshLambertMaterial({ color: 0xc88030 })
+      );
+      sack.position.set(0, -0.7, 0.2);
+      g.add(sack);
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(1.8, 14),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      g._wingL = wingL;
+      g._wingR = wingR;
+      g._shadow = shadow;
+      g._kind = 'bird';
+      return g;
+    }
+    function makeBalloon() {
+      const g = new THREE.Group();
+      // envelope (the balloon itself) — chunky teardrop using a sphere
+      const env = new THREE.Mesh(
+        new THREE.SphereGeometry(3.0, 14, 12),
+        new THREE.MeshLambertMaterial({ color: 0xff3a3a })
+      );
+      env.scale.set(1, 1.2, 1);
+      env.position.y = 3.6;
+      g.add(env);
+      // alternating color stripes
+      for (let i = 0; i < 4; i++) {
+        const stripe = new THREE.Mesh(
+          new THREE.SphereGeometry(3.02, 14, 4, (i / 4) * Math.PI * 2, Math.PI / 2.4, Math.PI / 4, Math.PI / 2),
+          new THREE.MeshBasicMaterial({ color: i % 2 ? 0xffce4a : 0xfff5b0, side: THREE.DoubleSide })
+        );
+        stripe.scale.set(1, 1.2, 1);
+        stripe.position.y = 3.6;
+        g.add(stripe);
+      }
+      // basket
+      const basket = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 1.0, 1.6),
+        new THREE.MeshLambertMaterial({ color: 0x8a5028 })
+      );
+      basket.position.y = 0.0;
+      g.add(basket);
+      // ropes
+      for (const sx of [-0.7, 0.7]) for (const sz of [-0.7, 0.7]) {
+        const rope = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.04, 2.4, 6),
+          new THREE.MeshLambertMaterial({ color: 0x1a1a1a })
+        );
+        rope.position.set(sx, 1.7, sz);
+        g.add(rope);
+      }
+      const shadow = new THREE.Mesh(
+        new THREE.CircleGeometry(2.4, 16),
+        new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      g._shadow = shadow;
+      g._kind = 'balloon';
+      return g;
+    }
+
+    function makeAirVehicle() {
+      // Pick a random air vehicle for this supply drop.
+      const r = Math.random();
+      if      (r < 0.45) return makeHelicopter();
+      else if (r < 0.65) return makeJet();
+      else if (r < 0.80) return makeUFO();
+      else if (r < 0.92) return makeBird();
+      else               return makeBalloon();
+    }
+
     function makeCartPickup() {
-      // The pickup is just the actual yellow cart model, hovering slightly
-      // above the ground with a small floating "+1" plate. No rings, no
-      // beam — the player should see "that's a cart, pick it up."
+      // The pickup is the actual yellow cart model, ENLARGED + ringed with a
+      // bright green ground halo + tall green beam column so it reads from
+      // across the road. Still keeps the "+1" plate floating above.
       const g = new THREE.Group();
       const cart = makeCartMesh();
-      cart.scale.set(1.05, 1.05, 1.05);
-      cart.position.y = 0.6;     // hover so it doesn't z-fight the road
+      cart.scale.set(1.5, 1.5, 1.5);
+      cart.position.y = 1.0;       // hover higher so the halo reads under it
       g.add(cart);
-      // small +1 plate floating above
-      const sign = makeTextSign('+1', 1.0, 0.55, '#2ce053', '#001a3a');
-      sign.position.set(0, 2.3, 0);
+      // ground halo — flat translucent green disc that pulses
+      const halo = new THREE.Mesh(
+        new THREE.CircleGeometry(2.2, 24),
+        new THREE.MeshBasicMaterial({ color: 0x2ce053, transparent: true, opacity: 0.45, depthWrite: false })
+      );
+      halo.rotation.x = -Math.PI / 2;
+      halo.position.y = 0.06;
+      g.add(halo);
+      // bright inner halo
+      const haloIn = new THREE.Mesh(
+        new THREE.CircleGeometry(1.3, 22),
+        new THREE.MeshBasicMaterial({ color: 0xaaffae, transparent: true, opacity: 0.55, depthWrite: false })
+      );
+      haloIn.rotation.x = -Math.PI / 2;
+      haloIn.position.y = 0.08;
+      g.add(haloIn);
+      // tall vertical beam column to flag the pickup at distance
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.42, 0.42, 5.5, 8),
+        new THREE.MeshBasicMaterial({ color: 0x88ff9a, transparent: true, opacity: 0.32, depthWrite: false })
+      );
+      beam.position.y = 2.8;
+      g.add(beam);
+      // floating "+1" plate
+      const sign = makeTextSign('+1', 1.4, 0.7, '#2ce053', '#001a3a');
+      sign.position.set(0, 3.3, 0);
       g.add(sign);
       g._core = cart;
       g._sign = sign;
+      g._halo = halo;
+      g._haloIn = haloIn;
+      g._beam = beam;
       return g;
     }
     function makeBoostPickup() {
-      // CYAN BOOST pickup — silhouette/colour clearly different from the GREEN
-      // cart-restock pickup. Stretched bipyramid shape (reads as a power bolt)
-      // surrounded by a cyan double ring + cyan beam column.
+      // CYAN BOOST pickup — bigger crystal, bigger rings, tall beam, ground
+      // halo so it reads from across the stage.
       const g = new THREE.Group();
       // Stretched octahedron — taller than wide → "power crystal / bolt"
       const core = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.95, 0),
-        new THREE.MeshBasicMaterial({ color: 0xffe44a })   // bright yellow crystal core
+        new THREE.OctahedronGeometry(1.25, 0),
+        new THREE.MeshBasicMaterial({ color: 0xffe44a })
       );
-      core.scale.set(0.7, 1.5, 0.7);
-      core.position.y = 1.9;
+      core.scale.set(0.75, 1.6, 0.75);
+      core.position.y = 2.4;
       g.add(core);
-      // outer ring — CYAN to distinguish from green cart-restock pickups
+      // outer / inner cyan rings — bigger
       const ringMat = new THREE.MeshBasicMaterial({ color: 0x00d4ff });
-      const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.14, 8, 24), ringMat);
+      const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.20, 8, 26), ringMat);
       ringOuter.rotation.x = Math.PI / 2;
-      ringOuter.position.y = 0.4;
+      ringOuter.position.y = 0.5;
       g.add(ringOuter);
       const ringInner = new THREE.Mesh(
-        new THREE.TorusGeometry(0.95, 0.08, 8, 22),
+        new THREE.TorusGeometry(1.25, 0.12, 8, 24),
         new THREE.MeshBasicMaterial({ color: 0xa8f0ff })
       );
       ringInner.rotation.x = Math.PI / 2;
-      ringInner.position.y = 0.52;
+      ringInner.position.y = 0.62;
       g.add(ringInner);
-      // beam column in cyan
-      const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.32, 0.32, 2.6, 8),
-        new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.34 })
+      // ground halo disc
+      const halo = new THREE.Mesh(
+        new THREE.CircleGeometry(2.6, 26),
+        new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.40, depthWrite: false })
       );
-      beam.position.y = 1.4;
+      halo.rotation.x = -Math.PI / 2;
+      halo.position.y = 0.06;
+      g.add(halo);
+      // tall beam in cyan
+      const beam = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.45, 0.45, 6.0, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.36, depthWrite: false })
+      );
+      beam.position.y = 3.0;
       g.add(beam);
       g._core = core;
       g._ring = ringOuter;
       g._ringInner = ringInner;
+      g._halo = halo;
+      g._beam = beam;
       return g;
     }
 
@@ -4895,6 +5230,15 @@
       // small bumper accents in same red, makes the silhouette pop
       const bump = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 0.08), new THREE.MeshBasicMaterial({ color: 0xff2030 }));
       bump.position.set(0, 0.55, -2.6); g.add(bump);
+      // small roof beacon so the car silhouette pops at distance — color
+      // contrasts the body (yellow on dark, cyan on light) for legibility.
+      const beaconCol = (color & 0xffffff) >= 0x808080 ? 0x00d4ff : 0xffe44a;
+      const beacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.22, 8, 6),
+        new THREE.MeshBasicMaterial({ color: beaconCol })
+      );
+      beacon.position.set(0, 1.75, 0);
+      g.add(beacon);
       setShadows(g, true, true);
       return g;
     }
@@ -5629,27 +5973,50 @@
     // dropping a small cluster of cart pickups, then exits ahead.
     // -----------------------------------------------------------------
     function spawnHelicopter() {
-      const mesh = makeHelicopter();
+      const mesh = makeAirVehicle();
       scene.add(mesh);
+      const kind = mesh._kind || 'heli';
       const spawnS = Math.max(0, truckS - rand(60, 100));
       const lat = rand(-3.0, 3.0);
-      const alt = rand(14, 18);
+      // each air vehicle has its own typical altitude + behavior
+      const alt = (kind === 'balloon') ? rand(22, 28)
+                : (kind === 'jet')     ? rand(20, 26)
+                : (kind === 'ufo')     ? rand(16, 22)
+                : (kind === 'bird')    ? rand(10, 14)
+                :                        rand(14, 18);
+      const speedBoost = (kind === 'jet') ? rand(28, 40)
+                       : (kind === 'balloon') ? rand(3, 6)
+                       : (kind === 'ufo') ? rand(10, 18)
+                       : (kind === 'bird') ? rand(6, 10)
+                       : rand(8, 16);
       _helicopters.push({
-        mesh,
+        mesh, kind,
         s: spawnS,
         lat,
         alt,
-        fwdSpeed: truckSpeed + rand(8, 16),   // chase + overtake
+        fwdSpeed: truckSpeed + speedBoost,
         dropTimer: 1.2 + Math.random() * 0.6,
         dropsLeft: 3 + Math.floor(Math.random() * 3),  // 3–5 carts
         life: 0,
       });
-      arcadeCallout('SUPPLY DROP', {
-        type: 'restock', pos: 'lt', size: 's',
-        subtext: 'CHOPPER INBOUND', holdMs: 1200,
+      // Bigger, more readable callout per vehicle type
+      const labels = {
+        heli:    { text: 'SUPPLY DROP',     sub: 'CHOPPER INBOUND' },
+        jet:     { text: 'AIR DROP',        sub: 'JET FLYBY' },
+        ufo:     { text: 'UFO SIGHTING',    sub: 'BEAMING IN CARTS' },
+        bird:    { text: 'CARGO BIRD',      sub: 'INCOMING DELIVERY' },
+        balloon: { text: 'BALLOON DROP',    sub: 'CARTS OVERHEAD' },
+      };
+      const lbl = labels[kind] || labels.heli;
+      arcadeCallout(lbl.text, {
+        type: 'restock', pos: 'ct', size: 'l',
+        subtext: lbl.sub, holdMs: 1500,
       });
       bark('SUPPLY');
-      try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+      try {
+        sfxPickup(audioCtx ? audioCtx.currentTime : 0);
+        sfxBoost(audioCtx ? audioCtx.currentTime + 0.08 : 0);
+      } catch(_) {}
     }
 
     // Spawn one heli-dropped cart pickup at curve-position s + lateral lat,
@@ -8778,14 +9145,18 @@
         pu.mesh._core.rotation.y += dt * 2.4;
         pu.mesh._core.rotation.x += dt * 1.6;
         pu.mesh._core.position.y = 1.8 + Math.sin(pu.t0 * 3) * 0.18;
-        // pulsing rings
-        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.12;
+        // pulsing rings + ground halo
+        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.16;
         if (pu.mesh._ring)      pu.mesh._ring.scale.set(pulse, pulse, 1);
         if (pu.mesh._ringInner) pu.mesh._ringInner.scale.set(2 - pulse, 2 - pulse, 1);
+        if (pu.mesh._halo)      pu.mesh._halo.scale.set(pulse, pulse, 1);
+        if (pu.mesh._beam) {
+          pu.mesh._beam.material.opacity = 0.30 + Math.sin(pu.t0 * 5) * 0.10;
+        }
         if (!gameOver) {
           const ds = Math.abs(pu.s - truckS);
           const dlat = Math.abs(pu.lat - truckLateral);
-          if (ds < 2.2 && dlat < 1.8) {
+          if (ds < 2.6 && dlat < 2.2) {     // wider grab radius matches bigger pickup
             pu.alive = false;
             pu.mesh.visible = false;
             const prevFull = boostMeter >= 0.999;
@@ -8819,14 +9190,19 @@
         } else {
           pu.mesh.position.y = Math.sin(pu.t0 * 2.4) * 0.18;
         }
-        // pulsing rings (kept defensive — the simplified pickup has none)
-        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.14;
+        // pulsing rings + ground halo + beam shimmer
+        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.16;
         if (pu.mesh._ring)      pu.mesh._ring.scale.set(pulse, pulse, 1);
         if (pu.mesh._ringInner) pu.mesh._ringInner.scale.set(2 - pulse, 2 - pulse, 1);
+        if (pu.mesh._halo)      pu.mesh._halo.scale.set(pulse, pulse, 1);
+        if (pu.mesh._haloIn)    pu.mesh._haloIn.scale.set(2 - pulse, 2 - pulse, 1);
+        if (pu.mesh._beam) {
+          pu.mesh._beam.material.opacity = 0.28 + Math.sin(pu.t0 * 5) * 0.10;
+        }
         if (!gameOver && !stageRecap && !introState && !pu.falling) {
           const ds = Math.abs(pu.s - truckS);
           const dlat = Math.abs(pu.lat - truckLateral);
-          if (ds < 2.2 && dlat < 1.8) {
+          if (ds < 2.6 && dlat < 2.2) {     // wider grab radius matches bigger pickup
             pu.alive = false;
             pu.mesh.visible = false;
             if (pu.full) {
@@ -8882,8 +9258,30 @@
         h.mesh.position.z = hp.z + hrt.z * h.lat;
         h.mesh.rotation.y = Math.atan2(htn.x, htn.z);
         // spin rotors fast
-        if (h.mesh._rotor) h.mesh._rotor.rotation.y += dt * 28;
-        if (h.mesh._tail)  h.mesh._tail.rotation.x  += dt * 36;
+        // Per-type animation
+        if (h.kind === 'bird') {
+          const flap = Math.sin(h.life * 9) * 0.9;
+          if (h.mesh._wingL) h.mesh._wingL.rotation.z =  flap;
+          if (h.mesh._wingR) h.mesh._wingR.rotation.z = -flap;
+          h.mesh.position.y = h.alt + Math.sin(h.life * 2.4) * 0.5;
+        } else if (h.kind === 'balloon') {
+          h.mesh.position.y = h.alt + Math.sin(h.life * 0.8) * 0.6;
+          h.mesh.rotation.z = Math.sin(h.life * 0.6) * 0.05;
+        } else if (h.kind === 'jet') {
+          // small thrust flicker
+          if (h.mesh._flame) h.mesh._flame.scale.set(1, 1 + Math.sin(h.life * 30) * 0.25, 1);
+          h.mesh.position.y = h.alt + Math.sin(h.life * 2.2) * 0.25;
+        } else if (h.kind === 'ufo') {
+          // hover wobble + spinning LED ring (stored in _rotor)
+          if (h.mesh._rotor) h.mesh._rotor.rotation.y += dt * 12;
+          h.mesh.position.y = h.alt + Math.sin(h.life * 3.1) * 0.35;
+          h.mesh.rotation.y = Math.atan2(htn.x, htn.z); // override; doesn't bank
+          h.mesh.rotation.z = Math.sin(h.life * 1.4) * 0.06;
+        } else {
+          // helicopter
+          if (h.mesh._rotor) h.mesh._rotor.rotation.y += dt * 28;
+          if (h.mesh._tail)  h.mesh._tail.rotation.x  += dt * 36;
+        }
         // ground shadow tracks underneath
         if (h.mesh._shadow) {
           const sh = h.mesh._shadow;
