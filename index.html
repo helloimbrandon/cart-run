@@ -4715,6 +4715,7 @@
       }
       startAudio();
       if (e.key.toLowerCase() === 'm') toggleMute();
+      if (e.key.toLowerCase() === 'c' && !wasDown) cycleCamera();
     });
     addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
     addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -4803,6 +4804,14 @@
         (pad.buttons[6] && pad.buttons[6].value > 0.5) ||
         (pad.axes[7] && pad.axes[7] > 0.5);
       keys['s'] = !!brakeDown;
+      // D-pad UP (button 12) — cycle the camera view
+      {
+        const pressed = !!(pad.buttons[12] && pad.buttons[12].pressed);
+        const prev = _padPrev['cam12'] || false;
+        if (pressed && !prev) cycleCamera();
+        _padPrev['cam12'] = pressed;
+      }
+
       // Boost — any south/east/right-trigger button, edge-triggered
       for (const idx of PAD_BOOST_BUTTONS) {
         const pressed = !!(pad.buttons[idx] && pad.buttons[idx].pressed);
@@ -5732,6 +5741,47 @@
 
     let bumpVel = 0, bumpY = 0, bodyRoll = 0;
     let cameraRoll = 0;            // rally-style banking, eased
+
+    // ---- Camera modes (cycle with C key, gamepad D-pad up) ----
+    // 0 = chase (current default), 1 = close (lower + tighter), 2 = cockpit FPV
+    const CAMERA_MODES = [
+      {
+        name: 'CHASE',
+        kind: 'chase',
+        dist: 8.5,  distMobile: 13,
+        height: 9.5, heightMobile: 11,
+        lookAhead: 24, lookY: 1.6,
+        lerpX: 0.14, lerpY: 0.10, lerpZ: 0.18,
+        shakeMul: 1.0, fovBase: 104, fovBaseMobile: 82,
+      },
+      {
+        name: 'CLOSE',
+        kind: 'chase',
+        dist: 5.4, distMobile: 9,
+        height: 4.6, heightMobile: 6.0,
+        lookAhead: 18, lookY: 1.2,
+        lerpX: 0.20, lerpY: 0.14, lerpZ: 0.24,
+        shakeMul: 1.25, fovBase: 92, fovBaseMobile: 78,
+      },
+      {
+        name: 'COCKPIT',
+        kind: 'cockpit',
+        dist: 0, distMobile: 0,
+        height: 0, heightMobile: 0,
+        lookAhead: 28, lookY: 2.0,
+        lerpX: 1.0, lerpY: 1.0, lerpZ: 1.0,
+        shakeMul: 0.8, fovBase: 86, fovBaseMobile: 76,
+      },
+    ];
+    let cameraMode = 0;
+    function cycleCamera() {
+      cameraMode = (cameraMode + 1) % CAMERA_MODES.length;
+      const m = CAMERA_MODES[cameraMode];
+      arcadeCallout(`VIEW · ${m.name}`, {
+        type: 'boost', pos: 'lt', size: 's', holdMs: 700,
+      });
+      try { sfxClack(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+    }
     let dropTimer = rand(0.55, 0.85);
     let gameOver = false;
     let startTime = performance.now();
@@ -7853,36 +7903,68 @@
       const aheadTan = tangentAt(lookAheadT);
       const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
       const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
-      // 10mm-ish ultra-wide chase cam — pulled back, height + angle kept.
-      // Mobile pushes further back since portrait crops the wide lens horizontally.
-      const camDist = isMobile ? 13 : 8.5;
-      const camTargetX = truck.position.x - blendTanX * camDist;
-      const camTargetY = (isMobile ? 11 : 9.5) + bumpY * 0.4;
-      const camTargetZ = truck.position.z - blendTanZ * camDist;
-      camera.position.x += (camTargetX - camera.position.x) * 0.14;
-      camera.position.y += (camTargetY - camera.position.y) * 0.10;
-      camera.position.z += (camTargetZ - camera.position.z) * 0.18;
-      // shake
-      const shakeI = clamp((truckSpeed - 18) / 30, 0, 1);
+
+      // Per-camera-mode rig (cameraMode index → CAMERA_MODES entry)
+      const cm = CAMERA_MODES[cameraMode] || CAMERA_MODES[0];
+      const camDist   = isMobile ? cm.distMobile   : cm.dist;
+      const camHeight = isMobile ? cm.heightMobile : cm.height;
+      const camLerpX  = cm.lerpX;
+      const camLerpY  = cm.lerpY;
+      const camLerpZ  = cm.lerpZ;
+
+      // shake (shared across modes, scaled per mode)
+      const shakeI = clamp((truckSpeed - 18) / 30, 0, 1) * cm.shakeMul;
       const ts = performance.now() * 0.001;
       const sx = (Math.sin(ts * 47) + Math.sin(ts * 23)) * 0.18 * shakeI;
       const sy = (Math.sin(ts * 31) + Math.sin(ts * 19)) * 0.12 * shakeI;
       const sr = (Math.sin(ts * 39) + Math.sin(ts * 13)) * 0.015 * shakeI;
-      camera.position.x += sx;
-      camera.position.y += sy;
-      // look ahead along the (blended) curve so the camera frames the turn.
-      // Target is further out + lower so the higher camera tips down into the road.
-      camera.lookAt(
-        truck.position.x + blendTanX * 24,
-        1.6 + bumpY * 0.5,
-        truck.position.z + blendTanZ * 24
-      );
-      // rally-style camera bank: roll into the steering direction, eased
-      // plus a small contribution from upcoming curvature so corners pre-tilt
-      const curveBend = (aheadTan.x * _curTan.z - aheadTan.z * _curTan.x);
-      const targetRoll = -steerInput * 0.18 + curveBend * 0.9;
-      cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 4.5);
-      camera.rotation.z += cameraRoll + sr;
+
+      if (cm.kind === 'cockpit') {
+        // First-person: camera sits at the cab, hugs the truck, looks ahead
+        // along the tangent. No catch-up lerp — camera is rigidly attached.
+        const eyeFwd  = 0.4;             // tiny forward offset so we're at the windshield, not the bumper
+        const eyeUp   = 2.3 + bumpY * 0.6;
+        camera.position.x = truck.position.x + _curTan.x * eyeFwd + sx * 0.4;
+        camera.position.y = eyeUp + sy * 0.4;
+        camera.position.z = truck.position.z + _curTan.z * eyeFwd;
+        camera.lookAt(
+          truck.position.x + blendTanX * 28,
+          eyeUp - 0.4,
+          truck.position.z + blendTanZ * 28
+        );
+        // mild roll into corners (steering + curvature)
+        const curveBend = (aheadTan.x * _curTan.z - aheadTan.z * _curTan.x);
+        const targetRoll = -steerInput * 0.10 + curveBend * 0.5;
+        cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 4.5);
+        camera.rotation.z += cameraRoll + sr;
+      } else {
+        // Chase variants (default + close) — same shape, different distance/height.
+        const camTargetX = truck.position.x - blendTanX * camDist;
+        const camTargetY = camHeight + bumpY * 0.4;
+        const camTargetZ = truck.position.z - blendTanZ * camDist;
+        camera.position.x += (camTargetX - camera.position.x) * camLerpX;
+        camera.position.y += (camTargetY - camera.position.y) * camLerpY;
+        camera.position.z += (camTargetZ - camera.position.z) * camLerpZ;
+        camera.position.x += sx;
+        camera.position.y += sy;
+        camera.lookAt(
+          truck.position.x + blendTanX * cm.lookAhead,
+          (cm.lookY) + bumpY * 0.5,
+          truck.position.z + blendTanZ * cm.lookAhead
+        );
+        // rally-style banking
+        const curveBend = (aheadTan.x * _curTan.z - aheadTan.z * _curTan.x);
+        const targetRoll = -steerInput * 0.18 + curveBend * 0.9;
+        cameraRoll += (targetRoll - cameraRoll) * Math.min(1, dt * 4.5);
+        camera.rotation.z += cameraRoll + sr;
+      }
+
+      // Toggle the truck body visibility for cockpit so we're not staring
+      // at the back of our own cab. We DO keep the truck.position updated
+      // so dropped carts + shadow tracking still work.
+      if (truck.visible !== (cm.kind !== 'cockpit')) {
+        truck.visible = (cm.kind !== 'cockpit');
+      }
       } // end !replayPhase chase-cam branch
 
       // light tracking
@@ -7896,8 +7978,10 @@
       const blur = clamp((truckSpeed - 26) / 22, 0, 1);
       afterimagePass.uniforms['damp'].value = blur * 0.35;
       const fovFactor = clamp((truckSpeed - 18) / 30, 0, 1);
-      // 10mm-ish baseline + small punch on boost — narrower on mobile portrait
-      camera.fov = (isMobile ? 82 : 104) + fovFactor * (isMobile ? 8 : 14);
+      // per-camera-mode baseline + small punch on boost
+      const _cmFov = CAMERA_MODES[cameraMode] || CAMERA_MODES[0];
+      const fovBase = isMobile ? _cmFov.fovBaseMobile : _cmFov.fovBase;
+      camera.fov = fovBase + fovFactor * (isMobile ? 8 : 14);
       camera.updateProjectionMatrix();
       const vAmt = Math.round(60 + fovFactor * 140);
       vignette.style.boxShadow = `inset 0 0 ${vAmt}px ${Math.round(30 + fovFactor * 90)}px rgba(0,0,0,${0.22 + fovFactor * 0.32})`;
