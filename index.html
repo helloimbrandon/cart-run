@@ -949,6 +949,158 @@
     .arcade-callout[data-combo="3"] .callout-burst::before { animation-duration: 0.6s; }
 
     /* =====================================================================
+       SPORTSBRUT HUD PUSH — bigger corner panels, chunkier italic numbers,
+       huge race-broadcast type. Center road stays clear.
+       ===================================================================== */
+
+    /* TOP-LEFT — RECORD / BEST / LAST  (+25%) */
+    #rallyTL { padding: 12px 18px; min-width: 280px; }
+    #rallyTL .row {
+      grid-template-columns: 100px 1fr;
+      margin: 4px 0;
+    }
+    #rallyTL .row .label {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 800; font-size: 15px; letter-spacing: 2.5px;
+      color: var(--rally-label);
+    }
+    #rallyTL .row .val {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 22px; letter-spacing: 2px;
+      color: var(--rally-white);
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    /* TOP-RIGHT — primary race info  (+45%) */
+    #rallyTR {
+      padding: 14px 22px; min-width: 340px; gap: 4px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.32);
+    }
+    #rallyTR .row { grid-template-columns: 90px 1fr; align-items: baseline; }
+    #rallyTR .lbl {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 18px; letter-spacing: 4px;
+      color: var(--rally-label);
+    }
+    #rallyTR .val {
+      font-family: 'Russo One', sans-serif;
+      font-size: 40px; font-weight: 400;
+      font-style: italic;
+      letter-spacing: 2px;
+      color: var(--rally-white);
+      text-align: right;
+      text-shadow: 4px 4px 0 #000, 0 0 1px rgba(0,0,0,0.7);
+      line-height: 1;
+    }
+    /* TIME row leads the hierarchy */
+    #rallyTR .row:nth-child(3) .val { font-size: 48px; letter-spacing: 3px; }
+
+    /* TOP-CENTER — NEXT turn pill  (+50%) */
+    #rallyTurn {
+      padding: 8px 22px; gap: 14px;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.3);
+    }
+    #rallyTurn .lbl {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 16px; letter-spacing: 4px;
+      color: var(--rally-label);
+    }
+    #rallyTurn .arrow {
+      font-family: 'Russo One', sans-serif;
+      font-size: 48px;
+      color: var(--rally-white);
+      text-shadow: 4px 4px 0 #000;
+    }
+
+    /* BOTTOM-LEFT — green LCD delta */
+    #rallyBL {
+      padding: 8px 22px;
+      font-size: 40px; letter-spacing: 4px;
+      text-shadow: 0 0 14px rgba(44,224,83,0.5), 3px 3px 0 #000;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.5);
+    }
+
+    /* BOTTOM-RIGHT — speed / gear cluster  (+50%) */
+    #rallyBR { gap: 16px; align-items: flex-end; }
+    #rallyBR .gauge-svg { width: 300px; height: 168px; }
+    #rallyBR .gauge-info { gap: 6px; padding-right: 8px; }
+    #rallyBR .gauge-info .kmh {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 16px; letter-spacing: 3px;
+      color: var(--rally-label);
+    }
+    #rallyBR .gauge-info .kmh #rKmh {
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 32px; letter-spacing: 2px;
+      margin-left: 8px;
+      color: var(--rally-white);
+      text-shadow: 3px 3px 0 #000;
+    }
+    #rallyBR .gauge-info .gear {
+      font-family: 'Russo One', sans-serif;
+      font-size: 132px !important;
+      font-style: italic;
+      line-height: 0.82;
+      color: var(--rally-white);
+      letter-spacing: -2px;
+      text-shadow: 5px 5px 0 #000, 0 0 1px #000, 0 0 18px rgba(0,0,0,0.55);
+    }
+    /* thicker cyan tach */
+    #rGaugeArc { stroke-width: 26 !important; }
+    .gauge-svg path:first-of-type { stroke-width: 26 !important; }
+
+    /* COUNTDOWN — slam-big, race-broadcast presence */
+    #countdown {
+      font-family: 'Russo One', sans-serif;
+      font-weight: 400;
+      font-style: italic;
+      letter-spacing: 8px;
+      font-size: 30vmin;
+      line-height: 0.85;
+      color: var(--arc-green);
+      text-shadow:
+        12px 12px 0 var(--arc-navy),
+        0 0 36px rgba(44,224,83,0.45);
+    }
+    #countdown.go {
+      color: var(--arc-orange);
+      letter-spacing: 12px;
+      text-shadow:
+        14px 14px 0 var(--arc-navy),
+        0 0 50px rgba(255,122,0,0.55);
+    }
+
+    /* ARCADE CALLOUTS — louder presence */
+    .callout-text { font-size: 60px; letter-spacing: 4px; }
+    .callout-text.size-l { font-size: 84px; letter-spacing: 5px; }
+    .callout-text.size-s { font-size: 38px; }
+    .callout-tab {
+      width: 60px; height: 60px;
+      font-size: 36px;
+      border-width: 4px;
+      box-shadow: 6px 6px 0 rgba(0,0,0,0.6);
+    }
+    .callout-sub { font-size: 22px; letter-spacing: 3px; }
+
+    /* mobile re-tune for the new sizes */
+    .mobile-active #rallyTL { padding: 6px 10px; min-width: 0; }
+    .mobile-active #rallyTL .row { grid-template-columns: 60px 1fr; margin: 1px 0; }
+    .mobile-active #rallyTL .row .val { font-size: 13px; }
+    .mobile-active #rallyTL .row .label { font-size: 11px; }
+    .mobile-active #rallyTR { min-width: 0; padding: 6px 12px; }
+    .mobile-active #rallyTR .row { grid-template-columns: 48px 1fr; }
+    .mobile-active #rallyTR .lbl { font-size: 11px; letter-spacing: 2px; }
+    .mobile-active #rallyTR .val { font-size: 22px; }
+    .mobile-active #rallyTR .row:nth-child(3) .val { font-size: 26px; }
+    .mobile-active #rallyTurn .arrow { font-size: 30px; }
+    .mobile-active #rallyBL { font-size: 22px; padding: 4px 10px; }
+    .mobile-active #rallyBR .gauge-svg { width: 170px; height: 96px; }
+    .mobile-active #rallyBR .gauge-info .gear { font-size: 64px !important; }
+    .mobile-active #rallyBR .gauge-info .kmh #rKmh { font-size: 20px; }
+    .mobile-active #countdown { font-size: 28vmin; }
+
+    /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
        stepped corners, drop-shadows, exaggerated gear/speed. Layered as
        overrides so existing JS doesn't break.
