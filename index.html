@@ -1083,6 +1083,157 @@
     }
     .callout-sub { font-size: 22px; letter-spacing: 3px; }
 
+    /* =====================================================================
+       WIPEOUT-STYLE THRUST CLUSTER (bottom right) — replaces the old rallyBR
+       SCOREBOARD BOARDS (top-left) — "12 OF 12 / CARTS" and "1 OF 3 / DELIVERY"
+       Inspired by Wipeout 2097 / Ridge Racer arcade meters
+       ===================================================================== */
+    .scoreboard {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Russo One', sans-serif;
+      color: #fff;
+    }
+    .scoreboard .sb-row {
+      display: flex; align-items: baseline; gap: 4px;
+      line-height: 0.85;
+    }
+    .scoreboard .sb-num {
+      font-style: italic;
+      font-size: 76px;
+      color: #fff;
+      letter-spacing: -2px;
+      text-shadow: 5px 5px 0 #000, 2px 2px 0 #000;
+    }
+    .scoreboard .sb-num.small { font-size: 56px; }
+    .scoreboard .sb-of {
+      font-style: italic;
+      font-size: 30px;
+      color: #ffce4a;
+      letter-spacing: 1px;
+      text-shadow: 3px 3px 0 #000;
+      margin: 0 4px;
+    }
+    .scoreboard .sb-lbl {
+      font-style: italic;
+      font-size: 18px;
+      color: #ffce4a;
+      letter-spacing: 4px;
+      text-shadow: 2px 2px 0 #000;
+      margin-top: -4px;
+    }
+    #cargoBoard    { top: 18px; left: 18px; }
+    #deliveryBoard { top: 138px; left: 18px; }
+    #cargoBoard.danger .sb-num { color: #ff5a3a; }
+    #cargoBoard .sb-num.bump   { animation: cargoBump 350ms ease-out both; }
+    @keyframes cargoBump {
+      0%   { transform: scale(1); color: #fff; }
+      40%  { transform: scale(1.22); color: #ffce4a; }
+      100% { transform: scale(1); color: #fff; }
+    }
+    #cargoBoard .sb-num.drop  { animation: cargoDrop 350ms ease-out both; }
+    @keyframes cargoDrop {
+      0%   { transform: scale(1); color: #fff; }
+      40%  { transform: scale(0.86); color: #ff5a3a; }
+      100% { transform: scale(1); color: #fff; }
+    }
+
+    /* SCORE compact readout — top-right, above the LAP/POS/TIME panel */
+    #scoreBoard {
+      position: fixed; top: 18px; right: 18px;
+      pointer-events: none;
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      text-align: right;
+      z-index: 3;
+    }
+    #scoreBoard .sb-score {
+      font-size: 44px;
+      color: #fff;
+      letter-spacing: 2px;
+      text-shadow: 4px 4px 0 #000;
+    }
+    #scoreBoard .sb-lbl {
+      font-size: 16px; letter-spacing: 4px; color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+      margin-top: -2px;
+    }
+    /* push rallyTR down to live under the score */
+    #rallyTR { top: 102px !important; }
+
+    /* THRUST cluster bottom-right */
+    #thrustCluster {
+      position: fixed; right: 18px; bottom: 18px;
+      pointer-events: none;
+      font-family: 'Russo One', sans-serif;
+      display: flex; flex-direction: column; align-items: flex-end;
+      gap: 6px;
+    }
+    .thrust-top {
+      display: flex; align-items: flex-end; gap: 10px;
+    }
+    .thrust-num {
+      font-size: 138px;
+      font-style: italic;
+      color: #fff;
+      letter-spacing: -4px;
+      line-height: 0.82;
+      text-shadow: 7px 7px 0 #000, 0 0 1px #000;
+    }
+    .thrust-unit-pill {
+      font-style: italic;
+      background: #ffce4a;
+      color: #001a3a;
+      font-size: 20px;
+      padding: 5px 12px;
+      letter-spacing: 3px;
+      border: 3px solid #fff;
+      box-shadow: 4px 4px 0 #000;
+      margin-bottom: 18px;
+    }
+    .thrust-meter-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .thrust-meter-label {
+      font-style: italic;
+      font-size: 17px;
+      color: #ffce4a;
+      letter-spacing: 4px;
+      text-shadow: 2px 2px 0 #000;
+      min-width: 96px;
+      text-align: right;
+    }
+    .thrust-bar {
+      position: relative;
+      width: 280px;
+      height: 22px;
+      border: 2px solid #fff;
+      background: rgba(20, 20, 30, 0.75);
+      transform: skewX(-18deg);
+      box-shadow: 4px 4px 0 rgba(0,0,0,0.55);
+      overflow: hidden;
+    }
+    .thrust-bar::before {
+      content: '';
+      position: absolute; inset: 0;
+      transform-origin: left;
+      transform: scaleX(var(--fill, 1));
+      transition: transform 0.10s linear;
+      -webkit-mask: repeating-linear-gradient(90deg, #000 0 14px, transparent 14px 16px);
+              mask: repeating-linear-gradient(90deg, #000 0 14px, transparent 14px 16px);
+    }
+    .thrust-bar.energy::before {
+      background: linear-gradient(90deg, #ff00aa 0%, #ff3a30 40%, #ff7a00 75%, #ffce4a 100%);
+    }
+    .thrust-bar.thrust::before {
+      background: linear-gradient(90deg, #00d4ff 0%, #2ce053 35%, #ffce4a 65%, #ff7a00 100%);
+    }
+
+    /* Hide the old rallyBR speed/gear cluster — replaced by thrustCluster */
+    #rallyBR { display: none !important; }
+    /* Also hide rallyTL since cargo/delivery now live in the upper left */
+    #rallyTL { display: none !important; }
+
     /* mobile re-tune for the new sizes */
     .mobile-active #rallyTL { padding: 6px 10px; min-width: 0; }
     .mobile-active #rallyTL .row { grid-template-columns: 60px 1fr; margin: 1px 0; }
@@ -1099,6 +1250,15 @@
     .mobile-active #rallyBR .gauge-info .gear { font-size: 64px !important; }
     .mobile-active #rallyBR .gauge-info .kmh #rKmh { font-size: 20px; }
     .mobile-active #countdown { font-size: 28vmin; }
+
+    /* Mobile re-tune for the new boards/cluster */
+    .mobile-active #cargoBoard, .mobile-active #deliveryBoard {
+      transform: scale(0.55); transform-origin: top left;
+    }
+    .mobile-active #deliveryBoard { top: 80px; }
+    .mobile-active #scoreBoard { transform: scale(0.55); transform-origin: top right; }
+    .mobile-active #rallyTR { top: 60px !important; }
+    .mobile-active #thrustCluster { transform: scale(0.55); transform-origin: bottom right; }
 
     /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
@@ -1742,11 +1902,51 @@
     <span class="arrow" id="rTurnArrow">▲</span>
   </div>
 
-  <!-- top-right: LAP / POS / TIME — plain PS1 race info box -->
+  <!-- top-left: arcade scoreboard for cargo + delivery -->
+  <div id="cargoBoard" class="scoreboard">
+    <div class="sb-row">
+      <span class="sb-num" id="cargoCur">120</span>
+      <span class="sb-of">OF</span>
+      <span class="sb-num small" id="cargoMax">120</span>
+    </div>
+    <div class="sb-lbl">CARTS</div>
+  </div>
+  <div id="deliveryBoard" class="scoreboard">
+    <div class="sb-row">
+      <span class="sb-num small" id="deliveryCur">1</span>
+      <span class="sb-of">OF</span>
+      <span class="sb-num small" id="deliveryMax">3</span>
+    </div>
+    <div class="sb-lbl">DELIVERY</div>
+  </div>
+
+  <!-- top-right: SCORE pill (chunky arcade numbers) -->
+  <div id="scoreBoard">
+    <div class="sb-score" id="scoreVal">0000000</div>
+    <div class="sb-lbl">SCORE</div>
+  </div>
+
+  <!-- top-right: LAP / POS / TIME — plain PS1 race info box (now lives under SCORE) -->
   <div id="rallyTR" class="rally">
     <div class="row"><span class="lbl">LAP</span><span class="val" id="rLap">1/3</span></div>
     <div class="row"><span class="lbl">POS</span><span class="val" id="rPos">1</span></div>
     <div class="row"><span class="lbl">TIME</span><span class="val" id="rTime">00'00"00</span></div>
+  </div>
+
+  <!-- bottom-right: WipEout thrust cluster (replaces #rallyBR) -->
+  <div id="thrustCluster">
+    <div class="thrust-top">
+      <span class="thrust-num" id="thrustSpeed">000</span>
+      <span class="thrust-unit-pill">KPH</span>
+    </div>
+    <div class="thrust-meter-row">
+      <span class="thrust-meter-label">ENERGY</span>
+      <div class="thrust-bar energy" id="energyBar" style="--fill:1"></div>
+    </div>
+    <div class="thrust-meter-row">
+      <span class="thrust-meter-label">THRUST</span>
+      <div class="thrust-bar thrust" id="thrustBar" style="--fill:0"></div>
+    </div>
   </div>
 
   <!-- bottom-left: green LCD delta -->
@@ -1983,10 +2183,10 @@
         tDiffuse: { value: null },
         resolution: { value: new THREE.Vector2(innerWidth, innerHeight) },
         time: { value: 0 },
-        chroma: { value: 0.0008 },
-        curve:  { value: 0.008 },    // tiny barrel
+        chroma: { value: 0.0014 },
+        curve:  { value: 0.030 },    // 12mm wide-angle barrel — edge distortion now visible
         scanI:  { value: 0.006 },    // scanlines whisper-thin
-        vig:    { value: 0.24 },     // gentle vignette
+        vig:    { value: 0.30 },     // a bit more vignette to frame the barrel
       },
       vertexShader: /* glsl */`
         varying vec2 vUv;
@@ -3663,6 +3863,11 @@
       { src: 'audio/big-stepper.mp3', title: 'BIG STEPPER (BRANDON)' },
       { src: 'audio/ooiiiii.mp3',     title: 'OOIIIII (BRANDON)'     },
     ];
+    // Fisher-Yates shuffle so each load picks a random first track
+    for (let i = MUSIC_PLAYLIST.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [MUSIC_PLAYLIST[i], MUSIC_PLAYLIST[j]] = [MUSIC_PLAYLIST[j], MUSIC_PLAYLIST[i]];
+    }
     let _trackIdx = 0;
     function _setAudioLabel() {
       const lbl = document.getElementById('audioLbl');
@@ -4335,13 +4540,18 @@
     }
     let _lastCartsShown = MAX_CARTS;
     function setCartsHUD(n) {
-      if (n !== _lastCartsShown) {
-        hudCarts.classList.remove('flash-value');
-        void hudCarts.offsetWidth;
-        hudCarts.classList.add('flash-value');
-        _lastCartsShown = n;
+      // legacy hudCarts span may be gone — guard
+      if (hudCarts) {
+        if (n !== _lastCartsShown) {
+          hudCarts.classList.remove('flash-value');
+          void hudCarts.offsetWidth;
+          hudCarts.classList.add('flash-value');
+        }
+        hudCarts.textContent = n;
       }
-      hudCarts.textContent = n;
+      _lastCartsShown = n;
+      // route to the new WipEout cargo scoreboard
+      if (typeof updateCargoBoard === 'function') updateCargoBoard(n);
     }
     // re-trigger a CSS animation by toggling its class
     function reanim(el, klass) {
@@ -4481,6 +4691,35 @@
       else                 { arcTurnPad.textContent = '▶'; if (mag > 0.18) arcTurnPad.classList.add('hard'); else arcTurnPad.classList.add('warn'); }
     }
 
+    // ----- WipEout-style scoreboard + thrust cluster -----
+    const cargoCurEl   = document.getElementById('cargoCur');
+    const cargoMaxEl   = document.getElementById('cargoMax');
+    const cargoBoardEl = document.getElementById('cargoBoard');
+    const deliveryCurEl = document.getElementById('deliveryCur');
+    const deliveryMaxEl = document.getElementById('deliveryMax');
+    const scoreValEl   = document.getElementById('scoreVal');
+    const thrustSpeedEl = document.getElementById('thrustSpeed');
+    const energyBarEl   = document.getElementById('energyBar');
+    const thrustBarEl   = document.getElementById('thrustBar');
+    // initialize maxes on first frame
+    if (cargoMaxEl)    cargoMaxEl.textContent = String(MAX_CARTS);
+    if (deliveryMaxEl) deliveryMaxEl.textContent = String(LEVELS.length);
+
+    // override setCartsHUD to drive the new board AND keep legacy ref alive
+    let _lastCargo = MAX_CARTS;
+    function updateCargoBoard(n) {
+      if (!cargoCurEl) return;
+      cargoCurEl.textContent = String(n);
+      if (n !== _lastCargo) {
+        const dropping = n < _lastCargo;
+        cargoCurEl.classList.remove('drop', 'bump');
+        void cargoCurEl.offsetWidth;
+        cargoCurEl.classList.add(dropping ? 'drop' : 'bump');
+        _lastCargo = n;
+      }
+      cargoBoardEl.classList.toggle('danger', n <= 12);
+    }
+
     // ----- PS1 rally HUD elements -----
     const rRecord     = document.getElementById('rRecord');
     const rBest       = document.getElementById('rBest');
@@ -4535,6 +4774,14 @@
       rTime.textContent = fmtRally(elapsedMs);
       rLap.textContent  = `${levelIdx + 1}/${LEVELS.length}`;
       rPos.textContent  = String(levelIdx + 1);
+
+      // WipEout boards
+      updateCargoBoard(cartsRemaining);
+      if (deliveryCurEl) deliveryCurEl.textContent = String(levelIdx + 1);
+      if (scoreValEl)    scoreValEl.textContent = String(score).padStart(7, '0');
+      if (thrustSpeedEl) thrustSpeedEl.textContent = String(Math.round(truckSpeed * 3.6)).padStart(3, '0');
+      if (energyBarEl)   energyBarEl.style.setProperty('--fill', clamp(boostMeter, 0, 1));
+      if (thrustBarEl)   thrustBarEl.style.setProperty('--fill', clamp(truckSpeed / TRUCK_BOOST_SPEED, 0, 1));
 
       // records: show all-time best + last for current stage
       const best = bestStageTimes[levelIdx];
@@ -5281,10 +5528,10 @@
       const aheadTan = tangentAt(lookAheadT);
       const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
       const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
-      // higher chase cam so we can see oncoming traffic & the road ahead
-      const camTargetX = truck.position.x - blendTanX * 13.5;
-      const camTargetY = 8.8 + bumpY * 0.4;
-      const camTargetZ = truck.position.z - blendTanZ * 13.5;
+      // 12mm wide-angle chase cam — pull in close so the lens does the work
+      const camTargetX = truck.position.x - blendTanX * 8.5;
+      const camTargetY = 6.5 + bumpY * 0.4;
+      const camTargetZ = truck.position.z - blendTanZ * 8.5;
       camera.position.x += (camTargetX - camera.position.x) * 0.14;
       camera.position.y += (camTargetY - camera.position.y) * 0.10;
       camera.position.z += (camTargetZ - camera.position.z) * 0.18;
@@ -5320,7 +5567,8 @@
       const blur = clamp((truckSpeed - 26) / 22, 0, 1);
       afterimagePass.uniforms['damp'].value = blur * 0.35;
       const fovFactor = clamp((truckSpeed - 18) / 30, 0, 1);
-      camera.fov = 62 + fovFactor * 22;
+      // 12mm-equivalent wide-angle baseline + small punch on boost
+      camera.fov = 92 + fovFactor * 14;
       camera.updateProjectionMatrix();
       const vAmt = Math.round(60 + fovFactor * 140);
       vignette.style.boxShadow = `inset 0 0 ${vAmt}px ${Math.round(30 + fovFactor * 90)}px rgba(0,0,0,${0.22 + fovFactor * 0.32})`;
