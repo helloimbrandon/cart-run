@@ -2426,6 +2426,210 @@
       #mainMenu .menu-title-row { top: 18px; left: 20px; }
     }
 
+    /* =====================================================================
+       DRIVER SELECT — Smash Court-style PS1 character select
+       ===================================================================== */
+    #driverSelect {
+      position: fixed; inset: 0; z-index: 95;
+      display: none;
+      background:
+        radial-gradient(ellipse at 30% 30%, #2a4a6a 0%, #14283c 60%, #0a141c 100%);
+      font-family: 'Russo One', 'Saira Condensed', sans-serif;
+      overflow: hidden;
+      color: #fff;
+    }
+    #driverSelect.show { display: block; }
+    #driverSelect .ds-scanlines {
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 3px);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+      z-index: 3;
+    }
+    #driverSelect .ds-title {
+      position: absolute; top: 26px; left: 50%; transform: translateX(-50%);
+      font-style: italic; font-size: 34px; letter-spacing: 10px;
+      color: #ffce4a;
+      text-shadow: 4px 4px 0 #1a0a00, 6px 6px 0 #000;
+      z-index: 2;
+    }
+    #driverSelect .ds-grid {
+      position: absolute; top: 90px; left: 50%;
+      transform: translateX(-50%);
+      width: min(1080px, 96vw);
+      display: grid;
+      grid-template-columns: 1.0fr 1.4fr;
+      grid-template-rows: auto auto;
+      gap: 18px;
+      z-index: 2;
+    }
+
+    /* DRIVER LIST */
+    #driverSelect .ds-list {
+      grid-column: 1; grid-row: 1 / span 2;
+      display: flex; flex-direction: column;
+      gap: 8px;
+      padding: 16px 12px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 4px solid #c89030;
+      box-shadow: 6px 6px 0 #1a1208, inset 0 0 0 2px rgba(0,0,0,0.6);
+      border-radius: 14px;
+      min-height: 360px;
+    }
+    #driverSelect .ds-row {
+      position: relative;
+      padding: 12px 16px 10px 44px;
+      font-style: italic;
+      font-size: 26px;
+      letter-spacing: 5px;
+      color: #fff;
+      text-shadow: 3px 3px 0 #000;
+      background: rgba(28, 30, 40, 0.7);
+      border: 3px solid #5a5a6a;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: transform 80ms steps(2,end), background 80ms;
+    }
+    #driverSelect .ds-row.sel {
+      background: var(--row-accent, #ff7a00);
+      border-color: #fff;
+      transform: translateX(6px) scale(1.04);
+      box-shadow: 0 0 0 3px #000, 0 0 18px rgba(255,255,255,0.4);
+    }
+    #driverSelect .ds-row.sel::before {
+      content: '▶';
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+      font-size: 22px;
+      animation: dsCursorBlink 380ms steps(3, end) infinite;
+    }
+    @keyframes dsCursorBlink {
+      0%, 70% { opacity: 1; }
+      71%, 100% { opacity: 0.5; }
+    }
+
+    /* PORTRAIT */
+    #driverSelect .ds-portrait-wrap {
+      grid-column: 2; grid-row: 1;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.45);
+      border: 4px solid var(--portrait-frame, #ff7a00);
+      box-shadow: 6px 6px 0 #1a1208, inset 0 0 0 2px rgba(0,0,0,0.6);
+      border-radius: 14px;
+      transition: border-color 120ms steps(3,end);
+    }
+    #driverSelect #dsPortraitCanvas {
+      display: block;
+      width: 220px; height: 280px;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 3px solid #fff;
+      background: #11141c;
+    }
+    #driverSelect .ds-driver-name {
+      font-style: italic;
+      font-size: 36px; letter-spacing: 6px;
+      color: var(--name-color, #ffce4a);
+      text-shadow: 4px 4px 0 #000;
+    }
+
+    /* STATS PANEL */
+    #driverSelect .ds-stats {
+      grid-column: 2; grid-row: 2;
+      padding: 12px 18px;
+      background: rgba(0, 0, 0, 0.55);
+      border: 4px solid #c89030;
+      box-shadow: 6px 6px 0 #1a1208, inset 0 0 0 2px rgba(0,0,0,0.6);
+      border-radius: 14px;
+    }
+    #driverSelect .ds-stat-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      font-style: italic;
+      font-size: 18px;
+      letter-spacing: 4px;
+      color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+    }
+    #driverSelect .ds-stat-dots {
+      display: flex; gap: 6px;
+    }
+    #driverSelect .ds-dot {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #2a2030;
+      border: 2px solid #000;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+      transition: background 120ms steps(3, end);
+    }
+    #driverSelect .ds-dot.lit {
+      background: var(--row-accent, #ff7a00);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5),
+                  0 0 8px rgba(255, 200, 80, 0.5);
+    }
+
+    /* DESCRIPTION + HINT */
+    #driverSelect .ds-desc {
+      position: absolute;
+      bottom: 64px; left: 50%; transform: translateX(-50%);
+      max-width: 720px;
+      text-align: center;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #fff;
+      text-shadow: 2px 2px 0 #000;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.55);
+      border: 2px solid rgba(255,206,74,0.5);
+      z-index: 2;
+    }
+    #driverSelect .ds-hint {
+      position: absolute;
+      bottom: 18px; left: 50%; transform: translateX(-50%);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px; letter-spacing: 3px;
+      color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+      animation: dsHintBlink 1.2s ease-in-out infinite;
+      z-index: 2;
+    }
+    @keyframes dsHintBlink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+    #driverSelect .ds-flash {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      background: rgba(255, 240, 200, 0);
+      transition: background 80ms ease-out;
+      z-index: 4;
+    }
+    #driverSelect .ds-flash.bang { background: rgba(255, 240, 200, 0.85); transition: none; }
+
+    @media (max-width: 820px), (pointer: coarse) {
+      #driverSelect .ds-grid { grid-template-columns: 1fr; gap: 10px; top: 70px; }
+      #driverSelect .ds-list { grid-row: 1; grid-column: 1; min-height: 0; padding: 8px; }
+      #driverSelect .ds-portrait-wrap { grid-row: 2; grid-column: 1; padding: 8px; }
+      #driverSelect #dsPortraitCanvas { width: 140px; height: 175px; }
+      #driverSelect .ds-stats { grid-row: 3; grid-column: 1; padding: 8px 12px; }
+      #driverSelect .ds-row { font-size: 18px; letter-spacing: 3px; padding: 6px 10px 6px 32px; }
+      #driverSelect .ds-row.sel::before { font-size: 16px; left: 8px; }
+      #driverSelect .ds-driver-name { font-size: 22px; letter-spacing: 3px; }
+      #driverSelect .ds-stat-row { font-size: 13px; letter-spacing: 2px; grid-template-columns: 90px 1fr; }
+      #driverSelect .ds-dot { width: 14px; height: 14px; }
+      #driverSelect .ds-title { font-size: 22px; letter-spacing: 5px; top: 14px; }
+      #driverSelect .ds-desc { font-size: 12px; bottom: 50px; padding: 6px 10px; max-width: 86vw; }
+      #driverSelect .ds-hint { font-size: 11px; bottom: 12px; letter-spacing: 2px; }
+    }
+
     /* ====== Replay-results stamp-in styling ====== */
     /* Each row starts hidden and snaps in via .in. Bonus row flashes. */
     #stageRecap .recap-stats .stat-row {
@@ -2653,6 +2857,23 @@
       VERSION 0.04 · SOUND: ON · MUSIC: ON · CONTROL: ONE-THUMB · CRT: ON · PRESS START
     </div>
     <div class="menu-flash" id="menuFlash"></div>
+  </div>
+
+  <!-- ===== Smash-Court-style driver select ===== -->
+  <div id="driverSelect">
+    <div class="ds-scanlines"></div>
+    <div class="ds-title">DRIVER SELECT</div>
+    <div class="ds-grid">
+      <div class="ds-list" id="dsList"></div>
+      <div class="ds-portrait-wrap">
+        <canvas id="dsPortraitCanvas" width="160" height="200"></canvas>
+        <div class="ds-driver-name" id="dsName">BRANDON</div>
+      </div>
+      <div class="ds-stats" id="dsStats"></div>
+    </div>
+    <div class="ds-desc" id="dsDesc">Balanced route runner. Easy to control.</div>
+    <div class="ds-hint">↑↓ CHANGE · ENTER CONFIRM · ESC BACK</div>
+    <div class="ds-flash" id="dsFlash"></div>
   </div>
 
   <canvas id="c"></canvas>
@@ -3505,7 +3726,8 @@
     const cartStack = new THREE.Group();
     truck.add(cartStack);
 
-    const MAX_CARTS = 120;
+    let MAX_CARTS = 120;
+    const BASE_MAX_CARTS = 120;
     let cartsRemaining = MAX_CARTS;
     const stackCarts = [];
 
@@ -3869,7 +4091,12 @@
       }
       try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
       if (_menuMode === 'main' && opt === 'START') {
-        setTimeout(exitMainMenu, 220);
+        // Hand off to driver select instead of dropping straight into the stage.
+        setTimeout(() => {
+          document.getElementById('mainMenu').classList.remove('show');
+          _menuActive = false;
+          enterDriverSelect();
+        }, 220);
         return;
       }
       if (_menuMode === 'main' && opt === 'SETTINGS') {
@@ -3995,6 +4222,219 @@
       _applySettings();
       try { _initMenuScene(); } catch (e) { console.warn('menu scene init failed', e); }
     }
+
+    // =================================================================
+    // DRIVER SELECT — chunky PS1-style character select between START
+    // and the stage intro. Each driver mutates the live gameplay
+    // constants (max speed, steer, boost regen/duration, max carts).
+    // =================================================================
+    const DRIVERS = [
+      {
+        name: 'BRANDON',
+        desc: 'Balanced route runner. Easy to control.',
+        accent: '#ff7a00',
+        stats: { SPEED: 3, HANDLING: 3, BOOST: 3, CARGO: 3, RECOVERY: 3 },
+        palette: { cap: '#c83a30', capDk: '#7a1810', hair: '#1a1208',
+                   skin: '#d8a878', skinDk: '#a06848',
+                   sk0: '#4a2818', sk1: '#a06848', sk2: '#d8a878',
+                   sk3: '#f0c898', sk4: '#ffdcb0' },
+        barks: ['LETS GO', 'HERE WE GO'],
+      },
+      {
+        name: 'MIKI',
+        desc: 'Sharp turns, quick recovery, lighter cargo.',
+        accent: '#ff5aa0',
+        stats: { SPEED: 2, HANDLING: 5, BOOST: 3, CARGO: 2, RECOVERY: 4 },
+        palette: { cap: '#ffce4a', capDk: '#a87830', hair: '#0a0a0a',
+                   skin: '#f0c898', skinDk: '#a87858',
+                   sk0: '#5a3018', sk1: '#a87858', sk2: '#f0c898',
+                   sk3: '#ffd8b0', sk4: '#fff0d0' },
+        barks: ['NO PROBLEM', 'EASY'],
+      },
+      {
+        name: 'RICO',
+        desc: 'Fast and risky. Harder to keep stable.',
+        accent: '#ff3a30',
+        stats: { SPEED: 5, HANDLING: 2, BOOST: 4, CARGO: 2, RECOVERY: 2 },
+        palette: { cap: '#ff7a00', capDk: '#a04800', hair: '#2a1a08',
+                   skin: '#c89058', skinDk: '#906038',
+                   sk0: '#3a2010', sk1: '#906038', sk2: '#c89058',
+                   sk3: '#e8b078', sk4: '#ffd098' },
+        barks: ['FLOOR IT', 'PEDAL'],
+      },
+      {
+        name: 'TINA',
+        desc: 'Keeps more carts secure, but slower.',
+        accent: '#2ce053',
+        stats: { SPEED: 2, HANDLING: 3, BOOST: 2, CARGO: 5, RECOVERY: 4 },
+        palette: { cap: '#2ce053', capDk: '#0a5a18', hair: '#a87830',
+                   skin: '#e8c098', skinDk: '#a87858',
+                   sk0: '#4a2818', sk1: '#a87858', sk2: '#e8c098',
+                   sk3: '#f8d8a8', sk4: '#fff0c8' },
+        barks: ['SECURE', 'GOT IT'],
+      },
+      {
+        name: 'YURI',
+        desc: 'Builds boost quickly and rewards risky driving.',
+        accent: '#a040e8',
+        stats: { SPEED: 3, HANDLING: 3, BOOST: 5, CARGO: 2, RECOVERY: 2 },
+        palette: { cap: '#a040e8', capDk: '#4a1078', hair: '#d8d0e8',
+                   skin: '#e8c8b0', skinDk: '#a89060',
+                   sk0: '#3a2030', sk1: '#a89060', sk2: '#e8c8b0',
+                   sk3: '#f8e0c0', sk4: '#fff0d8' },
+        barks: ['POWER UP', 'CHARGE'],
+      },
+    ];
+    let _dsActive = false;
+    let _dsIdx = 0;
+    let _selectedDriverIdx = 0;
+
+    // ---- portrait rendering: reuse drawDriverFace by swapping driverCtx +
+    // overlaying the chosen driver's palette onto DRIVER_PALETTE keys ----
+    let _dsPortraitCtx = null;
+    function _applyDriverPaletteFor(idx) {
+      const p = DRIVERS[idx].palette;
+      for (const k in p) { if (k in DRIVER_PALETTE) DRIVER_PALETTE[k] = p[k]; }
+    }
+    function _drawDsPortrait(now) {
+      if (!_dsPortraitCtx) {
+        const c = document.getElementById('dsPortraitCanvas');
+        _dsPortraitCtx = c ? c.getContext('2d') : null;
+        if (!_dsPortraitCtx) return;
+      }
+      // swap globals, paint, restore
+      const restoreCtx = driverCtx;
+      driverCtx = _dsPortraitCtx;
+      _applyDriverPaletteFor(_dsIdx);
+      const restoreState = driverState;
+      driverState = 'focused';
+      drawDriverFace(now);
+      driverState = restoreState;
+      driverCtx = restoreCtx;
+    }
+
+    // ---- UI building ----
+    function _renderDsList() {
+      const list = document.getElementById('dsList');
+      if (!list) return;
+      list.innerHTML = '';
+      DRIVERS.forEach((d, i) => {
+        const row = document.createElement('div');
+        row.className = 'ds-row' + (i === _dsIdx ? ' sel' : '');
+        row.style.setProperty('--row-accent', d.accent);
+        row.textContent = d.name;
+        row.addEventListener('click', () => {
+          if (i === _dsIdx) _dsConfirm();
+          else { _dsIdx = i; _dsRefresh(); }
+        });
+        list.appendChild(row);
+      });
+    }
+    function _renderDsStats() {
+      const root = document.getElementById('dsStats');
+      if (!root) return;
+      const d = DRIVERS[_dsIdx];
+      const labels = ['SPEED', 'HANDLING', 'BOOST', 'CARGO', 'RECOVERY'];
+      root.innerHTML = labels.map(lbl => {
+        const v = d.stats[lbl] || 0;
+        const dots = [];
+        for (let i = 0; i < 5; i++) {
+          dots.push(`<span class="ds-dot${i < v ? ' lit' : ''}" style="--row-accent:${d.accent}"></span>`);
+        }
+        return `<div class="ds-stat-row"><span>${lbl}</span><span class="ds-stat-dots">${dots.join('')}</span></div>`;
+      }).join('');
+    }
+    function _dsRefresh() {
+      const d = DRIVERS[_dsIdx];
+      document.getElementById('dsName').textContent = d.name;
+      document.getElementById('dsName').style.setProperty('--name-color', d.accent);
+      document.getElementById('dsDesc').textContent = d.desc;
+      const wrap = document.querySelector('#driverSelect .ds-portrait-wrap');
+      if (wrap) wrap.style.setProperty('--portrait-frame', d.accent);
+      _renderDsList();
+      _renderDsStats();
+    }
+    function _dsMove(delta) {
+      _dsIdx = (_dsIdx + delta + DRIVERS.length) % DRIVERS.length;
+      try { sfxClack(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+      _dsRefresh();
+    }
+    function _dsConfirm() {
+      const flash = document.getElementById('dsFlash');
+      if (flash) {
+        flash.classList.remove('bang');
+        void flash.offsetWidth;
+        flash.classList.add('bang');
+        setTimeout(() => flash.classList.remove('bang'), 220);
+      }
+      try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+      const d = DRIVERS[_dsIdx];
+      bark(d.barks[(Math.random() * d.barks.length) | 0]);
+      setTimeout(() => exitDriverSelect(_dsIdx), 240);
+    }
+    function _dsBack() {
+      // back to main menu
+      _dsActive = false;
+      document.getElementById('driverSelect').classList.remove('show');
+      _menuActive = true;
+      document.getElementById('mainMenu').classList.add('show');
+      _menuMode = 'main';
+      _menuIdx = 0;
+      _renderMenuOptions();
+      try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch (_) {}
+    }
+
+    // ---- stat → gameplay mapping ----
+    //   SPEED    → TRUCK_MAX_SPEED      stat 1..5 → ×0.88 .. ×1.16
+    //   HANDLING → STEER_SPEED          stat 1..5 → ×0.85 .. ×1.20
+    //   BOOST    → REGEN + DURATION     stat 1..5 → ×0.70 .. ×1.40
+    //   CARGO    → MAX_CARTS            stat 1..5 → 90 .. 150
+    //   RECOVERY → BOOST_CRASH_LOSS     stat 5..1 → ×0.55 .. ×1.0
+    function applyDriverStats(idx) {
+      const d = DRIVERS[idx];
+      const s = d.stats;
+      TRUCK_MAX_SPEED = BASE_TRUCK_MAX_SPEED * (0.88 + (s.SPEED    - 1) * 0.07);
+      STEER_SPEED     = BASE_STEER_SPEED     * (0.85 + (s.HANDLING - 1) * 0.0875);
+      const bMul = 0.70 + (s.BOOST - 1) * 0.175;
+      BOOST_REGEN_PER_SEC = BASE_BOOST_REGEN     * bMul;
+      BOOST_DURATION      = BASE_BOOST_DURATION  * bMul;
+      MAX_CARTS = Math.round(90 + (s.CARGO - 1) * 15);
+      BOOST_CRASH_LOSS = BASE_BOOST_CRASH_LOSS * (1.1 - (s.RECOVERY - 1) * 0.13);
+      // The live cart count is reset on every new run, but if we're starting
+      // a fresh game, sync it here so the very first stage opens with the
+      // chosen driver's cargo capacity.
+      if (typeof cartsRemaining !== 'undefined') cartsRemaining = MAX_CARTS;
+      // Bake the driver's palette into the in-race PIP permanently.
+      _applyDriverPaletteFor(idx);
+    }
+
+    function enterDriverSelect() {
+      _dsActive = true;
+      _dsIdx = _selectedDriverIdx || 0;
+      document.getElementById('driverSelect').classList.add('show');
+      _dsRefresh();
+    }
+    function exitDriverSelect(idx) {
+      _selectedDriverIdx = idx;
+      _dsActive = false;
+      document.getElementById('driverSelect').classList.remove('show');
+      applyDriverStats(idx);
+      // hand off to the existing stage intro
+      _menuActive = false;
+      if (typeof startIntro === 'function') startIntro();
+    }
+
+    // ---- keyboard ----
+    addEventListener('keydown', (e) => {
+      if (!_dsActive) return;
+      const k = e.key.toLowerCase();
+      if (k === 'arrowup' || k === 'w')         { e.preventDefault(); _dsMove(-1); }
+      else if (k === 'arrowdown' || k === 's')  { e.preventDefault(); _dsMove(+1); }
+      else if (k === 'arrowleft'  || k === 'a') { e.preventDefault(); _dsMove(-1); }
+      else if (k === 'arrowright' || k === 'd') { e.preventDefault(); _dsMove(+1); }
+      else if (k === 'enter' || k === ' ')      { e.preventDefault(); _dsConfirm(); }
+      else if (k === 'escape')                  { e.preventDefault(); _dsBack(); }
+    });
     let introT = 0;
     let introHasShown = false; // allows tap-to-skip after first stage
     let levelGroup = new THREE.Group();
@@ -5349,6 +5789,30 @@
         }
         return;   // don't fall through to gameplay bindings while menu is up
       }
+
+      // ---- driver select: nav with D-pad / stick, confirm with south ----
+      if (_dsActive) {
+        const ly = pad.axes[1] || 0;
+        const DZ = 0.45;
+        const up    = (pad.buttons[12] && pad.buttons[12].pressed) || ly < -DZ;
+        const down  = (pad.buttons[13] && pad.buttons[13].pressed) || ly >  DZ;
+        const confirm = (pad.buttons[0] && pad.buttons[0].pressed) || (pad.buttons[9] && pad.buttons[9].pressed);
+        const back    = (pad.buttons[1] && pad.buttons[1].pressed);
+        const edges = ['dsUp','dsDown','dsOk','dsBack'];
+        const vals  = [up, down, confirm, back];
+        for (let i = 0; i < edges.length; i++) {
+          const pressed = !!vals[i];
+          const prev = _padPrev[edges[i]] || false;
+          if (pressed && !prev) {
+            if (i === 0) _dsMove(-1);
+            else if (i === 1) _dsMove(+1);
+            else if (i === 2) _dsConfirm();
+            else if (i === 3) _dsBack();
+          }
+          _padPrev[edges[i]] = pressed;
+        }
+        return;
+      }
       // Left stick X — apply deadzone, fall back to D-pad
       const lx = pad.axes[0] || 0;
       const DZ = 0.18;
@@ -6292,12 +6756,14 @@
     let truckLateral = 2.5;          // start in right lane
     let truckSpeed = 14;
     const TRUCK_MIN_SPEED = 8;
-    const TRUCK_MAX_SPEED = 42;
+    let   TRUCK_MAX_SPEED = 42;
+    const BASE_TRUCK_MAX_SPEED = 42;
     const TRUCK_BOOST_SPEED = 66;
     const TRUCK_ACCEL = 20;
     const TRUCK_BRAKE = 32;
     const TRUCK_DRAG = 4;
-    const STEER_SPEED = 8;
+    let   STEER_SPEED = 8;
+    const BASE_STEER_SPEED = 8;
 
     let bumpVel = 0, bumpY = 0, bodyRoll = 0;
     let cameraRoll = 0;            // rally-style banking, eased
@@ -6353,7 +6819,8 @@
     let boostMeter = 1.0;                 // 0..1
     let boostActive = false;
     let boostTime = 0;
-    const BOOST_DURATION = 2.5;           // seconds of burst per fire
+    let   BOOST_DURATION = 2.5;           // seconds of burst per fire
+    const BASE_BOOST_DURATION = 2.5;
 
     // ---- Style → performance: per-stage top-speed bonus + boost gain
     // Risky driving (near miss / close call / thread the needle / nice jump)
@@ -6414,9 +6881,11 @@
         cluster.classList.remove('top-grow');
       }, 900);
     }
-    const BOOST_REGEN_PER_SEC = 0.08;     // ~12s to fully recharge from empty
+    let   BOOST_REGEN_PER_SEC = 0.08;     // ~12s to fully recharge from empty
+    const BASE_BOOST_REGEN = 0.08;
     const BOOST_PICKUP_VALUE = 0.5;       // each pickup adds 50%
-    const BOOST_CRASH_LOSS = 1.0;         // crash empties entirely
+    let   BOOST_CRASH_LOSS = 1.0;         // crash empties entirely
+    const BASE_BOOST_CRASH_LOSS = 1.0;
 
     // ---- score ----
     let score = 0;
@@ -6828,7 +7297,8 @@
     //  Expressions: happy / focused / concerned / panic / angry / relieved
     // ===================================================================
     const driverCanvas = document.getElementById('driverCanvas');
-    const driverCtx = driverCanvas ? driverCanvas.getContext('2d') : null;
+    let   driverCtx = driverCanvas ? driverCanvas.getContext('2d') : null;
+    const _origDriverCtx = driverCtx;
     const driverStateEl = document.getElementById('driverState');
     const driverCaptionEl = document.getElementById('driverCaption');
     const driverPipEl = document.getElementById('driverPip');
@@ -8025,6 +8495,10 @@
       if (_menuActive) {
         _tickMenu(performance.now() * 0.001);
       }
+      // ---- driver select portrait redraw ----
+      if (_dsActive) {
+        _drawDsPortrait(performance.now() * 0.001);
+      }
 
       // ---- stage intro plays before gameplay resumes ----
       if (introState) {
@@ -8036,7 +8510,7 @@
         tickReplay(dt);
       }
 
-      if (!gameOver && !stageRecap && !introState && !_menuActive) {
+      if (!gameOver && !stageRecap && !introState && !_menuActive && !_dsActive) {
         // throttle — boost is a press-to-fire timed burst, not a hold
         if (boostActive) {
           boostTime -= dt;
