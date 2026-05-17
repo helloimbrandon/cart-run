@@ -6325,10 +6325,11 @@
       const aheadTan = tangentAt(lookAheadT);
       const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
       const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
-      // 12mm wide-angle chase cam — pull in close so the lens does the work
-      const camTargetX = truck.position.x - blendTanX * 8.5;
-      const camTargetY = 6.5 + bumpY * 0.4;
-      const camTargetZ = truck.position.z - blendTanZ * 8.5;
+      // 12mm wide-angle chase cam — closer + higher + angled down so the
+      // road ahead reads further into the distance.
+      const camTargetX = truck.position.x - blendTanX * 7.0;
+      const camTargetY = 9.5 + bumpY * 0.4;
+      const camTargetZ = truck.position.z - blendTanZ * 7.0;
       camera.position.x += (camTargetX - camera.position.x) * 0.14;
       camera.position.y += (camTargetY - camera.position.y) * 0.10;
       camera.position.z += (camTargetZ - camera.position.z) * 0.18;
@@ -6340,11 +6341,12 @@
       const sr = (Math.sin(ts * 39) + Math.sin(ts * 13)) * 0.015 * shakeI;
       camera.position.x += sx;
       camera.position.y += sy;
-      // look ahead along the (blended) curve so the camera frames the turn
+      // look ahead along the (blended) curve so the camera frames the turn.
+      // Target is further out + lower so the higher camera tips down into the road.
       camera.lookAt(
-        truck.position.x + blendTanX * 18,
-        2.6 + bumpY * 0.5,
-        truck.position.z + blendTanZ * 18
+        truck.position.x + blendTanX * 24,
+        1.6 + bumpY * 0.5,
+        truck.position.z + blendTanZ * 24
       );
       // rally-style camera bank: roll into the steering direction, eased
       // plus a small contribution from upcoming curvature so corners pre-tilt
