@@ -3411,7 +3411,7 @@
     // =========================================================================
     const LEVELS = [
       {
-        name: 'SUBURB',
+        name: 'SUBURB', kind: 'suburb',
         // ~1800m, gentle S in three sections
         points: [
           [0,0,0], [0,0,300], [-18,0,560], [10,0,820], [-12,0,1080],
@@ -3427,7 +3427,7 @@
         bumps: 5, potholes: 4, trafficCount: 4, parkedCarChance: 0.15,
       },
       {
-        name: 'AVENUE',
+        name: 'AVENUE', kind: 'urban',
         // ~2400m, sharper bends in three sections
         points: [
           [0,0,0], [0,0,300], [45,0,560], [60,0,820], [20,0,1080],
@@ -3442,7 +3442,7 @@
         bumps: 8, potholes: 6, trafficCount: 7, parkedCarChance: 0.22,
       },
       {
-        name: 'DOWNTOWN',
+        name: 'DOWNTOWN', kind: 'downtown',
         // ~2800m, tight serpentine in three sections
         points: [
           [0,0,0], [25,0,260], [-30,0,500], [40,0,740], [-45,0,980],
@@ -3458,7 +3458,7 @@
         bumps: 8, potholes: 7, trafficCount: 8, parkedCarChance: 0.22,
       },
       {
-        name: 'HIGHWAY',
+        name: 'HIGHWAY', kind: 'highway',
         // ~2200m, mostly long sweepers — high-speed run
         points: [
           [0,0,0], [0,0,300], [-15,0,600], [15,0,900], [-10,0,1200],
@@ -3473,7 +3473,7 @@
         bumps: 4, potholes: 3, trafficCount: 9, parkedCarChance: 0.10,
       },
       {
-        name: 'HILLS',
+        name: 'HILLS', kind: 'forest',
         // ~2300m, winding tighter curves — mid-tier challenge
         points: [
           [0,0,0], [25,0,260], [-30,0,500], [40,0,740], [-30,0,980],
@@ -3489,7 +3489,7 @@
         bumps: 7, potholes: 5, trafficCount: 7, parkedCarChance: 0.12,
       },
       {
-        name: 'INDUSTRIAL',
+        name: 'INDUSTRIAL', kind: 'industrial',
         // ~2500m, concrete, gritty — heavy traffic
         points: [
           [0,0,0], [20,0,280], [-25,0,540], [35,0,800], [-35,0,1060],
@@ -3504,7 +3504,7 @@
         bumps: 9, potholes: 8, trafficCount: 9, parkedCarChance: 0.28,
       },
       {
-        name: 'COAST',
+        name: 'COAST', kind: 'coast',
         // ~2400m, long curves with ocean palette
         points: [
           [0,0,0], [0,0,280], [25,0,560], [40,0,860], [25,0,1160],
@@ -3519,7 +3519,7 @@
         bumps: 5, potholes: 4, trafficCount: 6, parkedCarChance: 0.12,
       },
       {
-        name: 'NIGHTRUN',
+        name: 'NIGHTRUN', kind: 'night',
         // ~2600m, dusk/night palette
         points: [
           [0,0,0], [-25,0,260], [30,0,520], [-40,0,800], [35,0,1080],
@@ -3535,7 +3535,7 @@
         bumps: 9, potholes: 7, trafficCount: 11, parkedCarChance: 0.25,
       },
       {
-        name: 'DESERT',
+        name: 'DESERT', kind: 'desert',
         // ~2700m, wide-open sand
         points: [
           [0,0,0], [-20,0,320], [25,0,640], [-15,0,960], [20,0,1280],
@@ -3550,7 +3550,7 @@
         bumps: 6, potholes: 6, trafficCount: 8, parkedCarChance: 0.08,
       },
       {
-        name: 'METRO',
+        name: 'METRO', kind: 'metro',
         // ~3000m, the final urban grind
         points: [
           [0,0,0], [30,0,280], [-35,0,520], [45,0,780], [-50,0,1040],
@@ -4157,13 +4157,40 @@
         levelGroup.add(d);
       }
 
-      // decor along curve — denser placement, per-stage flavor
+      // decor along curve — gated by stage `kind` so highway isn't lined
+      // with suburban houses, downtown doesn't have mailboxes, etc.
       const carColors = [0x2a6acc, 0x3a8a3a, 0xc8a830, 0x8a3030, 0x444444, 0xc0c0c0, 0x7a4ab8];
-      const isDowntown = L.name === 'DOWNTOWN';
-      const isAvenue   = L.name === 'AVENUE';
+      const kind = L.kind || 'suburb';
+      const isCityKind   = (kind === 'downtown' || kind === 'metro' || kind === 'night');
+      const isHighway    = (kind === 'highway');
+      const isForest     = (kind === 'forest');
+      const isDesert     = (kind === 'desert');
+      const isCoast      = (kind === 'coast');
+      const isIndustrial = (kind === 'industrial');
+      const isUrban      = (kind === 'urban');
+      const isSuburb     = (kind === 'suburb');
 
-      // tight spacing for suburb/avenue, sparser in downtown (perf)
-      const stepM = isDowntown ? 18 : 12;
+      // What primary structure goes by the roadside?
+      //   building → tall blocks (downtown / metro / night / industrial / urban-mix)
+      //   house    → suburban
+      //   none     → highway, forest, desert, coast
+      const primaryKind = isCityKind ? 'building'
+                        : isIndustrial ? 'building'
+                        : isUrban      ? 'mixed'        // mostly building, occasional house
+                        : isSuburb     ? 'house'
+                        :                'none';
+      const sideOff = isCityKind ? () => rand(27, 36)
+                    : isUrban    ? () => rand(25, 33)
+                    : isIndustrial ? () => rand(24, 30)
+                    : isSuburb   ? () => rand(24, 32)
+                    :                () => 999;   // pushed off-camera if "none"
+
+      // Spacing
+      const stepM = isCityKind ? 18
+                  : isHighway || isDesert ? 28
+                  : isForest || isCoast   ? 16
+                  : 12;
+
       let s = 8;
       while (s < curveLength - 60) {
         const t = s / curveLength;
@@ -4172,71 +4199,92 @@
         const rt = rightFromTangent(tn);
         const yaw = Math.atan2(tn.x, tn.z);
         for (const side of [-1, 1]) {
-          // primary building (house or downtown building)
-          if (Math.random() < L.houseDensity) {
-            const b = isDowntown ? makeBuilding() : makeHouse();
-            const off = isDowntown ? rand(27, 36) : rand(24, 32);
+          // ----- primary structure -----
+          if (primaryKind !== 'none' && Math.random() < L.houseDensity) {
+            let b;
+            if (primaryKind === 'building') b = makeBuilding();
+            else if (primaryKind === 'house') b = makeHouse();
+            else /* mixed */ b = (Math.random() < 0.65) ? makeBuilding() : makeHouse();
+            const off = sideOff();
             b.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             b.rotation.y = yaw + (side === -1 ? Math.PI : 0);
             levelGroup.add(b);
           }
-          // tree (more frequent now)
-          if (!isDowntown && Math.random() < L.treeDensity) {
+          // ----- trees: forest/suburb thick; coast/highway thin; cities/desert almost none -----
+          const treeAllowed =
+            isForest || isSuburb || isCoast || isHighway ||
+            (isUrban && Math.random() < 0.4);
+          if (treeAllowed && Math.random() < L.treeDensity) {
             const tr = makeTree();
-            const off = rand(15, 20);
+            const off = isHighway ? rand(22, 32) : rand(15, 20);
             tr.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             levelGroup.add(tr);
           }
-          // mailbox
-          if (!isDowntown && Math.random() < L.mailboxDensity) {
+          // ----- mailbox: suburb only -----
+          if (isSuburb && Math.random() < L.mailboxDensity) {
             const m = makeMailbox();
             const off = ROAD_W / 2 + 2.4;
             m.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             m.rotation.y = yaw;
             levelGroup.add(m);
           }
-          // parked car
-          if (Math.random() < L.parkedCarChance) {
+          // ----- parked cars: skipped on highway / forest / desert -----
+          const parkedAllowed = !isHighway && !isForest && !isDesert && !isCoast;
+          if (parkedAllowed && Math.random() < L.parkedCarChance) {
             const c = makeCar(carColors[(Math.random() * carColors.length) | 0]);
             const off = ROAD_W / 2 + 2.6;
             c.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             c.rotation.y = yaw + Math.PI / 2 * side;
             levelGroup.add(c);
           }
-          // hedge / bush filler (suburb + avenue)
-          if (!isDowntown && Math.random() < 0.55) {
+          // ----- hedges: suburb + light urban -----
+          if ((isSuburb || isUrban) && Math.random() < 0.45) {
             const h = makeHedge(rand(3.5, 5.5));
             const off = ROAD_W / 2 + 3.2;
             h.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             h.rotation.y = yaw;
             levelGroup.add(h);
           }
-          if (!isDowntown && Math.random() < 0.35) {
+          // ----- bushes: forest heavy, suburb/coast medium, desert sparse -----
+          const bushChance = isForest ? 0.5
+                           : isSuburb ? 0.35
+                           : isCoast  ? 0.25
+                           : isDesert ? 0.18
+                           : 0;
+          if (bushChance > 0 && Math.random() < bushChance) {
             const b = makeBush();
             const off = rand(7, 13);
             b.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             levelGroup.add(b);
           }
-          // garbage cans on curb
-          if (Math.random() < 0.18) {
+          // ----- garbage cans: urban + city + industrial only -----
+          if ((isUrban || isCityKind || isIndustrial) && Math.random() < 0.18) {
             const gc = makeGarbageCan();
             const off = ROAD_W / 2 + 1.6;
             gc.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             levelGroup.add(gc);
           }
-          // fire hydrants — rare
-          if (Math.random() < 0.06) {
+          // ----- fire hydrants: suburb + urban only, rare -----
+          if ((isSuburb || isUrban) && Math.random() < 0.06) {
             const fh = makeFireHydrant();
             const off = ROAD_W / 2 + 1.5;
             fh.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
             levelGroup.add(fh);
+          }
+          // ----- billboards: highway / desert / coast / industrial — set far back -----
+          if ((isHighway || isDesert || isCoast || isIndustrial) && Math.random() < 0.05) {
+            const bb = makeBillboard();
+            const off = rand(28, 40);
+            bb.position.set(p.x + rt.x * side * off, 0, p.z + rt.z * side * off);
+            bb.rotation.y = yaw + (side === -1 ? Math.PI : 0);
+            levelGroup.add(bb);
           }
         }
         s += rand(stepM * 0.85, stepM * 1.2);
       }
 
       // continuous fence run along each side (suburb only) — placed every ~4m so it follows the curve
-      if (L.name === 'SUBURB') {
+      if (L.kind === 'suburb') {
         for (let fs = 8; fs < curveLength - 8; fs += 3.8) {
           if (Math.random() < 0.55) continue; // gappy
           const t = fs / curveLength;
@@ -4684,6 +4732,37 @@
       startAudio();
     });
     addEventListener('gamepaddisconnected', () => { _padConnected = false; });
+
+    // -----------------------------------------------------------------
+    // Controller rumble via the standard Gamepad vibrationActuator.
+    // Safe-no-ops on browsers / controllers that don't expose it.
+    //   durationMs : how long to vibrate
+    //   strong     : 0..1 low-frequency motor (heavy thud)
+    //   weak       : 0..1 high-frequency motor (buzzy fizz)
+    // -----------------------------------------------------------------
+    function rumble(durationMs, strong, weak) {
+      if (!navigator.getGamepads) return;
+      try {
+        const pads = navigator.getGamepads();
+        for (const p of pads) {
+          if (!p) continue;
+          const v = p.vibrationActuator;
+          if (!v) continue;
+          // Modern path: playEffect('dual-rumble', …)
+          if (typeof v.playEffect === 'function') {
+            v.playEffect('dual-rumble', {
+              startDelay: 0,
+              duration: Math.max(40, Math.min(durationMs, 1000)),
+              strongMagnitude: Math.max(0, Math.min(strong, 1)),
+              weakMagnitude:   Math.max(0, Math.min(weak,   1)),
+            });
+          } else if (typeof v.pulse === 'function') {
+            // Older Firefox path
+            v.pulse(Math.max(strong, weak), Math.min(durationMs, 1000));
+          }
+        }
+      } catch (_) {}
+    }
 
     function pollGamepad() {
       if (!navigator.getGamepads) return;
@@ -5683,6 +5762,7 @@
       const gearEl  = document.getElementById('rGear');
       if (speedEl) reanim(speedEl, 'anim-speed-boost');
       if (gearEl)  reanim(gearEl, 'anim-flicker');
+      rumble(220, 0.85, 0.55);
       return true;
     }
 
@@ -5988,6 +6068,8 @@
 
       // Keep most of the player's speed (heavy / unstoppable feel).
       truckSpeed = Math.max(truckSpeed * 0.96, truckSpeed - 1.5);
+      // Beefy thunk that grows with chain.
+      rumble(140 + chain * 30, Math.min(1, 0.6 + chain * 0.08), 0.4);
     }
 
     function arcadeCallout(text, opts) {
@@ -6649,6 +6731,7 @@
     stageStartCarts = cartsRemaining;
     stageStartTime = performance.now();
     _resetStageStyleStats();
+    _resetReplayBuffer();
 
     // =========================================================================
     // main loop
@@ -6673,6 +6756,60 @@
     let _replayShotT   = 0;
     let _replayStats   = null;
     let _replayTickers = [];   // setTimeout handles, cleared on skip/teardown
+
+    // ---- recorded-path replay buffer ----
+    // Sample the truck's pose at ~30Hz during gameplay. On stage finish,
+    // play the buffer back through the orbit phase at a compressed speed
+    // so the camera follows the actual driven path (not just the parked truck).
+    const REPLAY_SAMPLE_HZ  = 30;
+    const REPLAY_SAMPLE_DT  = 1 / REPLAY_SAMPLE_HZ;
+    const REPLAY_MAX_SECS   = 12;   // keep the last 12s of gameplay
+    const REPLAY_MAX_FRAMES = REPLAY_SAMPLE_HZ * REPLAY_MAX_SECS;
+    const REPLAY_PLAY_DUR   = 5.5;  // seconds of replay playback during orbit
+    const _replayBuffer = [];
+    let _replaySampleT  = 0;        // accumulator for sample-rate gating
+
+    function _resetReplayBuffer() {
+      _replayBuffer.length = 0;
+      _replaySampleT = 0;
+    }
+
+    function _pushReplaySample(dt) {
+      _replaySampleT += dt;
+      if (_replaySampleT < REPLAY_SAMPLE_DT) return;
+      _replaySampleT = 0;
+      _replayBuffer.push({
+        s:    truckS,
+        lat:  truckLateral,
+        bumpY,
+        roll: bodyRoll,
+        speed: truckSpeed,
+        boost: boostActive,
+      });
+      if (_replayBuffer.length > REPLAY_MAX_FRAMES) _replayBuffer.shift();
+    }
+
+    // Sample the replay path at a normalized [0..1] progress, lerping
+    // between the two nearest captured frames.
+    function _replayPoseAt(u) {
+      const n = _replayBuffer.length;
+      if (n === 0) return null;
+      if (u <= 0) return _replayBuffer[0];
+      if (u >= 1) return _replayBuffer[n - 1];
+      const idx = u * (n - 1);
+      const i0  = Math.floor(idx);
+      const i1  = Math.min(n - 1, i0 + 1);
+      const t   = idx - i0;
+      const a = _replayBuffer[i0], b = _replayBuffer[i1];
+      return {
+        s:     a.s     + (b.s     - a.s)     * t,
+        lat:   a.lat   + (b.lat   - a.lat)   * t,
+        bumpY: a.bumpY + (b.bumpY - a.bumpY) * t,
+        roll:  a.roll  + (b.roll  - a.roll)  * t,
+        speed: a.speed + (b.speed - a.speed) * t,
+        boost: t < 0.5 ? a.boost : b.boost,
+      };
+    }
 
     const REPLAY_SHOTS = [
       { dur: 1.2, type: 'chase'  },
@@ -6742,6 +6879,10 @@
       bark('FINISH');
       try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
       setDriverState('relieved', 1.8, 'FINISH!');
+      // Celebratory triple-thump on the controller
+      rumble(180, 0.9, 0.7);
+      setTimeout(() => rumble(180, 0.7, 0.5), 220);
+      setTimeout(() => rumble(280, 1.0, 0.9), 460);
       reanim(document.getElementById('rTime'), 'anim-glitch');
     }
 
@@ -6750,31 +6891,57 @@
       if (!_replayPhase) return;
       _replayT += dt;
 
-      // truck coasts forward during finish + orbit
-      if (_replayPhase === 'finish' || _replayPhase === 'orbit') {
+      // 'finish' phase: truck coasts forward briefly so the FINISH callout
+      // has a beat to land before the replay kicks in.
+      if (_replayPhase === 'finish') {
         truckSpeed *= 0.985;
         truckSpeed = Math.max(truckSpeed, 6);
         truckS += truckSpeed * dt;
         truckS = Math.min(truckS, curveLength - 4);
-      }
-
-      if (_replayPhase === 'finish' && _replayT >= 1.0) {
-        _replayPhase = 'orbit';
-        _replayT = 0;
-        _replayShot = 0;
-        _replayShotT = 0;
+        if (_replayT >= 1.0) {
+          _replayPhase = 'orbit';
+          _replayT = 0;
+          _replayShot = 0;
+          _replayShotT = 0;
+        }
         return;
       }
+
+      // 'orbit' phase: play back the recorded path over REPLAY_PLAY_DUR.
       if (_replayPhase === 'orbit') {
         _replayShotT += dt;
+        // Drive the truck along the recorded path
+        const u = clamp(_replayT / REPLAY_PLAY_DUR, 0, 1);
+        const pose = _replayPoseAt(u);
+        if (pose) {
+          truckS       = pose.s;
+          truckLateral = pose.lat;
+          bumpY        = pose.bumpY;
+          bodyRoll     = pose.roll;
+          truckSpeed   = pose.speed;
+        }
+        // Cycle through camera shots
         const shot = REPLAY_SHOTS[_replayShot];
         if (_replayShotT >= shot.dur) {
           _replayShot++;
           _replayShotT = 0;
-          if (_replayShot >= REPLAY_SHOTS.length) {
-            _enterTallyPhase();
-          }
         }
+        // End orbit when either: all shots done, OR replay playback hits 1.0
+        if (u >= 1 || _replayShot >= REPLAY_SHOTS.length) {
+          _enterTallyPhase();
+        }
+        return;
+      }
+
+      // 'tally' / 'done': hold the truck at the last recorded pose so the
+      // hero shot frames the finish line, not a wandering coast.
+      if (_replayBuffer.length) {
+        const last = _replayBuffer[_replayBuffer.length - 1];
+        truckS       = last.s;
+        truckLateral = last.lat;
+        bumpY        = last.bumpY;
+        bodyRoll     = last.roll;
+        truckSpeed   = last.speed;
       }
     }
 
@@ -6972,6 +7139,7 @@
       stageDodges = 0;
       _resetStageStyleStats();
       _resetStyleBoosts();
+      _resetReplayBuffer();
       stageStartScore = score;
       stageStartCarts = cartsRemaining;
       stageStartTime = performance.now();
@@ -7028,6 +7196,7 @@
       stageDodges = 0;
       _resetStageStyleStats();
       _resetStyleBoosts();
+      _resetReplayBuffer();
       truckS = 0;
       truckLateral = 2.5;
       stageStartTime = performance.now();
@@ -7093,6 +7262,8 @@
 
         // advance along curve
         truckS += truckSpeed * dt;
+        // record the truck pose into the rolling replay buffer
+        _pushReplaySample(dt);
         if (truckS >= curveLength - 14) {
           endStage();
           // freeze further game logic this frame
@@ -7257,6 +7428,7 @@
             boostActive = false;
             addScore(-40);
             _breakDodgeChain('COMBO LOST');
+            rumble(360, 1.0, 0.8);
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
             arcadeCallout('WATCH IT', { type: 'warning', pos: 'lr', holdMs: 700 });
