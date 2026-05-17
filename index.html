@@ -1380,6 +1380,42 @@
     /* mobile: hide */
     .mobile-active #driverPip { display: none !important; }
 
+    /* ---- SONG flash + controls strip ---- */
+    #songFlash {
+      position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 18px;
+      letter-spacing: 4px;
+      color: #fff;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      z-index: 5;
+      white-space: nowrap;
+    }
+    #songFlash .label { color: #ffce4a; margin-right: 8px; }
+    #songFlash.show { opacity: 1; }
+
+    #controlsStrip {
+      position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: rgba(245, 245, 240, 0.62);
+      white-space: nowrap;
+      z-index: 4;
+    }
+    #controlsStrip b { color: #ffce4a; font-weight: 400; margin-right: 2px; }
+    #controlsStrip .sep { color: rgba(255,206,74,0.6); margin: 0 10px; }
+    /* hide during intro so nothing competes with the stage title / countdown */
+    body.intro-active #controlsStrip,
+    body.intro-active #songFlash { opacity: 0 !important; }
+    /* mobile shows a simpler line */
+    .mobile-active #controlsStrip { font-size: 9px; letter-spacing: 2px; bottom: 4px; }
+
     /* =====================================================================
        POLISH PASS — glow purge + arcade-size recap + HUD unification
        (One italic-white-on-yellow-label sportsbrut system. Hard drop
@@ -2238,6 +2274,14 @@
 
   <!-- voice bark subtitle -->
   <div id="bark"></div>
+
+  <!-- song-name flash + bottom controls strip -->
+  <div id="songFlash"><span class="label">SONG:</span><span id="songFlashName">—</span></div>
+  <div id="controlsStrip">
+    <b>WASD</b>STEER<span class="sep">|</span>
+    <b>SPACE</b>BOOST<span class="sep">|</span>
+    <b>M</b>MUTE
+  </div>
 
   <!-- driver picture-in-picture comms window -->
   <div id="driverPip">
@@ -3111,12 +3155,120 @@
           [25,0,2180], [0,0,2440], [0,0,2800],
         ],
         checkpoints: [930, 1860],
-        skyColor: 0x3a2a55, fogColor: 0x40305a, fogNear: 50, fogFar: 210,  // tighter fog = less to render
+        skyColor: 0x3a2a55, fogColor: 0x40305a, fogNear: 50, fogFar: 210,
         sunColor: 0xc8b0ff, hemiSky: 0x6a4a90, hemiGround: 0x1a1a2a,
         grassColor: 0x3a4a3a, roadColor: 0x1f1f1f,
         mountainNear: 0x4a3a6a, mountainFar: 0x2a1f44,
         houseDensity: 0.55, treeDensity: 0.12, mailboxDensity: 0.06,
         bumps: 8, potholes: 7, trafficCount: 8, parkedCarChance: 0.22,
+      },
+      {
+        name: 'HIGHWAY',
+        // ~2200m, mostly long sweepers — high-speed run
+        points: [
+          [0,0,0], [0,0,300], [-15,0,600], [15,0,900], [-10,0,1200],
+          [20,0,1500], [-5,0,1800], [0,0,2200],
+        ],
+        checkpoints: [720, 1450],
+        skyColor: 0x6fb4e8, fogColor: 0x80c0e8, fogNear: 100, fogFar: 360,
+        sunColor: 0xfff4d4, hemiSky: 0xa0d0f0, hemiGround: 0x7a8a40,
+        grassColor: 0x88a85a, roadColor: 0x3d3d3d,
+        mountainNear: 0x7090a8, mountainFar: 0x4a5a78,
+        houseDensity: 0.18, treeDensity: 0.22, mailboxDensity: 0.10,
+        bumps: 4, potholes: 3, trafficCount: 9, parkedCarChance: 0.10,
+      },
+      {
+        name: 'HILLS',
+        // ~2300m, winding tighter curves — mid-tier challenge
+        points: [
+          [0,0,0], [25,0,260], [-30,0,500], [40,0,740], [-30,0,980],
+          [25,0,1200], [-30,0,1440], [30,0,1700], [-20,0,1960],
+          [10,0,2200], [0,0,2300],
+        ],
+        checkpoints: [780, 1560],
+        skyColor: 0x95c8a8, fogColor: 0x9fc8b0, fogNear: 70, fogFar: 280,
+        sunColor: 0xfff0c8, hemiSky: 0xa8d8c0, hemiGround: 0x4a6a3a,
+        grassColor: 0x5aa848, roadColor: 0x3a3a3a,
+        mountainNear: 0x6a8a5a, mountainFar: 0x3a5a3a,
+        houseDensity: 0.35, treeDensity: 0.70, mailboxDensity: 0.18,
+        bumps: 7, potholes: 5, trafficCount: 7, parkedCarChance: 0.12,
+      },
+      {
+        name: 'INDUSTRIAL',
+        // ~2500m, concrete, gritty — heavy traffic
+        points: [
+          [0,0,0], [20,0,280], [-25,0,540], [35,0,800], [-35,0,1060],
+          [20,0,1320], [-20,0,1580], [35,0,1840], [-15,0,2100], [0,0,2500],
+        ],
+        checkpoints: [830, 1670],
+        skyColor: 0x8a8a92, fogColor: 0x90909a, fogNear: 60, fogFar: 240,
+        sunColor: 0xc8c8d0, hemiSky: 0x9090a0, hemiGround: 0x3a3a40,
+        grassColor: 0x6a6a68, roadColor: 0x2a2a2a,
+        mountainNear: 0x5a5a64, mountainFar: 0x3a3a44,
+        houseDensity: 0.75, treeDensity: 0.06, mailboxDensity: 0.04,
+        bumps: 9, potholes: 8, trafficCount: 9, parkedCarChance: 0.28,
+      },
+      {
+        name: 'COAST',
+        // ~2400m, long curves with ocean palette
+        points: [
+          [0,0,0], [0,0,280], [25,0,560], [40,0,860], [25,0,1160],
+          [-10,0,1460], [-30,0,1760], [-15,0,2060], [10,0,2400],
+        ],
+        checkpoints: [800, 1620],
+        skyColor: 0x76b8d8, fogColor: 0x9ad0e0, fogNear: 100, fogFar: 380,
+        sunColor: 0xfff8d8, hemiSky: 0xa8d8e8, hemiGround: 0xc8b88a,
+        grassColor: 0xd8c890, roadColor: 0x3b3b3b,
+        mountainNear: 0x6a98b8, mountainFar: 0x3a6890,
+        houseDensity: 0.30, treeDensity: 0.18, mailboxDensity: 0.10,
+        bumps: 5, potholes: 4, trafficCount: 6, parkedCarChance: 0.12,
+      },
+      {
+        name: 'NIGHTRUN',
+        // ~2600m, dusk/night palette
+        points: [
+          [0,0,0], [-25,0,260], [30,0,520], [-40,0,800], [35,0,1080],
+          [-25,0,1360], [25,0,1640], [-30,0,1920], [15,0,2200],
+          [0,0,2480], [0,0,2600],
+        ],
+        checkpoints: [870, 1740],
+        skyColor: 0x1a1f3a, fogColor: 0x202a48, fogNear: 50, fogFar: 220,
+        sunColor: 0x7080c0, hemiSky: 0x3a3a78, hemiGround: 0x12141e,
+        grassColor: 0x2a3242, roadColor: 0x1a1a1f,
+        mountainNear: 0x2a3056, mountainFar: 0x10142a,
+        houseDensity: 0.70, treeDensity: 0.20, mailboxDensity: 0.06,
+        bumps: 9, potholes: 7, trafficCount: 11, parkedCarChance: 0.25,
+      },
+      {
+        name: 'DESERT',
+        // ~2700m, wide-open sand
+        points: [
+          [0,0,0], [-20,0,320], [25,0,640], [-15,0,960], [20,0,1280],
+          [-25,0,1600], [30,0,1920], [-10,0,2240], [0,0,2700],
+        ],
+        checkpoints: [900, 1800],
+        skyColor: 0xf0a070, fogColor: 0xe89868, fogNear: 80, fogFar: 320,
+        sunColor: 0xffe0a0, hemiSky: 0xffa078, hemiGround: 0xa86838,
+        grassColor: 0xd8a062, roadColor: 0x3a2a20,
+        mountainNear: 0xa86040, mountainFar: 0x603024,
+        houseDensity: 0.10, treeDensity: 0.04, mailboxDensity: 0.04,
+        bumps: 6, potholes: 6, trafficCount: 8, parkedCarChance: 0.08,
+      },
+      {
+        name: 'METRO',
+        // ~3000m, the final urban grind
+        points: [
+          [0,0,0], [30,0,280], [-35,0,520], [45,0,780], [-50,0,1040],
+          [30,0,1300], [-30,0,1560], [45,0,1820], [-45,0,2080],
+          [30,0,2340], [-15,0,2600], [0,0,2820], [0,0,3000],
+        ],
+        checkpoints: [1000, 2000],
+        skyColor: 0x2a2040, fogColor: 0x322840, fogNear: 50, fogFar: 220,
+        sunColor: 0xb8a8e0, hemiSky: 0x584280, hemiGround: 0x14122a,
+        grassColor: 0x303a3a, roadColor: 0x1c1c1c,
+        mountainNear: 0x3a2a4a, mountainFar: 0x1a142a,
+        houseDensity: 0.50, treeDensity: 0.10, mailboxDensity: 0.04,
+        bumps: 11, potholes: 9, trafficCount: 10, parkedCarChance: 0.30,
       },
     ];
 
@@ -3396,85 +3548,118 @@
     }
 
     function makeCartPickup() {
-      // floating yellow cart icon + green "+1" tag + bright ring
+      // BIG floating cart restock — neon green double-ring + tall beam +
+      // floating "+1 CART" plate. Reads as collectible at distance.
       const g = new THREE.Group();
       const cart = makeCartMesh();
-      cart.scale.set(0.65, 0.65, 0.65);
-      cart.position.y = 0.8;
+      cart.scale.set(0.85, 0.85, 0.85);
+      cart.position.y = 1.1;
       g.add(cart);
       // +1 plate
-      const sign = makeTextSign('+1', 1.0, 0.55, '#2ce053', '#001a3a');
-      sign.position.set(0, 1.85, 0);
+      const sign = makeTextSign('+1', 1.4, 0.7, '#2ce053', '#001a3a');
+      sign.position.set(0, 2.4, 0);
       g.add(sign);
-      // green glow ring
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.85, 0.08, 6, 18),
-        new THREE.MeshBasicMaterial({ color: 0x2ce053 })
+      // green ring stack — thicker + a smaller inner one
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x2ce053 });
+      const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.14, 8, 24), ringMat);
+      ringOuter.rotation.x = Math.PI / 2;
+      ringOuter.position.y = 0.3;
+      g.add(ringOuter);
+      const ringInner = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.08, 8, 22),
+        new THREE.MeshBasicMaterial({ color: 0xaaffae })
       );
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = 0.25;
-      g.add(ring);
-      // beam
+      ringInner.rotation.x = Math.PI / 2;
+      ringInner.position.y = 0.42;
+      g.add(ringInner);
+      // tall beam column to draw the eye
       const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.18, 1.6, 8),
-        new THREE.MeshBasicMaterial({ color: 0x88ff9a, transparent: true, opacity: 0.28 })
+        new THREE.CylinderGeometry(0.32, 0.32, 2.4, 8),
+        new THREE.MeshBasicMaterial({ color: 0x88ff9a, transparent: true, opacity: 0.32 })
       );
-      beam.position.y = 0.95;
+      beam.position.y = 1.4;
       g.add(beam);
       g._core = cart;
       g._sign = sign;
+      g._ring = ringOuter;
+      g._ringInner = ringInner;
       return g;
     }
     function makeBoostPickup() {
-      // glowing yellow octahedron in a ring, hovering above the road
+      // BIG glowing yellow octahedron in a double ring — instantly readable
       const g = new THREE.Group();
       const core = new THREE.Mesh(
-        new THREE.OctahedronGeometry(0.55, 0),
+        new THREE.OctahedronGeometry(0.85, 0),
         new THREE.MeshBasicMaterial({ color: 0xffe44a })
       );
-      core.position.y = 1.4;
+      core.position.y = 1.8;
       g.add(core);
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.85, 0.08, 6, 18),
-        new THREE.MeshBasicMaterial({ color: 0xfff5a0 })
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xfff5a0 });
+      const ringOuter = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.14, 8, 24), ringMat);
+      ringOuter.rotation.x = Math.PI / 2;
+      ringOuter.position.y = 0.4;
+      g.add(ringOuter);
+      const ringInner = new THREE.Mesh(
+        new THREE.TorusGeometry(0.95, 0.08, 8, 22),
+        new THREE.MeshBasicMaterial({ color: 0xfffac0 })
       );
-      ring.rotation.x = Math.PI / 2;
-      ring.position.y = 0.3;
-      g.add(ring);
-      // glow column
+      ringInner.rotation.x = Math.PI / 2;
+      ringInner.position.y = 0.52;
+      g.add(ringInner);
       const beam = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.18, 0.18, 1.4, 8),
-        new THREE.MeshBasicMaterial({ color: 0xfff5a0, transparent: true, opacity: 0.32 })
+        new THREE.CylinderGeometry(0.32, 0.32, 2.4, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfff5a0, transparent: true, opacity: 0.36 })
       );
-      beam.position.y = 0.85;
+      beam.position.y = 1.4;
       g.add(beam);
       g._core = core;
+      g._ring = ringOuter;
+      g._ringInner = ringInner;
       return g;
     }
 
     function makeCar(color = 0x2a6acc) {
+      // Larger, more vehicle-shaped silhouette + dark soft ground shadow so
+      // traffic instantly reads as "grounded car" vs "floating pickup".
       const g = new THREE.Group();
-      const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.7, 4), new THREE.MeshLambertMaterial({ color }));
-      body.position.y = 0.7; g.add(body);
-      const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 2.2), new THREE.MeshLambertMaterial({ color }));
-      top.position.set(0, 1.25, -0.2); g.add(top);
-      const winMat = new THREE.MeshBasicMaterial({ color: 0x223a55 });
-      const front = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.05), winMat);
-      front.position.set(0, 1.25, 0.9); g.add(front);
-      const back = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.5, 0.05), winMat);
-      back.position.set(0, 1.25, -1.3); g.add(back);
-      const wm = new THREE.MeshLambertMaterial({ color: 0x111 });
-      for (const sx of [-1, 1]) for (const sz of [-1.3, 1.3]) {
-        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.25, 12), wm);
+      // ground shadow — flat dark plane just above the road
+      const shadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.2, 5.0),
+        new THREE.MeshBasicMaterial({ color: 0x000, transparent: true, opacity: 0.45 })
+      );
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.y = 0.06;
+      g.add(shadow);
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.9, 5.2), new THREE.MeshLambertMaterial({ color }));
+      body.position.y = 0.85; g.add(body);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.75, 2.8), new THREE.MeshLambertMaterial({ color }));
+      top.position.set(0, 1.55, -0.3); g.add(top);
+      const winMat = new THREE.MeshBasicMaterial({ color: 0x1a3a55 });
+      const front = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 0.05), winMat);
+      front.position.set(0, 1.55, 1.13); g.add(front);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.65, 0.05), winMat);
+      back.position.set(0, 1.55, -1.73); g.add(back);
+      for (const sx of [-1, 1]) {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.65, 2.7), winMat);
+        side.position.set(sx * 1.06, 1.55, -0.3); g.add(side);
+      }
+      const wm = new THREE.MeshLambertMaterial({ color: 0x0a0a0a });
+      for (const sx of [-1, 1]) for (const sz of [-1.7, 1.7]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.34, 14), wm);
         w.rotation.z = Math.PI / 2;
-        w.position.set(sx * 0.95, 0.32, sz);
+        w.position.set(sx * 1.24, 0.42, sz);
         g.add(w);
       }
-      // headlights forward (+z) and tail (-z)
-      const hl = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xfff5b0 }));
-      hl.position.set(0, 0.85, 2.02); g.add(hl);
-      const tll = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xcc2020 }));
-      tll.position.set(0, 0.85, -2.02); g.add(tll);
+      // headlights (front) — warm white, brighter
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 0.05), new THREE.MeshBasicMaterial({ color: 0xfffac0 }));
+      hl.position.set(0, 1.0, 2.62); g.add(hl);
+      // brake / tail lights (rear) — saturated red so traffic = danger
+      const tll = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 0.05), new THREE.MeshBasicMaterial({ color: 0xff2030 }));
+      tll.position.set(0, 1.0, -2.62); g.add(tll);
+      // small bumper accents in same red, makes the silhouette pop
+      const bump = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.18, 0.08), new THREE.MeshBasicMaterial({ color: 0xff2030 }));
+      bump.position.set(0, 0.55, -2.6); g.add(bump);
       setShadows(g, true, true);
       return g;
     }
@@ -4256,8 +4441,18 @@
     let _trackIdx = 0;
     function _setAudioLabel() {
       const lbl = document.getElementById('audioLbl');
-      if (!lbl) return;
-      lbl.textContent = audioMuted ? 'MUTED · M TO UNMUTE' : MUSIC_PLAYLIST[_trackIdx].title;
+      if (lbl) lbl.textContent = audioMuted ? 'MUTED · M TO UNMUTE' : MUSIC_PLAYLIST[_trackIdx].title;
+    }
+    let _songFlashTimer = null;
+    function flashSongName() {
+      const el = document.getElementById('songFlash');
+      const name = document.getElementById('songFlashName');
+      if (!el || !name) return;
+      if (audioMuted) return;
+      name.textContent = MUSIC_PLAYLIST[_trackIdx].title;
+      el.classList.add('show');
+      clearTimeout(_songFlashTimer);
+      _songFlashTimer = setTimeout(() => el.classList.remove('show'), 3200);
     }
     function startMusicPlaylist() {
       const music = document.getElementById('bigStepper');
@@ -4270,6 +4465,7 @@
       const p = music.play();
       if (p && typeof p.catch === 'function') p.catch(() => {});
       _setAudioLabel();
+      flashSongName();
       // ensure single listener
       if (!music._cartRunListener) {
         music._cartRunListener = true;
@@ -4279,6 +4475,7 @@
           const p2 = music.play();
           if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
           _setAudioLabel();
+          flashSongName();
         });
       }
     }
@@ -5464,7 +5661,7 @@
       if (stTab && stName && stSub && stRoot) {
         stTab.textContent  = `STAGE ${levelIdx + 1}`;
         stName.textContent = L.name;
-        stSub.textContent  = `SECTOR ${'ABC'[levelIdx] || 'A'} / CART-RUN '97`;
+        stSub.textContent  = `SECTOR ${'ABCDEFGHIJ'[levelIdx] || 'A'} / CART-RUN '97`;
         stRoot.classList.remove('show');
         void stRoot.offsetWidth;
         stRoot.classList.add('show');
@@ -5962,7 +6159,11 @@
         pu.t0 += dt;
         pu.mesh._core.rotation.y += dt * 2.4;
         pu.mesh._core.rotation.x += dt * 1.6;
-        pu.mesh._core.position.y = 1.4 + Math.sin(pu.t0 * 3) * 0.18;
+        pu.mesh._core.position.y = 1.8 + Math.sin(pu.t0 * 3) * 0.18;
+        // pulsing rings
+        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.12;
+        if (pu.mesh._ring)      pu.mesh._ring.scale.set(pulse, pulse, 1);
+        if (pu.mesh._ringInner) pu.mesh._ringInner.scale.set(2 - pulse, 2 - pulse, 1);
         if (!gameOver) {
           const ds = Math.abs(pu.s - truckS);
           const dlat = Math.abs(pu.lat - truckLateral);
@@ -5985,7 +6186,11 @@
         if (!pu.alive) continue;
         pu.t0 += dt;
         pu.mesh._core.rotation.y += dt * 2.0;
-        pu.mesh.position.y = Math.sin(pu.t0 * 2.4) * 0.15;
+        pu.mesh.position.y = Math.sin(pu.t0 * 2.4) * 0.18;
+        // pulsing rings
+        const pulse = 1 + Math.sin(pu.t0 * 4) * 0.14;
+        if (pu.mesh._ring)      pu.mesh._ring.scale.set(pulse, pulse, 1);
+        if (pu.mesh._ringInner) pu.mesh._ringInner.scale.set(2 - pulse, 2 - pulse, 1);
         if (!gameOver && !stageRecap && !introState) {
           const ds = Math.abs(pu.s - truckS);
           const dlat = Math.abs(pu.lat - truckLateral);
