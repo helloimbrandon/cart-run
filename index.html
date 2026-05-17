@@ -4,140 +4,556 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cart Run — Beat the Cart Clock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@700;900&display=swap">
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, sans-serif; color: #fff; }
-    #c { display: block; width: 100vw; height: 100vh; }
-    #hud {
-      position: fixed; top: 14px; left: 14px;
-      pointer-events: none;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6), 0 0 2px rgba(0,0,0,0.7);
+    :root {
+      /* WipEout / Designers Republic palette */
+      --safety:        #ff5a00;     /* safety orange — primary brand */
+      --orange:        #ff5a00;
+      --orange-tab:    #ff8e2c;     /* slightly lighter for tabs */
+      --orange-deep:   #c44400;
+      --amber:         #ffce4a;
+      --navy:          #001a3a;
+      --navy-deep:     #00112a;
+      --red-orange:    #ff3a30;
+      --cool-gray:     #7a8088;
+      --white:         #f5f5f0;
+      --cyan:          #00d4ff;
+      --lime:          #c8ff00;
+      --ui-white:      #f5f5f0;
+      --red:           #ff3a30;
+      --yellow:        #ffe46b;
+      --shadow-strong: none;
+      --panel-bg:      rgba(0, 12, 28, 0.86);
     }
-    #hud .row { font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: 0.5px; }
-    #hud .row#cartsRow.low { color: #ff7060; animation: pulse 0.45s ease-in-out infinite alternate; }
-    @keyframes pulse { from { opacity: 1; } to { opacity: 0.55; } }
-    #hud .small { font-size: 13px; opacity: 0.85; font-weight: 500; margin-top: 8px; max-width: 380px; }
-    #speedoWrap {
-      position: fixed; right: 14px; top: 14px;
+
+    /* ====== WipEout panel system ====== */
+    .wp-panel {
+      position: relative;
+      background: var(--panel-bg);
+      border: 1px solid var(--white);
+      padding: 14px 12px 8px;
+      color: var(--white);
       pointer-events: none;
-      text-align: right;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
-    #speedoWrap .big { font-size: 56px; font-weight: 900; line-height: 1; letter-spacing: 1px; }
-    #speedoWrap .lbl { font-size: 12px; opacity: 0.85; letter-spacing: 2px; }
-    #speedoWrap.boost .big { color: #ffe46b; text-shadow: 0 0 18px rgba(255,200,40,0.7); }
-    #boostMeter {
-      position: fixed; right: 14px; top: 124px;
-      width: 220px; height: 18px;
-      background: rgba(0,0,0,0.45);
-      border: 2px solid rgba(255,255,255,0.45);
-      border-radius: 5px;
+    .wp-panel.right { border-color: var(--white); }
+    .wp-panel .wp-tab {
+      position: absolute; left: -1px; top: -16px;
+      background: var(--safety);
+      color: var(--navy);
+      font-weight: 900; font-size: 11px; letter-spacing: 3px;
+      padding: 3px 10px 3px 10px;
+      text-transform: uppercase;
+      border: 1px solid var(--white);
+    }
+    .wp-panel .wp-tab-right {
+      position: absolute; right: -1px; top: -16px;
+      background: var(--navy); color: var(--white);
+      font-weight: 700; font-size: 10px; letter-spacing: 2px;
+      padding: 3px 8px;
+      border: 1px solid var(--white);
+    }
+    .wp-panel .wp-micro {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px; letter-spacing: 1.5px;
+      color: var(--cool-gray);
+      margin-top: 6px; text-transform: uppercase;
+    }
+    .wp-panel .wp-ticks {
+      display: flex; height: 4px; gap: 2px; margin-top: 4px;
+    }
+    .wp-panel .wp-ticks::before {
+      content: ''; flex: 1; height: 100%;
+      background: repeating-linear-gradient(90deg, var(--cool-gray) 0 1px, transparent 1px 6px);
+    }
+    .wp-panel .wp-corner {
+      position: absolute; bottom: -1px; right: -1px;
+      width: 14px; height: 14px;
+      border-right: 2px solid var(--safety);
+      border-bottom: 2px solid var(--safety);
+    }
+    .wp-panel.alert { border-color: var(--red-orange); }
+    .wp-panel.alert .wp-tab { background: var(--red-orange); }
+    .wp-kana {
+      font-family: 'Noto Sans JP', sans-serif;
+      letter-spacing: 0;
+    }
+
+    /* ====== floating sponsor stamp (top-right corner accent) ====== */
+    #wpStamp {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      display: flex; align-items: stretch; gap: 0;
+      border: 1px solid var(--white);
+      background: var(--navy);
+      padding: 0;
+    }
+    #wpStamp .stamp-num {
+      background: var(--safety); color: var(--navy);
+      font-weight: 900; font-size: 26px; letter-spacing: 1px;
+      padding: 6px 12px; line-height: 1;
+      align-self: stretch; display: flex; align-items: center;
+    }
+    #wpStamp .stamp-text {
+      color: var(--white); padding: 4px 12px 4px 10px;
+      font-size: 10px; font-weight: 800; letter-spacing: 2px;
+      line-height: 1.15; text-transform: uppercase;
+    }
+    #wpStamp .stamp-text small {
+      display: block;
+      color: var(--cool-gray); font-size: 9px; letter-spacing: 1px;
+      font-weight: 500;
+    }
+    #wpStamp .stamp-kanji {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--white); color: var(--navy);
+      font-weight: 900; font-size: 22px;
+      padding: 4px 8px;
+      align-self: stretch; display: flex; align-items: center;
+    }
+
+    /* ====== big background katakana ribbon (very faint, scrolls) ====== */
+    #wpKatakana {
+      position: fixed; left: 0; right: 0; top: 48%;
+      pointer-events: none;
+      white-space: nowrap;
+      font-family: 'Noto Sans JP', 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 96px;
+      color: rgba(255,90,0,0.06);
+      letter-spacing: 18px;
+      z-index: -1; /* behind everything */
+      transform: translateY(-50%);
       overflow: hidden;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
     }
-    #boostFill {
+
+    /* ====== edge calibration ticks ====== */
+    .wp-edge {
+      position: fixed; pointer-events: none;
+      background-image: repeating-linear-gradient(0deg, var(--cool-gray) 0 1px, transparent 1px 16px);
+      width: 4px; top: 60px; bottom: 60px;
+      opacity: 0.55;
+    }
+    #wpEdgeL { left: 4px; }
+    #wpEdgeR { right: 4px; }
+
+    /* ====== voice bark subtitle ====== */
+    #bark {
+      position: fixed; bottom: 120px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      padding: 6px 22px;
+      background: var(--safety); color: var(--navy);
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 22px; letter-spacing: 8px;
+      border: 1px solid var(--white);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.25s ease;
+      z-index: 6;
+    }
+    #bark::before {
+      content: '►'; font-size: 14px; margin-right: 12px; color: var(--navy);
+    }
+    #bark.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff;
+      font-family: 'Saira Condensed', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      color: var(--ui-white); letter-spacing: 0.5px;
+    }
+    #c { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; image-rendering: crisp-edges; }
+
+    /* ====== top-left: stat panel — Ridge Racer 4 colon-stat style ====== */
+    #hudStats {
+      position: fixed; top: 28px; left: 16px;
+      pointer-events: none;
+      background: var(--panel-bg);
+      border: 1px solid var(--white);
+      padding: 14px 16px 8px;
+      display: flex; flex-direction: column;
+      gap: 2px;
+      min-width: 230px;
+    }
+    .stat-row {
+      display: flex; align-items: baseline;
+      font-weight: 700; font-size: 18px; line-height: 1.1;
+      letter-spacing: 2px; text-transform: uppercase;
+    }
+    .stat-label  { color: var(--ui-white); min-width: 72px; opacity: 0.9; }
+    .stat-colon  { color: var(--orange); margin: 0 8px; font-weight: 900; }
+    .stat-value  { color: var(--ui-white); font-weight: 900; font-size: 22px; min-width: 50px; transition: color 0.18s, transform 0.12s; }
+    .stat-suffix { color: rgba(255,255,255,0.55); font-size: 13px; margin-left: 6px; letter-spacing: 2px; }
+    .stat-row.danger .stat-value { color: var(--red); animation: pulseRow 0.45s ease-in-out infinite alternate; }
+    @keyframes pulseRow { from { opacity: 1; } to { opacity: 0.5; } }
+    .flash-value { animation: flashOrange 0.32s ease-out; }
+    @keyframes flashOrange {
+      0%   { color: var(--orange); transform: scale(1.18); }
+      100% { color: var(--ui-white); transform: scale(1); }
+    }
+
+    /* ====== top-right: vertical speedometer gradient + digital readout (Colin McRae) ====== */
+    #hudSpeedo {
+      position: fixed; top: 28px; right: 16px;
+      display: flex; align-items: flex-end; gap: 10px;
+      pointer-events: none;
+      background: var(--panel-bg);
+      border: 1px solid var(--white);
+      padding: 12px 14px 8px;
+    }
+    .speed-bar {
+      width: 18px; height: 180px;
+      background: linear-gradient(to top, #2a8a2a 0%, #6abe3a 22%, #ffd02a 48%, #ff8a2a 72%, #ff3a3a 100%);
+      position: relative;
+      border: 2px solid var(--ui-white);
+      border-radius: 3px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .speed-mask {
+      position: absolute; left: 0; right: 0; top: 0;
+      background: rgba(15, 15, 20, 0.85);
+      transition: height 0.10s linear;
+    }
+    .speed-arrow {
+      position: absolute; left: 100%; transform: translate(2px, 50%);
+      width: 0; height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 11px solid var(--ui-white);
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+      transition: bottom 0.10s linear;
+    }
+    .speed-digital {
+      display: flex; flex-direction: column;
+      align-items: flex-end; justify-content: flex-end;
+      padding: 0;
+    }
+    .speed-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 64px; font-weight: 400; line-height: 0.95;
+      color: var(--cyan);
+      transition: color 0.2s, transform 0.1s;
+    }
+    .speed-value.boost { color: var(--yellow); }
+    .speed-unit {
+      font-family: 'Saira Condensed', sans-serif;
+      font-size: 13px; letter-spacing: 4px;
+      opacity: 0.8; margin-top: -2px; font-weight: 600;
+    }
+
+    /* ====== boost meter — bottom-right ====== */
+    #hudBoost {
+      position: fixed; bottom: 56px; right: 14px;
+      width: 240px;
+      pointer-events: none;
+      padding: 8px 10px;
+      background: var(--panel-bg);
+    }
+    .boost-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      font-size: 13px; letter-spacing: 3px; font-weight: 800;
+      margin-bottom: 5px;
+    }
+    .boost-row .lbl { color: var(--orange); }
+    .boost-row .state { color: var(--ui-white); transition: color 0.2s; }
+    .boost-row .state.ready { color: var(--yellow); animation: pulseRow 0.7s ease-in-out infinite alternate; }
+    .boost-row .state.empty { color: var(--red); }
+    .boost-row .state.firing { color: var(--lime); animation: pulseRow 0.18s ease-in-out infinite alternate; }
+    .boost-bar {
+      height: 14px;
+      background: rgba(0,0,0,0.55);
+      border: 2px solid var(--ui-white);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .boost-fill {
       height: 100%; width: 100%;
       background: linear-gradient(90deg, #ff7040, #ffd040, #fff19a);
-      box-shadow: 0 0 18px rgba(255,200,80,0.6);
-      transition: width 0.08s linear, background 0.2s;
+      box-shadow: 0 0 16px rgba(255,200,80,0.55);
+      transition: width 0.08s linear;
     }
-    #boostFill.empty { background: linear-gradient(90deg, #5a2020, #6a3030); box-shadow: none; }
-    #boostLabel {
-      position: fixed; right: 14px; top: 144px;
-      width: 220px; text-align: center; font-size: 11px; font-weight: 800;
-      letter-spacing: 2px; opacity: 0.9; pointer-events: none;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    .boost-fill.empty { background: linear-gradient(90deg, #5a2020, #6a3030); box-shadow: none; }
+    .boost-ticks {
+      position: absolute; inset: 0;
+      display: flex; align-items: center;
+      pointer-events: none;
     }
-    #boostLabel.empty { color: #ff7060; }
-    #overlay {
-      position: fixed; inset: 0;
-      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.78));
-      backdrop-filter: blur(2px);
+    .boost-ticks::before, .boost-ticks::after {
+      content: ''; flex: 1; height: 100%;
+      background: repeating-linear-gradient(90deg, transparent 0 22px, rgba(255,255,255,0.25) 22px 23px);
     }
-    #overlay h1 { font-size: 64px; margin: 0; letter-spacing: 2px; }
-    #overlay h1.win { color: #ffe46b; text-shadow: 0 4px 18px rgba(255,200,40,0.5); }
-    #overlay h1.lose { color: #ff7060; text-shadow: 0 4px 18px rgba(255,90,60,0.5); }
-    #overlay p { font-size: 18px; margin: 0; opacity: 0.92; max-width: 680px; text-align: center; }
-    #overlay button {
-      padding: 12px 28px; font-size: 17px; border: none; border-radius: 10px;
-      background: #ffe46b; color: #222; font-weight: 800; cursor: pointer; letter-spacing: 0.5px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+
+    /* ====== bottom-left: track section indicator (music A/B/C) ====== */
+    #hudSection {
+      position: fixed; bottom: 56px; left: 14px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 4px 12px;
+      border-left: 3px solid var(--cyan);
+      background: var(--panel-bg);
+      pointer-events: none;
     }
-    #overlay button:hover { background: #fff19a; }
+    #hudSection .lbl { font-size: 11px; letter-spacing: 3px; opacity: 0.75; font-weight: 700; }
+    #hudSection .letter {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 24px; color: var(--cyan); font-weight: 700;
+      min-width: 18px; text-align: center;
+    }
+
+    /* ====== bottom: pipe-separated controls hint ====== */
+    #hudHints {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 0;
+      font-family: 'Saira Condensed', sans-serif;
+      font-size: 13px; letter-spacing: 2px;
+      color: rgba(245,245,240,0.92);
+      padding: 6px 14px;
+      background: var(--panel-bg);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #hudHints .pipe { color: var(--orange); margin: 0 12px; font-weight: 900; }
+    #hudHints b { color: var(--orange); font-weight: 800; }
+    #hudHints .audio { color: rgba(255,255,255,0.55); margin-left: 14px; font-size: 12px; }
+
+    /* ====== title card (start) ====== */
     #title-card {
-      position: fixed; left: 50%; top: 22%; transform: translate(-50%, -50%);
+      position: fixed; left: 50%; top: 24%; transform: translate(-50%, -50%);
       pointer-events: none; text-align: center;
-      text-shadow: 0 3px 14px rgba(0,0,0,0.55);
       transition: opacity 1s ease 1.6s;
     }
-    #title-card .t1 { font-size: 44px; font-weight: 900; letter-spacing: 3px; }
-    #title-card .t2 { font-size: 16px; opacity: 0.9; margin-top: 4px; }
+    #title-card .t1 { font-size: 88px; font-weight: 900; letter-spacing: 14px; color: var(--ui-white); }
+    #title-card .t2 { font-size: 15px; opacity: 0.95; margin-top: 8px; letter-spacing: 6px; color: var(--orange); font-weight: 700; }
     #title-card.fade { opacity: 0; }
-    #vignette {
-      position: fixed; inset: 0; pointer-events: none;
-      box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
-      transition: box-shadow 0.15s ease-out;
-      mix-blend-mode: multiply;
-    }
-    #streaks {
-      position: fixed; inset: 0; pointer-events: none;
-      width: 100vw; height: 100vh;
-      mix-blend-mode: screen;
-    }
-    #boostBlast {
-      position: fixed; inset: 0; pointer-events: none;
-      width: 100vw; height: 100vh;
-      mix-blend-mode: screen;
-      opacity: 0;
-    }
-    #banner {
-      position: fixed; left: 50%; top: 38%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      font-size: 64px; font-weight: 900; letter-spacing: 5px;
-      color: #ffe46b;
-      text-shadow: 0 4px 24px rgba(0,0,0,0.7), 0 0 8px rgba(0,0,0,0.6);
-      opacity: 0;
-      transition: opacity 0.25s ease-out, transform 0.5s ease-out;
+
+    /* ====== stage banner (slides in on level change) ====== */
+    #stageBanner {
+      position: fixed; left: 0; right: 0; top: 28%;
       text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(-32px);
+      transition: opacity 0.32s ease, transform 0.5s cubic-bezier(0.2,0.9,0.3,1);
     }
-    #banner.show { opacity: 1; }
-    #banner .sub { display: block; font-size: 18px; opacity: 0.85; letter-spacing: 3px; margin-top: 6px; color:#fff; }
+    #stageBanner.show { opacity: 1; transform: translateX(0); }
+    #stageBanner .stagenum {
+      font-size: 18px; letter-spacing: 8px; color: var(--orange);
+      font-weight: 800; margin-bottom: 2px;
+    }
+    #stageBanner .stagename {
+      font-size: 110px; font-weight: 900; letter-spacing: 10px;
+      color: var(--ui-white);
+      line-height: 0.95;
+    }
+    #stageBanner .ruler {
+      display: inline-block; margin: 10px 0 8px;
+      width: min(60vw, 760px); height: 2px;
+      background: linear-gradient(90deg, transparent, var(--orange) 30%, var(--orange) 70%, transparent);
+    }
+    #stageBanner .stagesub {
+      font-size: 14px; letter-spacing: 6px;
+      color: rgba(255,255,255,0.78); font-weight: 600;
+    }
+
+    /* ====== game-over overlay ====== */
+    #overlay {
+      position: fixed; inset: 0;
+      display: none; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.55), rgba(0,0,0,0.85));
+      backdrop-filter: blur(2px);
+    }
+    #overlay h1 { font-size: 80px; margin: 0; letter-spacing: 12px; font-weight: 900; }
+    #overlay h1.win  { color: var(--yellow); }
+    #overlay h1.lose { color: var(--red);    }
+    #overlay p { font-size: 17px; letter-spacing: 1.5px; margin: 0; opacity: 0.92; max-width: 680px; text-align: center; }
+    #overlay button {
+      padding: 13px 32px; font-family: 'Saira Condensed', sans-serif;
+      font-size: 16px; letter-spacing: 4px; font-weight: 900;
+      border: 2px solid var(--ui-white);
+      background: var(--orange); color: #1a1a1a;
+      cursor: pointer; border-radius: 4px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      text-transform: uppercase;
+    }
+    #overlay button:hover { background: var(--amber); }
+
+    /* ====== full-screen FX layers ====== */
+    #vignette  { position: fixed; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 0 rgba(0,0,0,0); transition: box-shadow 0.15s ease-out; mix-blend-mode: multiply; }
+    #streaks   { position: fixed; inset: 0; pointer-events: none; width: 100vw; height: 100vh; mix-blend-mode: screen; }
+    #boostBlast{ position: fixed; inset: 0; pointer-events: none; width: 100vw; height: 100vh; mix-blend-mode: screen; opacity: 0; }
+    #scanlines {
+      position: fixed; inset: 0; pointer-events: none;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 3px);
+      mix-blend-mode: multiply;
+      z-index: 4;
+    }
+
+    /* ====== stage recap modal ====== */
+    #stageRecap {
+      position: fixed; inset: 0; z-index: 10;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, rgba(20,18,14,0.88), rgba(0,0,0,0.95));
+      padding: 40px;
+    }
+    #stageRecap.show { display: flex; }
+    #stageRecap .recap-bar {
+      font-size: 14px; letter-spacing: 6px; color: var(--orange);
+      font-weight: 700; margin-bottom: 8px;
+    }
+    #stageRecap .recap-header {
+      font-size: 72px; letter-spacing: 12px; font-weight: 900; color: var(--ui-white);
+      margin-bottom: 36px; line-height: 1;
+    }
+    #stageRecap .recap-ruler {
+      width: min(50vw, 560px); height: 2px;
+      background: linear-gradient(90deg, transparent, var(--orange) 25%, var(--orange) 75%, transparent);
+      margin-bottom: 28px;
+    }
+    #stageRecap .recap-stats {
+      display: flex; flex-direction: column; gap: 7px;
+      border-left: 3px solid var(--orange);
+      padding: 10px 18px; margin-bottom: 32px;
+      min-width: 380px;
+    }
+    #stageRecap .recap-stats .stat-row {
+      font-size: 22px; letter-spacing: 3px;
+    }
+    #stageRecap .recap-stats .stat-label { min-width: 130px; }
+    #stageRecap .recap-stats .stat-row.total { font-size: 30px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,165,48,0.4); }
+    #stageRecap .recap-stats .stat-row.total .stat-value { color: var(--yellow); }
+    #stageRecap button {
+      padding: 14px 40px; font-family: 'Saira Condensed', sans-serif;
+      font-size: 18px; letter-spacing: 6px; font-weight: 900;
+      border: 2px solid var(--ui-white);
+      background: var(--orange); color: #1a1a1a;
+      cursor: pointer; border-radius: 4px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+      text-transform: uppercase;
+    }
+    #stageRecap button:hover { background: var(--amber); }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
   <canvas id="streaks"></canvas>
   <canvas id="boostBlast"></canvas>
+  <div id="scanlines"></div>
   <div id="vignette"></div>
 
-  <div id="hud">
-    <div id="cartsRow" class="row">🛒 <span id="carts">150</span></div>
-    <div class="row">🏬 <span id="dist">0</span> m</div>
-    <div class="row" style="font-size:16px;">📍 STAGE <span id="lvl">1</span>/3 · <span id="lvlName">SUBURB</span></div>
-    <div class="small">WASD / Arrows — steer & throttle &nbsp;·&nbsp; SPACE — boost &nbsp;·&nbsp; M — mute &nbsp;·&nbsp; Carts = your timer. Dodge oncoming traffic. <strong>FLOOR IT.</strong></div>
-    <div class="small" id="audioLbl" style="margin-top:4px; opacity:0.7;">🎵 dark d&amp;b · 170 BPM · press any key to start audio</div>
+  <!-- background katakana flavor -->
+  <div id="wpKatakana">カート ラン &nbsp;/&nbsp; CART-RUN &nbsp;/&nbsp; A-G RACING &nbsp;/&nbsp; D-04</div>
+
+  <!-- top-center sponsor stamp -->
+  <div id="wpStamp">
+    <div class="stamp-num">D-04</div>
+    <div class="stamp-text">
+      CART-RUN
+      <small>A-G QUANTAX RACING SYSTEM</small>
+    </div>
+    <div class="stamp-kanji">急行</div>
   </div>
 
-  <div id="speedoWrap">
-    <div class="big"><span id="speed">0</span></div>
-    <div class="lbl">MPH</div>
-  </div>
-  <div id="boostMeter"><div id="boostFill"></div></div>
-  <div id="boostLabel">BOOST</div>
+  <!-- edge calibration ticks -->
+  <div id="wpEdgeL" class="wp-edge"></div>
+  <div id="wpEdgeR" class="wp-edge"></div>
 
+  <!-- top-left: PILOT DATA -->
+  <div id="hudStats">
+    <div class="wp-tab">PILOT DATA</div>
+    <div class="stat-row" id="cartsRow">
+      <span class="stat-label">CART</span><span class="stat-colon">:</span><span class="stat-value" id="carts">120</span><span class="stat-suffix">UNT</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">DIST</span><span class="stat-colon">:</span><span class="stat-value" id="dist">0</span><span class="stat-suffix">M</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">SECT</span><span class="stat-colon">:</span><span class="stat-value" id="lvl">1</span><span class="stat-suffix">/3 · <span id="lvlName">SUBURB</span></span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-label">SCR</span><span class="stat-colon">:</span><span class="stat-value" id="score">0</span>
+    </div>
+    <div class="wp-micro">QUANTAX D-MODEL 4 / A-G PROPULSION</div>
+    <div class="wp-ticks"></div>
+    <div class="wp-corner"></div>
+  </div>
+
+  <!-- top-right: A-G OUTPUT -->
+  <div id="hudSpeedo">
+    <div class="wp-tab">A-G OUTPUT</div>
+    <div class="speed-bar">
+      <div class="speed-mask" id="speedMask"></div>
+      <div class="speed-arrow" id="speedArrow"></div>
+    </div>
+    <div class="speed-digital">
+      <span class="speed-value" id="speed">0</span>
+      <span class="speed-unit">MPH · v.04</span>
+    </div>
+    <div class="wp-corner"></div>
+  </div>
+
+  <!-- bottom-left: COURSE SIGNAL (music section indicator) -->
+  <div id="hudSection">
+    <span class="lbl">SECTOR</span><span class="letter" id="sectionLetter">A</span>
+  </div>
+
+  <!-- bottom-right: A-G IGNITION (boost) -->
+  <div id="hudBoost">
+    <div class="boost-row">
+      <span class="lbl">PRIME</span><span class="state ready" id="boostStatus">READY</span>
+    </div>
+    <div class="boost-bar">
+      <div class="boost-fill" id="boostFill"></div>
+      <div class="boost-ticks"></div>
+    </div>
+  </div>
+
+  <!-- bottom-center: pipe controls hint -->
+  <div id="hudHints">
+    <span class="pipe">|</span><b>WASD</b> STEER
+    <span class="pipe">|</span><b>SPACE</b> A-G FIRE
+    <span class="pipe">|</span><b>M</b> MUTE
+    <span class="pipe">|</span>
+    <span class="audio" id="audioLbl">DEEP HOUSE 124 BPM · GENESIS FM</span>
+    <span class="pipe">|</span>
+  </div>
+
+  <!-- voice bark subtitle -->
+  <div id="bark"></div>
+
+  <!-- start-of-run title card -->
   <div id="title-card">
     <div class="t1">CART RUN</div>
-    <div class="t2">3 deliveries · 1 truck · no restock</div>
+    <div class="t2">3 DELIVERIES · 1 TRUCK · NO RESTOCK</div>
   </div>
 
-  <div id="banner"></div>
+  <!-- stage entry banner -->
+  <div id="stageBanner">
+    <div class="stagenum">STAGE 1</div>
+    <div class="stagename">SUBURB</div>
+    <div class="ruler"></div>
+    <div class="stagesub">900 M / NORMAL</div>
+  </div>
 
   <div id="overlay">
     <h1 id="title">YOU MADE IT</h1>
     <p id="subtitle"></p>
     <button id="again">Drive Again</button>
+  </div>
+
+  <!-- between-stage recap modal -->
+  <div id="stageRecap">
+    <div class="recap-bar" id="recapBar">DELIVERY COMPLETE</div>
+    <div class="recap-header" id="recapHeader">STAGE 1</div>
+    <div class="recap-ruler"></div>
+    <div class="recap-stats">
+      <div class="stat-row"><span class="stat-label">TIME</span><span class="stat-colon">:</span><span class="stat-value" id="recapTime">0.0</span><span class="stat-suffix">SEC</span></div>
+      <div class="stat-row"><span class="stat-label">DODGED</span><span class="stat-colon">:</span><span class="stat-value" id="recapDodges">0</span></div>
+      <div class="stat-row"><span class="stat-label">SPILLED</span><span class="stat-colon">:</span><span class="stat-value" id="recapSpilled">0</span><span class="stat-suffix">CARTS</span></div>
+      <div class="stat-row"><span class="stat-label">GAINED</span><span class="stat-colon">:</span><span class="stat-value" id="recapGained">0</span><span class="stat-suffix">PTS</span></div>
+      <div class="stat-row total"><span class="stat-label">TOTAL</span><span class="stat-colon">:</span><span class="stat-value" id="recapTotal">0</span></div>
+    </div>
+    <button id="recapContinue">CONTINUE →</button>
   </div>
 
   <script type="importmap">
@@ -154,6 +570,7 @@
     import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
     import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
     import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+    import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
     import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
     // =========================================================================
@@ -182,10 +599,12 @@
     // renderer / scene / camera / post-processing
     // =========================================================================
     const canvas = document.getElementById('c');
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    // antialias OFF so the PS1 pixelation reads as crunchy edges
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+    const PS1_PIXEL = 0.45;                                // ~45% pixel ratio for chunky upscale
+    renderer.setPixelRatio(PS1_PIXEL);
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.BasicShadowMap;        // dithered/hard shadows
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
@@ -199,6 +618,55 @@
     composer.addPass(new RenderPass(scene, camera));
     const afterimagePass = new AfterimagePass(0.0);
     composer.addPass(afterimagePass);
+    // ---- CRT pass: chromatic aberration + scanlines + curvature + vignette ----
+    const crtPass = new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        resolution: { value: new THREE.Vector2(innerWidth, innerHeight) },
+        time: { value: 0 },
+        chroma: { value: 0.0018 },
+        curve: { value: 0.018 },
+        scanI: { value: 0.10 },
+        vig:   { value: 0.55 },
+      },
+      vertexShader: /* glsl */`
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */`
+        uniform sampler2D tDiffuse;
+        uniform vec2 resolution;
+        uniform float time;
+        uniform float chroma;
+        uniform float curve;
+        uniform float scanI;
+        uniform float vig;
+        varying vec2 vUv;
+        void main() {
+          vec2 uv = vUv;
+          vec2 d  = uv - 0.5;
+          uv += d * dot(d, d) * curve;            // mild barrel
+          // chromatic aberration toward edges
+          float r = texture2D(tDiffuse, uv + vec2( chroma, 0.0)).r;
+          float g = texture2D(tDiffuse, uv).g;
+          float b = texture2D(tDiffuse, uv - vec2( chroma, 0.0)).b;
+          vec3 col = vec3(r, g, b);
+          // scanlines
+          float scan = sin(uv.y * resolution.y * 1.4) * scanI;
+          col -= scan;
+          // vignette
+          float v = 1.0 - dot(d, d) * vig;
+          col *= v;
+          // bail when sampling outside the curved frame
+          if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) col = vec3(0.0);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `
+    });
+    composer.addPass(crtPass);
     composer.addPass(new OutputPass());
 
     const streakCanvas = document.getElementById('streaks');
@@ -211,6 +679,9 @@
       camera.updateProjectionMatrix();
       renderer.setSize(innerWidth, innerHeight, false);
       composer.setSize(innerWidth, innerHeight);
+      if (crtPass && crtPass.uniforms.resolution) {
+        crtPass.uniforms.resolution.value.set(innerWidth * PS1_PIXEL, innerHeight * PS1_PIXEL);
+      }
       const dpr = Math.min(devicePixelRatio, 2);
       for (const cv of [streakCanvas, blastCanvas]) {
         cv.width = innerWidth * dpr;
@@ -616,30 +1087,28 @@
     // -------------- trail + detached carts --------------
     const trail = [];
     const detached = [];
-    const MAX_TRAIL_LEN = 24;
-    const TRAIL_SPACING = 0.46;     // tight nesting
+    const MAX_TRAIL_LEN = 30;
+    const TRAIL_SPACING = 0.44;     // tight nesting
 
     function dropCart() {
       if (cartsRemaining <= 0) return;
       cartsRemaining--;
       updateStackVisibility();
       const cart = makeCartMesh();
-      // slight initial tilt
-      cart.rotation.set(rand(-0.25, 0.25), rand(-0.6, 0.6), rand(-0.25, 0.25));
-      // spawn behind truck at the rear opening in world space
+      cart.rotation.set(rand(-0.1, 0.1), rand(-0.25, 0.25), rand(-0.1, 0.1));
       truck.updateMatrixWorld();
-      const local = new THREE.Vector3(rand(-0.9, 0.9), rand(1.5, 2.2), BOX_CZ - BOX_D / 2 - 0.2);
+      const local = new THREE.Vector3(rand(-0.45, 0.45), rand(1.4, 1.9), BOX_CZ - BOX_D / 2 - 0.15);
       local.applyMatrix4(truck.matrixWorld);
       cart.position.copy(local);
-      // inherit a portion of truck velocity along the curve tangent (gravity drag does the rest)
-      const carryFactor = rand(0.55, 0.85);
-      cart._vx = _curTan.x * truckSpeed * carryFactor + rand(-2.5, 2.5);
-      cart._vz = _curTan.z * truckSpeed * carryFactor + rand(-2.5, 2.5);
-      cart._vy = rand(2.5, 5.5);
-      cart._wx = rand(-5, 5);       // angular velocity (tumble spin)
-      cart._wy = rand(-3, 3);
-      cart._wz = rand(-5, 5);
-      cart._tumbleT = rand(0.55, 1.05);  // seconds of free physics before joining chain
+      // inherit most of truck velocity so cart trails *with* the truck instead of flying out wide
+      const carryFactor = rand(0.85, 1.0);
+      cart._vx = _curTan.x * truckSpeed * carryFactor + rand(-0.6, 0.6);
+      cart._vz = _curTan.z * truckSpeed * carryFactor + rand(-0.6, 0.6);
+      cart._vy = rand(1.6, 3.2);
+      cart._wx = rand(-1.5, 1.5);
+      cart._wy = rand(-1.2, 1.2);
+      cart._wz = rand(-1.5, 1.5);
+      cart._tumbleT = rand(0.18, 0.32);  // brief tumble, then chain
       cart._bounces = 0;
       scene.add(cart);
       trail.unshift(cart);
@@ -647,6 +1116,13 @@
         const tail = trail.pop();
         detached.push(tail);
       }
+      // subtle clack — but skip when many drops in a row (avoid audio spam)
+      if (audioStarted && Math.random() < 0.45) {
+        try { sfxClack(audioCtx.currentTime); } catch(_) {}
+      }
+      // low-cart warning bark (only once when crossing thresholds)
+      if (cartsRemaining === 25) bark('LOW CARGO');
+      else if (cartsRemaining === 8)  bark('HURRY');
     }
 
     // =========================================================================
@@ -694,6 +1170,7 @@
     let levelIdx = 0;
     let curve = null;
     let curveLength = 0;
+    let _pendingBanner = null;
     let levelGroup = new THREE.Group();
     scene.add(levelGroup);
     const obstacles = [];          // {type, t, gapMinLat, gapMaxLat, lat, hit}
@@ -903,6 +1380,56 @@
       return g;
     }
 
+    function makeBoxTruckVeh(color = 0xaa5050) {
+      // small box truck for AI traffic
+      const g = new THREE.Group();
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.5, 1.8), new THREE.MeshLambertMaterial({ color }));
+      cab.position.set(0, 1.45, 1.4); g.add(cab);
+      const ws = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.7, 0.05), new THREE.MeshBasicMaterial({ color: 0x223a55 }));
+      ws.position.set(0, 1.75, 2.32); g.add(ws);
+      const box = new THREE.Mesh(new THREE.BoxGeometry(2.1, 2.2, 3.2), new THREE.MeshLambertMaterial({ color: 0xeeeeea }));
+      box.position.set(0, 1.8, -0.8); g.add(box);
+      const wm = new THREE.MeshLambertMaterial({ color: 0x111 });
+      for (const sx of [-1, 1]) for (const sz of [-1.6, 1.4]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.25, 12), wm);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(sx * 1.05, 0.34, sz);
+        g.add(w);
+      }
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xfff5b0 }));
+      hl.position.set(0, 1.0, 2.32); g.add(hl);
+      const tll = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.18, 0.04), new THREE.MeshBasicMaterial({ color: 0xcc2020 }));
+      tll.position.set(0, 1.0, -2.42); g.add(tll);
+      setShadows(g, true, true);
+      return g;
+    }
+
+    function makeBike(color = 0xff5a3a) {
+      // motorbike + rider
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 1.6), new THREE.MeshLambertMaterial({ color }));
+      body.position.set(0, 0.7, 0); g.add(body);
+      const tank = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.35, 0.6), new THREE.MeshLambertMaterial({ color: 0x222 }));
+      tank.position.set(0, 1.05, 0.05); g.add(tank);
+      const rider = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.9, 0.5), new THREE.MeshLambertMaterial({ color: 0x222 }));
+      rider.position.set(0, 1.55, -0.05); g.add(rider);
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 6), new THREE.MeshLambertMaterial({ color }));
+      helmet.position.set(0, 2.05, -0.05); g.add(helmet);
+      const wm = new THREE.MeshLambertMaterial({ color: 0x111 });
+      for (const sz of [-0.7, 0.7]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 14), wm);
+        w.rotation.z = Math.PI / 2;
+        w.position.set(0, 0.32, sz);
+        g.add(w);
+      }
+      const hl = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.04), new THREE.MeshBasicMaterial({ color: 0xfff5b0 }));
+      hl.position.set(0, 0.9, 0.82); g.add(hl);
+      const tl = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.04), new THREE.MeshBasicMaterial({ color: 0xcc2020 }));
+      tl.position.set(0, 0.9, -0.82); g.add(tl);
+      setShadows(g, true, true);
+      return g;
+    }
+
     function makeBoostPickup() {
       // glowing yellow octahedron in a ring, hovering above the road
       const g = new THREE.Group();
@@ -1044,15 +1571,7 @@
       return geo;
     }
 
-    // ----- level transition / banner -----
-    const bannerEl = document.getElementById('banner');
-    let bannerTimer = null;
-    function showBanner(text, sub = '', ms = 1600) {
-      bannerEl.innerHTML = text + (sub ? `<span class="sub">${sub}</span>` : '');
-      bannerEl.classList.add('show');
-      clearTimeout(bannerTimer);
-      bannerTimer = setTimeout(() => bannerEl.classList.remove('show'), ms);
-    }
+    // (stage banner is wired later — see showStageBanner below)
 
     function disposeLevel() {
       levelGroup.traverse(o => {
@@ -1108,9 +1627,13 @@
       const roadGeo = buildRoadGeo(ROAD_W, ROAD_SEG, roadLight, roadDark);
       const road = new THREE.Mesh(
         roadGeo,
-        new THREE.MeshLambertMaterial({ vertexColors: true })
+        new THREE.MeshLambertMaterial({
+          vertexColors: true,
+          polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+        })
       );
       road.receiveShadow = true;
+      road.renderOrder = 1;
       levelGroup.add(road);
 
       // rumble strips on both edges (red/white alternating, classic arcade)
@@ -1382,8 +1905,8 @@
       storeMesh.rotation.y = Math.atan2(endTn.x, endTn.z) + Math.PI;
       levelGroup.add(storeMesh);
 
-      // banner
-      showBanner(`STAGE ${idx + 1}`, L.name, 1600);
+      // banner (deferred — fired by tick on first frame so DOM helpers are ready)
+      _pendingBanner = { num: idx + 1, name: L.name, dist: Math.round(curveLength) };
     }
 
     function makeStore(name) {
@@ -1449,11 +1972,15 @@
       const LOT_W = 160, LOT_D = 80;
       const lot = new THREE.Mesh(
         new THREE.PlaneGeometry(LOT_W, LOT_D),
-        new THREE.MeshLambertMaterial({ color: 0x5e5e5e })
+        new THREE.MeshLambertMaterial({
+          color: 0x5e5e5e,
+          polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+        })
       );
       lot.rotation.x = -Math.PI / 2;
       lot.position.set(0, 0.05, d / 2 + LOT_D / 2 + 2);
       lot.receiveShadow = true;
+      lot.renderOrder = 1;
       g.add(lot);
       // parking stripes — long grid
       const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -1519,21 +2046,59 @@
       return g;
     }
 
-    function spawnTrafficCar(s) {
-      const carColors = [0x2a6acc, 0xc8a830, 0x8a3030, 0x444444, 0xc0c0c0, 0x7a4ab8, 0xffffff];
-      const c = makeCar(carColors[(Math.random() * carColors.length) | 0]);
-      // oncoming car drives in the LEFT lane (negative lateral)
-      const lat = rand(-4, -2);
-      levelGroup.add(c);
-      traffic.push({ mesh: c, s, lat, speed: rand(10, 16), alive: true });
-      // initial position
+    // Vehicle types — different sizes, speeds, point values, lane preferences
+    const VEHICLE_KINDS = [
+      { kind: 'car',   build: makeCar,         dir: -1, speedRange: [12, 18], lane: 'left',  half: 1.0,  points: 50 },
+      { kind: 'truck', build: makeBoxTruckVeh, dir: -1, speedRange: [9, 13],  lane: 'left',  half: 1.3,  points: 120 },
+      { kind: 'bike',  build: makeBike,        dir: -1, speedRange: [18, 26], lane: 'left',  half: 0.5,  points: 80 },
+      // same-direction (you overtake): slower, you pass them = points
+      { kind: 'slow',  build: makeCar,         dir: +1, speedRange: [10, 16], lane: 'right', half: 1.0,  points: 40 },
+      { kind: 'truckSlow', build: makeBoxTruckVeh, dir: +1, speedRange: [8, 12], lane: 'right', half: 1.3, points: 100 },
+    ];
+
+    function spawnTrafficVehicle(s) {
+      const carColors = [0x2a6acc, 0xc8a830, 0x8a3030, 0x444444, 0xc0c0c0, 0x7a4ab8, 0xffffff, 0x3a8a3a];
+      // weighted random kind selection
+      const r = Math.random();
+      let kind;
+      if (r < 0.55) kind = VEHICLE_KINDS[0];          // oncoming car (common)
+      else if (r < 0.7) kind = VEHICLE_KINDS[1];      // oncoming truck
+      else if (r < 0.82) kind = VEHICLE_KINDS[2];     // oncoming bike
+      else if (r < 0.93) kind = VEHICLE_KINDS[3];     // same-dir slow car
+      else kind = VEHICLE_KINDS[4];                    // same-dir slow truck
+
+      const mesh = kind.build(carColors[(Math.random() * carColors.length) | 0]);
+      const baseLane = kind.lane === 'left' ? rand(-3.6, -2.0) : rand(2.0, 3.6);
+      levelGroup.add(mesh);
+
+      const speed = rand(kind.speedRange[0], kind.speedRange[1]);
+      const veh = {
+        mesh, s, lat: baseLane,
+        targetLat: baseLane,
+        dir: kind.dir,
+        speed,
+        half: kind.half,
+        points: kind.points,
+        kind: kind.kind,
+        alive: true,
+        passed: false,
+        nextLaneChange: performance.now() + rand(2000, 5500),
+      };
+      traffic.push(veh);
+
+      // initial transform
       const t = clamp(s / curveLength, 0, 1);
       const p = pointAt(t);
       const tn = tangentAt(t);
       const rt = rightFromTangent(tn);
-      c.position.set(p.x + rt.x * lat, 0, p.z + rt.z * lat);
-      c.rotation.y = Math.atan2(-tn.x, -tn.z); // facing opposite of travel
+      mesh.position.set(p.x + rt.x * veh.lat, 0, p.z + rt.z * veh.lat);
+      mesh.rotation.y = kind.dir === -1
+        ? Math.atan2(-tn.x, -tn.z)
+        : Math.atan2(tn.x, tn.z);
+      return veh;
     }
+    // back-compat alias for old call site
+    const spawnTrafficCar = spawnTrafficVehicle;
 
     // =========================================================================
     // input
@@ -1544,7 +2109,15 @@
       keys[e.key.toLowerCase()] = true;
       if (e.code === 'Space') {
         e.preventDefault();
-        if (!wasDown && boostMeter > 0) triggerBoostBlast();   // manga burst only when boost is available
+        // press-to-fire: tap only, must be fully charged
+        if (!wasDown && boostMeter >= 0.999 && !boostActive) {
+          boostActive = true;
+          boostTime = BOOST_DURATION;
+          boostMeter = 0;
+          triggerBoostBlast();
+          try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          bark('BOOST');
+        }
       }
       startAudio();
       if (e.key.toLowerCase() === 'm') toggleMute();
@@ -1564,36 +2137,21 @@
     let nextNoteTime = 0;
     let stepCounter = 0;
     let schedulerHandle = null;
-    const BPM = 170;
-    const STEP_DUR = 60 / BPM / 4;
+    const BPM = 124;                       // deep house tempo
+    const STEP_DUR = 60 / BPM / 4;         // 16th-note (~0.121s)
     const LOOKAHEAD = 0.12;
     const SCHED_MS = 25;
 
     const ROOT_HZ = 36.71; // D1
 
-    // 24-bar arrangement: A (groove, 8) → B (breakdown w/ melody, 8) → C (build w/ riser, 8)
-    // Each section's bass line: 32 quarter-note semitone offsets (8 bars × 4 quarters)
-    const BASS_A = [
-      0, 0, 0, -4,   0, 0, -5, -8,   0, 0, 0, -4,   0, 0, -5, -8,
-      0, 0, 0, -4,   0, 0, -5, -8,   0, 0, 0, -4,   0, 0, -5, -8,
-    ];
-    const BASS_B = [
-      0, 0, 5, 5,    3, 3, 0, 0,    -2, -2, 3, 3,   5, 7, 0, 0,
-      0, 0, 5, 5,    3, 3, 0, 0,    -2, -2, 3, 3,   5, 7, 0, 0,
-    ];
-    const BASS_C = [
-      0, 0, 0, 0,    0, 0, 0, 0,    -2, -2, -2, -2,  -2, -2, -2, -2,
-      3, 3, 3, 3,    5, 5, 5, 5,    7, 7, 10, 10,    12, 12, 12, 12,
-    ];
-
-    // Section B lead melody — eighths over 8 bars (64 eighths). null = rest. semitones from D3.
-    // Phrase repeats twice (4 bars × 2). D minor (notes: D=0, F=3, G=5, A=7, Bb=8, C=10, D=12).
-    const MELODY_B = [
-      0, null, null, 3,    5, null, 7, null,     3, null, 0, null,    7, null, 3, 0,
-      0, null, 3, null,    8, null, 7, 5,        3, 0, null, null,   10, 0, null, null,
-      0, null, null, 3,    5, null, 7, null,     3, null, 0, null,    7, null, 3, 0,
-      0, null, 3, null,    8, null, 7, 5,        3, 0, null, null,   10, 0, null, null,
-    ];
+    // Deep-house 4-channel arrangement (Genesis FM flavor):
+    //   A (8 bars) — drums + bass only          [drums + bass]
+    //   B (8 bars) — + chord stab on offbeats   [drums + bass + chord]
+    //   C (8 bars) — + bell lead phrase         [drums + bass + chord + bell]
+    // Bass + chord roots: D minor cycle Dm → F → A → C (one chord per bar × 2 cycles)
+    const CHORD_ROOTS = [0, 3, 7, 10, 0, 3, 7, 10]; // semitones from D, 8 bars
+    // Bell lead phrase: one note per bar (8 notes). null = rest.
+    const BELL_PHRASE = [12, null, 15, 10, 12, null, 19, 10];
 
     function startAudio() {
       if (audioStarted) return;
@@ -1601,6 +2159,7 @@
       if (!AC) return;
       audioCtx = new AC();
       audioStarted = true;
+      bark('GO');
 
       const comp = audioCtx.createDynamicsCompressor();
       comp.threshold.value = -12; comp.knee.value = 6;
@@ -1642,13 +2201,14 @@
       revGain.connect(audioMaster);
 
       startPad();
+      startEngineSFX();
 
       nextNoteTime = audioCtx.currentTime + 0.12;
       stepCounter = 0;
       schedulerHandle = setInterval(audioScheduler, SCHED_MS);
 
       const lbl = document.getElementById('audioLbl');
-      if (lbl) lbl.textContent = '🎵 dark d&b · 170 BPM · press M to mute';
+      if (lbl) lbl.textContent = 'DEEP HOUSE · 124 BPM · GENESIS FM';
     }
     function toggleMute() {
       if (!audioStarted) return;
@@ -1656,8 +2216,8 @@
       audioMaster.gain.setTargetAtTime(audioMuted ? 0 : 0.5, audioCtx.currentTime, 0.03);
       const lbl = document.getElementById('audioLbl');
       if (lbl) lbl.textContent = audioMuted
-        ? '🔇 muted · press M to unmute'
-        : '🎵 dark d&b · 170 BPM · press M to mute';
+        ? 'MUTED · M TO UNMUTE'
+        : 'DEEP HOUSE · 124 BPM · GENESIS FM';
     }
     function makeBitcrusher(bits) {
       const ws = audioCtx.createWaveShaper();
@@ -1680,75 +2240,41 @@
       if (!audioCtx) return;
       while (nextNoteTime < audioCtx.currentTime + LOOKAHEAD) {
         const s   = stepCounter;
-        const ss  = s % 16;                // sixteenth within bar
+        const ss  = s % 16;                       // 16th within bar
         const bar = Math.floor(s / 16);
-        const cyclePos = bar % 24;          // position in 24-bar cycle
+        const cyclePos = bar % 24;                // 24-bar A/B/C cycle
         const sec = cyclePos < 8 ? 'A' : cyclePos < 16 ? 'B' : 'C';
         const barInSec = cyclePos % 8;
         currentSection = sec;
 
-        if (sec === 'A')      schedSectionA(nextNoteTime, ss, barInSec);
-        else if (sec === 'B') schedSectionB(nextNoteTime, ss, barInSec);
-        else                  schedSectionC(nextNoteTime, ss, barInSec);
+        // ---- Channel 1 (drums) — same skeleton every section ----
+        // four-on-the-floor kick, claps on 2 & 4, hats on 8th offbeats
+        if (ss % 4 === 0)             scheduleKick(nextNoteTime);
+        if (ss === 4 || ss === 12)    scheduleClap(nextNoteTime);
+        if (ss === 2 || ss === 6 || ss === 10 || ss === 14) scheduleHat(nextNoteTime, ss === 14);
+
+        // ---- Channel 2 (bass) — FM stab on each quarter, one chord per bar ----
+        if (ss === 0 || ss === 6 || ss === 10) {
+          const root = CHORD_ROOTS[barInSec % CHORD_ROOTS.length];
+          // ghost notes on syncopated 6/10, full on the downbeat
+          const vel = ss === 0 ? 1.0 : 0.55;
+          scheduleBassFM(nextNoteTime, root, vel);
+        }
+
+        // ---- Channel 3 (chord stab) — joins in section B and C, plays the "and" of 2 & 4 ----
+        if ((sec === 'B' || sec === 'C') && (ss === 6 || ss === 14)) {
+          const root = CHORD_ROOTS[barInSec % CHORD_ROOTS.length];
+          scheduleChordStab(nextNoteTime, root);
+        }
+
+        // ---- Channel 4 (bell lead) — section C only, one note per bar on the downbeat ----
+        if (sec === 'C' && ss === 0) {
+          const note = BELL_PHRASE[barInSec % BELL_PHRASE.length];
+          if (note !== null && note !== undefined) scheduleBellLead(nextNoteTime, note);
+        }
 
         stepCounter++;
         nextNoteTime += STEP_DUR;
-      }
-    }
-
-    function schedSectionA(t, ss, bar) {
-      // main groove (dark tech-step)
-      if (ss === 0 || ss === 11)              scheduleKick(t);
-      if (ss === 4 || ss === 12)              scheduleSnare(t);
-      if ((ss === 7 || ss === 15) && Math.random() < 0.5) scheduleSnare(t, 0.32);
-      if (ss === 2 || ss === 10)              scheduleHat(t, false);
-      if (ss === 6 || ss === 14)              scheduleHat(t, true);
-      if (ss === 8 && bar % 4 === 0)          scheduleMetal(t);
-      if (ss % 4 === 0) {
-        const q = bar * 4 + (ss / 4);
-        scheduleBass(t, BASS_A[q % BASS_A.length], false);
-      }
-    }
-
-    function schedSectionB(t, ss, bar) {
-      // breakdown — sparse drums + PS1 square-lead melody
-      if (ss === 0)               scheduleKick(t);
-      if (ss === 12)              scheduleSnare(t);
-      if (ss === 6 || ss === 14)  scheduleHat(t, true);
-      // melody on eighths
-      if (ss % 2 === 0) {
-        const eIdx = bar * 8 + (ss / 2);
-        const note = MELODY_B[eIdx % MELODY_B.length];
-        if (note !== null && note !== undefined) scheduleLead(t, note);
-      }
-      // bass (slightly softer in breakdown)
-      if (ss % 4 === 0) {
-        const q = bar * 4 + (ss / 4);
-        scheduleBass(t, BASS_B[q % BASS_B.length], true);
-      }
-    }
-
-    function schedSectionC(t, ss, bar) {
-      // build — four-on-the-floor + escalating snare roll + 8-bar riser
-      if (ss % 4 === 0)            scheduleKick(t);
-      if (ss === 4 || ss === 12)   scheduleSnare(t);
-      // escalating snare roll on the last 2 bars of section
-      if (bar === 6 && ss % 4 === 0) scheduleSnare(t, 0.35);
-      if (bar === 7) {
-        // doubles in bar 7, sixteenths in last beat
-        if (ss < 12 && ss % 2 === 0)  scheduleSnare(t, 0.4);
-        if (ss >= 12)                 scheduleSnare(t, 0.45 + (ss - 12) * 0.04);
-      }
-      // closed hat every 8th
-      if (ss % 2 === 0)            scheduleHat(t, false);
-      // metal accent at end of bar
-      if (ss === 14 && bar % 2 === 0) scheduleMetal(t);
-      // 8-bar riser fires at start of section C
-      if (ss === 0 && bar === 0)   scheduleRiser(t, 8 * 16 * STEP_DUR);
-      // bass (climbing)
-      if (ss % 4 === 0) {
-        const q = bar * 4 + (ss / 4);
-        scheduleBass(t, BASS_C[q % BASS_C.length], false);
       }
     }
     function envGain(t, peak, attack, decay) {
@@ -1758,174 +2284,271 @@
       g.gain.exponentialRampToValueAtTime(0.001, t + attack + decay);
       return g;
     }
+    // 2-op FM voice helper (Genesis YM2612 flavor)
+    function fmVoice(t, freq, opts) {
+      const o = opts || {};
+      const modRatio = o.modRatio != null ? o.modRatio : 1;
+      const modIdx   = o.modIdx   != null ? o.modIdx   : 2;
+      const modDecay = o.modDecay != null ? o.modDecay : 0.15;
+      const attack   = o.attack   != null ? o.attack   : 0.005;
+      const decay    = o.decay    != null ? o.decay    : 0.12;
+      const sustain  = o.sustain  != null ? o.sustain  : 0.5;
+      const release  = o.release  != null ? o.release  : 0.18;
+      const peak     = o.peak     != null ? o.peak     : 0.2;
+      const sendReverb = o.sendReverb != null ? o.sendReverb : 0;
+      const mod = audioCtx.createOscillator(); mod.type = 'sine';
+      mod.frequency.value = freq * modRatio;
+      const modAmp = audioCtx.createGain();
+      modAmp.gain.setValueAtTime(freq * modIdx, t);
+      modAmp.gain.exponentialRampToValueAtTime(Math.max(0.001, freq * modIdx * 0.04), t + modDecay);
+      mod.connect(modAmp);
+      const car = audioCtx.createOscillator(); car.type = 'sine';
+      car.frequency.value = freq;
+      modAmp.connect(car.frequency);
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(peak, t + attack);
+      env.gain.linearRampToValueAtTime(peak * sustain, t + attack + decay);
+      const sEnd = t + attack + decay + 0.001;
+      env.gain.setValueAtTime(peak * sustain, sEnd);
+      env.gain.exponentialRampToValueAtTime(0.001, sEnd + release);
+      car.connect(env); env.connect(audioMaster);
+      if (sendReverb > 0) {
+        const rs = audioCtx.createGain(); rs.gain.value = sendReverb;
+        env.connect(rs); rs.connect(audioReverb);
+      }
+      const total = attack + decay + release + 0.1;
+      mod.start(t); mod.stop(t + total);
+      car.start(t); car.stop(t + total);
+    }
+
     function scheduleKick(t) {
+      // tight FM-style kick — sine pitch drop + crisp click
       const o = audioCtx.createOscillator(); o.type = 'sine';
-      o.frequency.setValueAtTime(150, t);
-      o.frequency.exponentialRampToValueAtTime(58, t + 0.045);
-      const g = envGain(t, 0.85, 0.002, 0.13);
+      o.frequency.setValueAtTime(120, t);
+      o.frequency.exponentialRampToValueAtTime(48, t + 0.06);
+      const g = envGain(t, 0.85, 0.002, 0.16);
       o.connect(g); g.connect(audioMaster);
-      o.start(t); o.stop(t + 0.16);
-      const buf = audioCtx.createBuffer(1, 512, audioCtx.sampleRate);
+      o.start(t); o.stop(t + 0.18);
+      const buf = audioCtx.createBuffer(1, 320, audioCtx.sampleRate);
       const d = buf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
       const src = audioCtx.createBufferSource(); src.buffer = buf;
-      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1600;
-      const cg = audioCtx.createGain(); cg.gain.value = 0.5;
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500;
+      const cg = audioCtx.createGain(); cg.gain.value = 0.35;
       src.connect(hp); hp.connect(cg); cg.connect(audioMaster);
       src.start(t);
     }
-    function scheduleSnare(t, vol = 0.9) {
-      const dur = 0.28;
-      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      const src = audioCtx.createBufferSource(); src.buffer = buf;
-      const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 3.0;
-      const g = envGain(t, vol * 0.85, 0.001, dur);
-      src.connect(bp); bp.connect(g); g.connect(audioMaster);
-      const rs = audioCtx.createGain(); rs.gain.value = 0.7;
-      g.connect(rs); rs.connect(audioReverb);
-      src.start(t);
-      const o = audioCtx.createOscillator(); o.type = 'triangle';
-      o.frequency.setValueAtTime(330, t);
-      o.frequency.exponentialRampToValueAtTime(165, t + 0.05);
-      const og = envGain(t, 0.55 * vol, 0.001, 0.11);
-      o.connect(og); og.connect(audioMaster);
-      o.start(t); o.stop(t + 0.13);
-      const buf2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
-      const d2 = buf2.getChannelData(0);
-      for (let i = 0; i < d2.length; i++) d2[i] = Math.random() * 2 - 1;
-      const src2 = audioCtx.createBufferSource(); src2.buffer = buf2;
-      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 5500;
-      const g2 = envGain(t, 0.45 * vol, 0.001, 0.05);
-      src2.connect(hp); hp.connect(g2); g2.connect(audioMaster);
-      src2.start(t);
+
+    function scheduleClap(t) {
+      // 3-tap bandpassed noise clap — backbeat
+      for (let i = 0; i < 3; i++) {
+        const tt = t + i * 0.009;
+        const dur = 0.045 + i * 0.005;
+        const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let j = 0; j < d.length; j++) d[j] = Math.random() * 2 - 1;
+        const src = audioCtx.createBufferSource(); src.buffer = buf;
+        const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 1.0;
+        const g = envGain(tt, i === 2 ? 0.55 : 0.25, 0.001, dur);
+        src.connect(bp); bp.connect(g); g.connect(audioMaster);
+        if (i === 2) {
+          const rs = audioCtx.createGain(); rs.gain.value = 0.35;
+          g.connect(rs); rs.connect(audioReverb);
+        }
+        src.start(tt);
+      }
     }
     function scheduleHat(t, open) {
-      const dur = open ? 0.22 : 0.034;
-      const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * dur, audioCtx.sampleRate);
+      // tight, short hat — classic deep house tss
+      const dur = open ? 0.18 : 0.028;
+      const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
       const d = buf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const src = audioCtx.createBufferSource(); src.buffer = buf;
-      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 9000;
-      const g = envGain(t, open ? 0.16 : 0.11, 0.001, dur);
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 8500;
+      const g = envGain(t, open ? 0.13 : 0.085, 0.001, dur);
       src.connect(hp); hp.connect(g); g.connect(audioMaster);
-      if (open) { const rs = audioCtx.createGain(); rs.gain.value = 0.25; g.connect(rs); rs.connect(audioReverb); }
       src.start(t);
     }
-    function scheduleMetal(t) {
-      const partials = [2200, 3700, 5300];
-      const peaks    = [0.06, 0.05, 0.04];
-      for (let i = 0; i < partials.length; i++) {
-        const o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.value = partials[i];
-        const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = partials[i]; bp.Q.value = 10;
-        const g = envGain(t, peaks[i], 0.001, 0.26);
-        o.connect(bp); bp.connect(g); g.connect(audioMaster);
-        const rs = audioCtx.createGain(); rs.gain.value = 0.5; g.connect(rs); rs.connect(audioReverb);
-        o.start(t); o.stop(t + 0.3);
-      }
-    }
-    function scheduleBass(t, semis, soft) {
+
+    function scheduleBassFM(t, semis, vel) {
+      // Deep, plucky FM bass — sub sine for weight + FM op for buzz/character
+      if (vel == null) vel = 1;
       const freq = ROOT_HZ * Math.pow(2, semis / 12);
-      const dur = STEP_DUR * 4 * 1.04;
-      const subAmp  = soft ? 0.42 : 0.55;
-      const reeseAmp = soft ? 0.13 : 0.2;
+      const dur = STEP_DUR * 4 * 0.95;
       const sub = audioCtx.createOscillator(); sub.type = 'sine'; sub.frequency.value = freq;
-      const subG = audioCtx.createGain();
-      subG.gain.setValueAtTime(0, t);
-      subG.gain.linearRampToValueAtTime(subAmp, t + 0.015);
-      subG.gain.setValueAtTime(subAmp, t + dur - 0.05);
-      subG.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      sub.connect(subG); subG.connect(audioMaster);
+      const sg = audioCtx.createGain();
+      sg.gain.setValueAtTime(0, t);
+      sg.gain.linearRampToValueAtTime(0.5 * vel, t + 0.005);
+      sg.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      sub.connect(sg); sg.connect(audioMaster);
       sub.start(t); sub.stop(t + dur + 0.05);
+      fmVoice(t, freq * 2, {
+        modRatio: 0.5, modIdx: 7, modDecay: 0.18,
+        attack: 0.004, decay: 0.18, sustain: 0.22, release: 0.22,
+        peak: 0.22 * vel, sendReverb: 0,
+      });
+    }
 
-      const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 360; lp.Q.value = 9;
-      const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.55;
-      const lfoG = audioCtx.createGain(); lfoG.gain.value = 260;
-      lfo.connect(lfoG); lfoG.connect(lp.frequency);
-      lfo.start(t); lfo.stop(t + dur + 0.05);
-
-      const gg = audioCtx.createGain();
-      gg.gain.setValueAtTime(0, t);
-      gg.gain.linearRampToValueAtTime(reeseAmp, t + 0.02);
-      gg.gain.setValueAtTime(reeseAmp, t + dur - 0.05);
-      gg.gain.exponentialRampToValueAtTime(0.001, t + dur);
-
-      const detunes = [-18, -7, 7, 18];
-      for (const dt of detunes) {
-        const o = audioCtx.createOscillator(); o.type = 'sawtooth';
-        o.frequency.value = freq * 2;
-        o.detune.value = dt;
-        o.connect(lp);
-        o.start(t); o.stop(t + dur + 0.05);
+    function scheduleChordStab(t, rootSemis) {
+      // 3-note FM brass-ish stab — root, minor 3rd, 5th
+      const freq0 = ROOT_HZ * 4 * Math.pow(2, rootSemis / 12);
+      const intervals = [0, 3, 7];
+      for (const iv of intervals) {
+        const f = freq0 * Math.pow(2, iv / 12);
+        fmVoice(t, f, {
+          modRatio: 1.0, modIdx: 2.2, modDecay: 0.1,
+          attack: 0.008, decay: 0.07, sustain: 0.0, release: 0.16,
+          peak: 0.07, sendReverb: 0.2,
+        });
       }
-      lp.connect(gg); gg.connect(audioMaster);
-      const rs = audioCtx.createGain(); rs.gain.value = 0.18;
-      gg.connect(rs); rs.connect(audioReverb);
     }
 
-    function scheduleLead(t, semis) {
-      // PS1-game style square lead — slightly detuned, short LP envelope
-      // Octave choice: ROOT_HZ * 8 puts us around D4 (293Hz)
+    function scheduleBellLead(t, semis) {
+      // FM bell — high modulator ratio gives a metallic-bell character
       const freq = ROOT_HZ * 8 * Math.pow(2, semis / 12);
-      const dur = STEP_DUR * 2 * 0.92;
-      const o1 = audioCtx.createOscillator(); o1.type = 'square'; o1.frequency.value = freq;
-      const o2 = audioCtx.createOscillator(); o2.type = 'square'; o2.frequency.value = freq; o2.detune.value = 9;
-      const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass';
-      lp.frequency.setValueAtTime(2200, t);
-      lp.frequency.linearRampToValueAtTime(3800, t + 0.05);
-      lp.Q.value = 3.5;
-      const g = envGain(t, 0.12, 0.004, dur);
-      o1.connect(lp); o2.connect(lp); lp.connect(g); g.connect(audioMaster);
-      const rs = audioCtx.createGain(); rs.gain.value = 0.32;
-      g.connect(rs); rs.connect(audioReverb);
-      o1.start(t); o1.stop(t + dur + 0.05);
-      o2.start(t); o2.stop(t + dur + 0.05);
+      fmVoice(t, freq, {
+        modRatio: 3.0, modIdx: 3.5, modDecay: 0.35,
+        attack: 0.003, decay: 0.22, sustain: 0.15, release: 0.55,
+        peak: 0.14, sendReverb: 0.45,
+      });
     }
 
-    function scheduleRiser(t, dur) {
-      // 8-bar bandpassed noise sweep, climbing in frequency and volume
-      const samples = Math.max(1, Math.floor(audioCtx.sampleRate * dur));
-      const buf = audioCtx.createBuffer(1, samples, audioCtx.sampleRate);
+    // ----- SFX -----
+    let engineOsc = null, engineGain = null, engineLP = null;
+    function startEngineSFX() {
+      if (engineOsc) return;
+      engineOsc = audioCtx.createOscillator(); engineOsc.type = 'sawtooth';
+      engineOsc.frequency.value = 80;
+      engineLP = audioCtx.createBiquadFilter();
+      engineLP.type = 'lowpass'; engineLP.frequency.value = 700; engineLP.Q.value = 3;
+      engineGain = audioCtx.createGain(); engineGain.gain.value = 0.045;
+      engineOsc.connect(engineLP); engineLP.connect(engineGain); engineGain.connect(audioMaster);
+      engineOsc.start();
+    }
+    function updateEngineSFX(speed) {
+      if (!engineOsc) return;
+      const pitch = 60 + speed * 4.5;
+      const cutoff = 500 + speed * 35;
+      engineOsc.frequency.setTargetAtTime(pitch, audioCtx.currentTime, 0.04);
+      engineLP.frequency.setTargetAtTime(cutoff, audioCtx.currentTime, 0.06);
+    }
+    function sfxClack(t) {
+      if (!audioCtx) return;
+      const buf = audioCtx.createBuffer(1, 320, audioCtx.sampleRate);
       const d = buf.getChannelData(0);
-      for (let i = 0; i < samples; i++) d[i] = Math.random() * 2 - 1;
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / 40);
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800;
+      const g = envGain(t, 0.06, 0.001, 0.05);
+      src.connect(hp); hp.connect(g); g.connect(audioMaster);
+      src.start(t);
+    }
+    function sfxPickup(t) {
+      if (!audioCtx) return;
+      const notes = [600, 900, 1350];
+      for (let i = 0; i < notes.length; i++) {
+        const tt = t + i * 0.06;
+        const o = audioCtx.createOscillator(); o.type = 'square'; o.frequency.value = notes[i];
+        const g = envGain(tt, 0.12, 0.003, 0.12);
+        o.connect(g); g.connect(audioMaster);
+        o.start(tt); o.stop(tt + 0.18);
+      }
+    }
+    function sfxBoost(t) {
+      if (!audioCtx) return;
+      const dur = 0.5;
+      const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
       const src = audioCtx.createBufferSource(); src.buffer = buf;
       const bp = audioCtx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 5;
-      bp.frequency.setValueAtTime(300, t);
-      bp.frequency.exponentialRampToValueAtTime(8500, t + dur);
-      const g = audioCtx.createGain();
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.05, t + dur * 0.4);
-      g.gain.linearRampToValueAtTime(0.22, t + dur);
+      bp.frequency.setValueAtTime(700, t);
+      bp.frequency.exponentialRampToValueAtTime(5500, t + dur);
+      const g = envGain(t, 0.25, 0.005, dur);
       src.connect(bp); bp.connect(g); g.connect(audioMaster);
-      const rs = audioCtx.createGain(); rs.gain.value = 0.6;
-      g.connect(rs); rs.connect(audioReverb);
+      src.start(t);
+      // accompanying low whomp
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(90, t);
+      o.frequency.exponentialRampToValueAtTime(45, t + 0.3);
+      const og = envGain(t, 0.32, 0.005, 0.3);
+      o.connect(og); og.connect(audioMaster);
+      o.start(t); o.stop(t + 0.35);
+    }
+    function sfxCrash(t) {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'sine';
+      o.frequency.setValueAtTime(140, t);
+      o.frequency.exponentialRampToValueAtTime(40, t + 0.32);
+      const g = envGain(t, 0.55, 0.003, 0.36);
+      o.connect(g); g.connect(audioMaster);
+      o.start(t); o.stop(t + 0.42);
+      const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * 0.22), audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      const src = audioCtx.createBufferSource(); src.buffer = buf;
+      const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+      const g2 = envGain(t, 0.28, 0.002, 0.22);
+      src.connect(lp); lp.connect(g2); g2.connect(audioMaster);
       src.start(t);
     }
+    function sfxBump(t) {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator(); o.type = 'triangle';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(80, t + 0.1);
+      const g = envGain(t, 0.18, 0.002, 0.1);
+      o.connect(g); g.connect(audioMaster);
+      o.start(t); o.stop(t + 0.14);
+    }
+
+    // ----- Voice barks (SpeechSynthesis + on-screen subtitle bubble) -----
+    let _lastBark = 0;
+    function bark(text, opts) {
+      const o = opts || {};
+      if (!o.force && performance.now() - _lastBark < 700) return;
+      _lastBark = performance.now();
+      showBark(text);
+      if (window.speechSynthesis) {
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 1.75; u.pitch = 1.55; u.volume = 0.6;
+        try { window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch(_) {}
+      }
+    }
+    function showBark(text) {
+      const el = document.getElementById('bark');
+      if (!el) return;
+      el.textContent = String(text).toUpperCase();
+      el.classList.remove('show');
+      void el.offsetWidth;
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), 1400);
+    }
+
     function startPad() {
-      const padGain = audioCtx.createGain(); padGain.gain.value = 0.085;
+      // sustained warm pad — root + minor 3rd + 5th + octave through slow-LFO LPF
+      const padGain = audioCtx.createGain(); padGain.gain.value = 0.05;
       padGain.connect(audioMaster);
-      const f1 = ROOT_HZ * 2;
-      const f2 = ROOT_HZ * 2 * Math.pow(2, 8 / 12);
-      const o1 = audioCtx.createOscillator(); o1.type = 'sine'; o1.frequency.value = f1;
-      const o2 = audioCtx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f2;
-      o2.detune.value = -6;
-      const og = audioCtx.createGain(); og.gain.value = 0.55;
-      o1.connect(og); o2.connect(og); og.connect(padGain);
-      o1.start(); o2.start();
-      const noiseBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 4, audioCtx.sampleRate);
-      const nd = noiseBuf.getChannelData(0);
-      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
-      const ns = audioCtx.createBufferSource(); ns.buffer = noiseBuf; ns.loop = true;
-      const nbp = audioCtx.createBiquadFilter(); nbp.type = 'bandpass'; nbp.frequency.value = 600; nbp.Q.value = 4;
-      const nlfo = audioCtx.createOscillator(); nlfo.type = 'sine'; nlfo.frequency.value = 0.11;
-      const nlfoG = audioCtx.createGain(); nlfoG.gain.value = 280;
-      nlfo.connect(nlfoG); nlfoG.connect(nbp.frequency);
-      const nGain = audioCtx.createGain(); nGain.gain.value = 0.35;
-      ns.connect(nbp); nbp.connect(nGain); nGain.connect(padGain);
-      const rs = audioCtx.createGain(); rs.gain.value = 0.6;
-      nGain.connect(rs); rs.connect(audioReverb);
-      ns.start(); nlfo.start();
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = 'lowpass'; lp.frequency.value = 1200; lp.Q.value = 1;
+      lp.connect(padGain);
+      const rs = audioCtx.createGain(); rs.gain.value = 0.5;
+      lp.connect(rs); rs.connect(audioReverb);
+      const lfo = audioCtx.createOscillator(); lfo.type = 'sine'; lfo.frequency.value = 0.08;
+      const lfoG = audioCtx.createGain(); lfoG.gain.value = 260;
+      lfo.connect(lfoG); lfoG.connect(lp.frequency); lfo.start();
+      const f0 = ROOT_HZ * 4;
+      const intervals = [0, 3, 7, 12];
+      for (const iv of intervals) {
+        const f = f0 * Math.pow(2, iv / 12);
+        const o = audioCtx.createOscillator(); o.type = 'sawtooth';
+        o.frequency.value = f;
+        o.detune.value = rand(-6, 6);
+        o.connect(lp); o.start();
+      }
     }
 
     // =========================================================================
@@ -1953,15 +2576,28 @@
       });
     }
 
-    function updateStreaks(dt, truckSpd, isBoosting) {
-      // factor scales with speed; boost gives extra streak density
-      const baseF = clamp((truckSpd - 18) / 30, 0, 1);
-      const factor = isBoosting ? Math.min(1, baseF + 0.3) : baseF;
-      const cx = innerWidth / 2;
-      const cy = innerHeight * 0.42;           // horizon vanishing point
+    // Speed-line streak system disabled — boost-blast handles the speed sense now.
+    // Clear the streaks canvas once to remove anything that may have been left.
+    streakCtx.clearRect(0, 0, innerWidth, innerHeight);
+    function updateStreaks() { /* no-op */ }
+    function _legacy_updateStreaks(dt, truckSpd, isBoosting) {
+      const baseF = clamp((truckSpd - 22) / 30, 0, 1);
+      const factor = isBoosting ? Math.min(1, baseF + 0.35) : baseF;
 
-      const target = Math.floor(factor * (isBoosting ? 150 : 80));
-      let spawnBudget = Math.min(12, Math.max(0, target - streaks.length));
+      // Emanate from a point ~12m in front of the truck along the tangent, projected to screen.
+      // This anchors the radial origin to where the truck is going — right out the nose, not behind it.
+      _streakAhead.set(
+        truck.position.x + _curTan.x * 12,
+        truck.position.y + 1.8,
+        truck.position.z + _curTan.z * 12
+      );
+      _streakAhead.project(camera);
+      const cx = (_streakAhead.x * 0.5 + 0.5) * innerWidth;
+      const cy = (-_streakAhead.y * 0.5 + 0.5) * innerHeight;
+
+      // Density way down — was 80/150, now 30/60
+      const target = Math.floor(factor * (isBoosting ? 60 : 30));
+      let spawnBudget = Math.min(6, Math.max(0, target - streaks.length));
       while (spawnBudget-- > 0) spawnStreak(cx, cy, factor);
 
       streakCtx.clearRect(0, 0, innerWidth, innerHeight);
@@ -2013,28 +2649,90 @@
     let gameOver = false;
     let startTime = performance.now();
 
-    // ---- boost meter ----
+    // ---- boost: press-to-fire ----
+    // Boost meter must be FULL to fire. Tap SPACE → discharges meter, gives a fixed-duration burst.
     let boostMeter = 1.0;                 // 0..1
-    const BOOST_DRAIN_PER_SEC = 0.32;     // ~3s of full boost
-    const BOOST_PICKUP_VALUE = 0.45;      // each pickup
-    const BOOST_CRASH_LOSS = 0.6;         // crash empties most of meter
+    let boostActive = false;
+    let boostTime = 0;
+    const BOOST_DURATION = 2.5;           // seconds of burst per fire
+    const BOOST_REGEN_PER_SEC = 0.08;     // ~12s to fully recharge from empty
+    const BOOST_PICKUP_VALUE = 0.5;       // each pickup adds 50%
+    const BOOST_CRASH_LOSS = 1.0;         // crash empties entirely
 
-    // HUD elements
-    const hudCarts = document.getElementById('carts');
+    // ---- score ----
+    let score = 0;
+    let stageDodges = 0;                  // vehicles passed this stage
+    let stageStartScore = 0;
+    let stageStartCarts = MAX_CARTS;
+    let stageStartTime = 0;
+    function addScore(n) { score += n; }
+
+    // HUD elements (new RR4/AC3-style layout)
+    const hudCarts    = document.getElementById('carts');
     const hudCartsRow = document.getElementById('cartsRow');
-    const hudDist  = document.getElementById('dist');
-    const hudSpeed = document.getElementById('speed');
-    const hudLvl   = document.getElementById('lvl');
-    const hudLvlName = document.getElementById('lvlName');
-    const boostFill = document.getElementById('boostFill');
-    const boostLabel = document.getElementById('boostLabel');
-    const speedoWrap = document.getElementById('speedoWrap');
-    const overlay  = document.getElementById('overlay');
-    const titleEl  = document.getElementById('title');
-    const subtitle = document.getElementById('subtitle');
-    const againBtn = document.getElementById('again');
-    const vignette = document.getElementById('vignette');
+    const hudDist     = document.getElementById('dist');
+    const hudSpeed    = document.getElementById('speed');
+    const hudLvl      = document.getElementById('lvl');
+    const hudLvlName  = document.getElementById('lvlName');
+    const hudScore    = document.getElementById('score');
+    const boostFill   = document.getElementById('boostFill');
+    const boostStatus = document.getElementById('boostStatus');
+    const speedMask   = document.getElementById('speedMask');
+    const speedArrow  = document.getElementById('speedArrow');
+    const sectionLetter = document.getElementById('sectionLetter');
+    const overlay     = document.getElementById('overlay');
+    const titleEl     = document.getElementById('title');
+    const subtitle    = document.getElementById('subtitle');
+    const againBtn    = document.getElementById('again');
+    const vignette    = document.getElementById('vignette');
     againBtn.addEventListener('click', () => location.reload());
+
+    // ----- HUD motion helpers -----
+    function glitchText(el, finalText, durationSec) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#@!$%&';
+      const start = performance.now();
+      const target = String(finalText).split('');
+      const dur = (durationSec || 0.5) * 1000;
+      function tick() {
+        const tt = (performance.now() - start) / dur;
+        if (tt >= 1) { el.textContent = finalText; return; }
+        el.textContent = target.map((c, i) => {
+          const charT = clamp(tt * target.length - i * 0.75, 0, 1);
+          if (charT >= 1 || c === ' ') return c;
+          return chars[(Math.random() * chars.length) | 0];
+        }).join('');
+        requestAnimationFrame(tick);
+      }
+      tick();
+    }
+    let _lastCartsShown = MAX_CARTS;
+    function setCartsHUD(n) {
+      if (n !== _lastCartsShown) {
+        hudCarts.classList.remove('flash-value');
+        void hudCarts.offsetWidth;
+        hudCarts.classList.add('flash-value');
+        _lastCartsShown = n;
+      }
+      hudCarts.textContent = n;
+    }
+    let _lastSection = 'A';
+    function maybeGlitchSection() {
+      if (typeof currentSection !== 'undefined' && currentSection !== _lastSection) {
+        _lastSection = currentSection;
+        glitchText(sectionLetter, currentSection, 0.45);
+      }
+    }
+    const stageBannerEl = document.getElementById('stageBanner');
+    let _bannerHide = null;
+    function showStageBanner(num, name, distM, holdMs) {
+      stageBannerEl.querySelector('.stagenum').textContent = `STAGE ${num}`;
+      stageBannerEl.querySelector('.stagesub').textContent = `${distM} M / NORMAL`;
+      const nameEl = stageBannerEl.querySelector('.stagename');
+      stageBannerEl.classList.add('show');
+      glitchText(nameEl, name, 0.55);
+      clearTimeout(_bannerHide);
+      _bannerHide = setTimeout(() => stageBannerEl.classList.remove('show'), holdMs || 2000);
+    }
 
     function endGame(isWin) {
       if (gameOver) return;
@@ -2064,6 +2762,9 @@
     loadLevel(0);
     hudLvl.textContent = String(levelIdx + 1);
     hudLvlName.textContent = LEVELS[levelIdx].name;
+    stageStartScore = score;
+    stageStartCarts = cartsRemaining;
+    stageStartTime = performance.now();
 
     // =========================================================================
     // main loop
@@ -2073,7 +2774,27 @@
     const _curRt  = new THREE.Vector3();
     const _curP   = new THREE.Vector3();
 
-    function advanceLevel() {
+    let stageRecap = false;
+    function endStage() {
+      if (stageRecap || gameOver) return;
+      stageRecap = true;
+      bark('CHECKPOINT');
+      const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
+      const spilled = stageStartCarts - cartsRemaining;
+      const gained  = score - stageStartScore;
+      document.getElementById('recapHeader').textContent = `STAGE ${levelIdx + 1}`;
+      document.getElementById('recapBar').textContent    = `DELIVERY COMPLETE · ${LEVELS[levelIdx].name}`;
+      document.getElementById('recapTime').textContent   = seconds;
+      document.getElementById('recapDodges').textContent = stageDodges;
+      document.getElementById('recapSpilled').textContent= spilled;
+      document.getElementById('recapGained').textContent = gained;
+      document.getElementById('recapTotal').textContent  = score;
+      document.getElementById('stageRecap').classList.add('show');
+    }
+
+    function continueToNextStage() {
+      document.getElementById('stageRecap').classList.remove('show');
+      stageRecap = false;
       levelIdx++;
       if (levelIdx >= LEVELS.length) {
         endGame(true);
@@ -2082,26 +2803,36 @@
       levelTransitioning = true;
       truckS = 0;
       truckLateral = 2.5;
+      stageDodges = 0;
+      stageStartScore = score;
+      stageStartCarts = cartsRemaining;
+      stageStartTime = performance.now();
       hudLvl.textContent = String(levelIdx + 1);
       hudLvlName.textContent = LEVELS[levelIdx].name;
       loadLevel(levelIdx);
-      // brief speed boost for the level-start surge
-      truckSpeed = Math.max(truckSpeed, 18);
+      truckSpeed = Math.max(truckSpeed, 20);
       setTimeout(() => { levelTransitioning = false; }, 600);
     }
+    document.getElementById('recapContinue').addEventListener('click', continueToNextStage);
 
     function tick() {
       const dt = Math.min(clock.getDelta(), 0.05);
       let steerInput = 0;
 
-      if (!gameOver) {
-        // throttle — boost requires a non-empty meter and drains it
-        const wantBoost = !!keys[' '] && boostMeter > 0;
+      if (!gameOver && !stageRecap) {
+        // throttle — boost is a press-to-fire timed burst, not a hold
+        if (boostActive) {
+          boostTime -= dt;
+          if (boostTime <= 0) boostActive = false;
+        }
+        // passive recharge (slower than pickups) so the meter eventually refills
+        if (!boostActive && boostMeter < 1) {
+          boostMeter = Math.min(1, boostMeter + BOOST_REGEN_PER_SEC * dt);
+        }
         const accel = keys['w'] || keys['arrowup'];
         const brake = keys['s'] || keys['arrowdown'];
-        if (wantBoost) {
-          truckSpeed += TRUCK_ACCEL * 1.4 * dt;
-          boostMeter = Math.max(0, boostMeter - BOOST_DRAIN_PER_SEC * dt);
+        if (boostActive) {
+          truckSpeed += TRUCK_ACCEL * 1.5 * dt;
         } else if (accel) {
           if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed += TRUCK_ACCEL * dt;
         } else if (brake) {
@@ -2109,9 +2840,9 @@
         } else {
           truckSpeed -= TRUCK_DRAG * dt;
         }
-        // boost falloff: above MAX with no boost, decel back to MAX
-        if (!wantBoost && truckSpeed > TRUCK_MAX_SPEED) {
-          truckSpeed -= 14 * dt;
+        // boost falloff: when burst ends, decel back to MAX
+        if (!boostActive && truckSpeed > TRUCK_MAX_SPEED) {
+          truckSpeed -= 16 * dt;
           if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed = TRUCK_MAX_SPEED;
         }
         truckSpeed = clamp(truckSpeed, TRUCK_MIN_SPEED, TRUCK_BOOST_SPEED);
@@ -2126,8 +2857,8 @@
         // advance along curve
         truckS += truckSpeed * dt;
         if (truckS >= curveLength - 14) {
-          advanceLevel();
-          if (gameOver) return finalize();
+          endStage();
+          // freeze further game logic this frame
         }
 
         // bounce
@@ -2166,6 +2897,7 @@
               o.hit = true;
               bumpVel = Math.max(7, truckSpeed * 0.4);
               dropCart();
+              try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             }
           } else {
             if (Math.abs(truckLateral - o.lat) < 1.6 && ds < 1.4) {
@@ -2191,42 +2923,77 @@
       }
 
       // ---- traffic update ----
+      const nowMs = performance.now();
       for (let i = traffic.length - 1; i >= 0; i--) {
         const c = traffic[i];
         if (!c.alive) { levelGroup.remove(c.mesh); traffic.splice(i, 1); continue; }
-        c.s -= c.speed * dt;
+        // forward in their own direction
+        c.s += c.speed * dt * c.dir;     // dir = -1 (oncoming toward truck) or +1 (same direction)
+        // lane-change AI: occasionally retarget within the vehicle's own lane(s)
+        if (nowMs > c.nextLaneChange) {
+          c.nextLaneChange = nowMs + rand(3500, 7000);
+          if (Math.random() < 0.55) {
+            // pick a new lane within their side of the road (with some jitter)
+            if (c.dir === -1) c.targetLat = rand(-4.0, -1.4);
+            else              c.targetLat = rand(1.4, 4.0);
+          }
+        }
+        // ease lateral toward target
+        c.lat += (c.targetLat - c.lat) * Math.min(1, dt * 1.4);
+
         const ct = clamp(c.s / curveLength, 0, 1);
         const cp = pointAt(ct);
         const ctn = tangentAt(ct);
         const crt = rightFromTangent(ctn);
         c.mesh.position.x = cp.x + crt.x * c.lat;
         c.mesh.position.z = cp.z + crt.z * c.lat;
-        c.mesh.rotation.y = Math.atan2(-ctn.x, -ctn.z);
-        // collision with truck
+        c.mesh.rotation.y = c.dir === -1
+          ? Math.atan2(-ctn.x, -ctn.z)
+          : Math.atan2(ctn.x, ctn.z);
+
         if (!gameOver) {
-          const dz = (c.s - truckS); // signed distance along curve (car ahead = positive)
-          if (Math.abs(dz) < 3.2 && Math.abs(c.lat - truckLateral) < 1.8) {
-            // crash: lose a chunk of carts AND boost meter, slow truck, bounce
+          const ds = (c.s - truckS);  // positive: ahead of truck
+          const dlat = Math.abs(c.lat - truckLateral);
+          // collision
+          if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half)) {
             for (let k = 0; k < 6; k++) dropCart();
             bumpVel = Math.max(8, truckSpeed * 0.6);
             truckSpeed *= 0.55;
             boostMeter = Math.max(0, boostMeter - BOOST_CRASH_LOSS);
+            boostActive = false;
+            addScore(-40);
+            try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+            bark('WATCH IT');
             c.alive = false;
             continue;
           }
+          // score on safe pass (only fires once per vehicle)
+          if (!c.passed) {
+            // for oncoming: passed when ds becomes negative; for same-direction: when we overtake (truck.s > c.s)
+            if (c.dir === -1 && ds < -1) {
+              c.passed = true;
+              addScore(c.points);
+              stageDodges++;
+            } else if (c.dir === +1 && ds < -1) {
+              // truck overtook a slower vehicle (it now sits behind)
+              c.passed = true;
+              addScore(c.points);
+              stageDodges++;
+            }
+          }
         }
-        // recycle if car passed behind truck
-        if (c.s < truckS - 20) {
-          c.alive = false;
-        }
+        // recycle if vehicle is well behind truck
+        if (c.s < truckS - 30) c.alive = false;
+        // or recycle if same-direction vehicle is way ahead (truck won't catch it)
+        if (c.dir === +1 && c.s > truckS + 260) c.alive = false;
       }
       // spawn replacement traffic ahead if under target
       if (!gameOver && !levelTransitioning) {
         const L = LEVELS[levelIdx];
-        const liveAhead = traffic.filter(c => c.alive && c.s > truckS - 5).length;
+        const liveAhead = traffic.filter(v => v.alive && v.s > truckS - 5).length;
         if (liveAhead < L.trafficCount && truckS < curveLength - 200) {
-          if (Math.random() < dt * 0.8) {
-            spawnTrafficCar(truckS + rand(110, 230));
+          if (Math.random() < dt * 1.1) {
+            spawnTrafficVehicle(truckS + rand(110, 230));
           }
         }
       }
@@ -2244,7 +3011,11 @@
           if (ds < 2.2 && dlat < 1.8) {
             pu.alive = false;
             pu.mesh.visible = false;
+            const prevFull = boostMeter >= 0.999;
             boostMeter = Math.min(1.0, boostMeter + BOOST_PICKUP_VALUE);
+            try { sfxPickup(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+            addScore(25);
+            if (!prevFull && boostMeter >= 0.999) bark('PRIMED');
           }
         }
       }
@@ -2309,27 +3080,26 @@
             }
           }
         } else {
-          // snake-follow trail behavior, with smoothly-eased orientation
+          // snake-follow trail behavior — full snap to maintain nesting
           if (cart.position.y > 0.15) {
-            cart.position.y += (0.15 - cart.position.y) * Math.min(1, dt * 8);
+            cart.position.y += (0.15 - cart.position.y) * Math.min(1, dt * 12);
           }
           const dx = leaderX - cart.position.x;
           const dz = leaderZ - cart.position.z;
           const dist = Math.hypot(dx, dz);
           if (dist > TRAIL_SPACING) {
+            // hard snap to spacing every frame — keeps chain tight at high speeds
             const f = (dist - TRAIL_SPACING) / dist;
             cart.position.x += dx * f;
             cart.position.z += dz * f;
             const targetRot = Math.atan2(dx, dz);
-            // smooth rotation toward leader
             let drot = targetRot - cart.rotation.y;
             while (drot > Math.PI) drot -= Math.PI * 2;
             while (drot < -Math.PI) drot += Math.PI * 2;
-            cart.rotation.y += drot * Math.min(1, dt * 5);
+            cart.rotation.y += drot * Math.min(1, dt * 8);
           }
-          // ease out residual x/z tilt
-          cart.rotation.x *= Math.pow(0.6, dt * 60);
-          cart.rotation.z *= Math.pow(0.6, dt * 60);
+          cart.rotation.x *= Math.pow(0.35, dt * 60);
+          cart.rotation.z *= Math.pow(0.35, dt * 60);
         }
         leaderX = cart.position.x;
         leaderZ = cart.position.z;
@@ -2393,7 +3163,7 @@
       const vAmt = Math.round(60 + fovFactor * 140);
       vignette.style.boxShadow = `inset 0 0 ${vAmt}px ${Math.round(30 + fovFactor * 90)}px rgba(0,0,0,${0.22 + fovFactor * 0.32})`;
 
-      updateStreaks(dt, truckSpeed, !!keys[' '] && boostMeter > 0);
+      updateStreaks();
 
       // boost-blast manga burst (one-shot on SPACE press)
       if (boostBlastTimer > 0) {
@@ -2406,23 +3176,49 @@
         }
       }
 
-      if (truckSpeed > TRUCK_MAX_SPEED + 1) speedoWrap.classList.add('boost');
-      else speedoWrap.classList.remove('boost');
-
-      hudCarts.textContent = cartsRemaining;
-      hudDist.textContent = Math.max(0, Math.round(curveLength - truckS));
-      hudSpeed.textContent = Math.round(truckSpeed * 2.237);
-      boostFill.style.width = (boostMeter * 100).toFixed(1) + '%';
-      if (boostMeter <= 0.001) {
-        boostFill.classList.add('empty');
-        boostLabel.classList.add('empty');
-        boostLabel.textContent = 'EMPTY — GRAB ⬢';
-      } else {
-        boostFill.classList.remove('empty');
-        boostLabel.classList.remove('empty');
-        boostLabel.textContent = 'BOOST';
+      // fire a pending stage banner on first frame after a loadLevel
+      if (_pendingBanner) {
+        showStageBanner(_pendingBanner.num, _pendingBanner.name, _pendingBanner.dist);
+        _pendingBanner = null;
       }
 
+      // ---- HUD update ----
+      setCartsHUD(cartsRemaining);
+      hudDist.textContent = Math.max(0, Math.round(curveLength - truckS));
+      hudScore.textContent = score;
+      const mph = Math.round(truckSpeed * 2.237);
+      hudSpeed.textContent = mph;
+      if (truckSpeed > TRUCK_MAX_SPEED + 1) hudSpeed.classList.add('boost');
+      else hudSpeed.classList.remove('boost');
+      // vertical speedo bar: mask shrinks from top as speed grows; arrow rides the level
+      const speedPct = clamp(truckSpeed / TRUCK_BOOST_SPEED, 0, 1) * 100;
+      speedMask.style.height = (100 - speedPct) + '%';
+      speedArrow.style.bottom = speedPct + '%';
+
+      // boost meter HUD — press-to-fire indicators
+      boostFill.style.width = (boostMeter * 100).toFixed(1) + '%';
+      if (boostActive) {
+        boostFill.classList.remove('empty');
+        boostStatus.classList.remove('ready', 'empty');
+        boostStatus.classList.add('firing');
+        boostStatus.textContent = 'FIRING';
+      } else if (boostMeter > 0.999) {
+        boostFill.classList.remove('empty', 'firing');
+        boostStatus.classList.add('ready');
+        boostStatus.textContent = 'PRIMED · TAP SPACE';
+      } else {
+        boostFill.classList.remove('empty', 'firing');
+        boostStatus.classList.remove('ready');
+        boostStatus.textContent = 'CHARGING';
+      }
+
+      // music section indicator (A/B/C) — glitch when it changes
+      maybeGlitchSection();
+
+      // engine drone follows speed
+      if (audioStarted) updateEngineSFX(truckSpeed);
+
+      if (crtPass) crtPass.uniforms.time.value += dt;
       composer.render();
       requestAnimationFrame(tick);
     }
