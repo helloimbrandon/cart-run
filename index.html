@@ -1566,8 +1566,8 @@
   <!-- voice bark subtitle -->
   <div id="bark"></div>
 
-  <!-- BIG STEPPER (the game's music) — loaded on first user gesture -->
-  <audio id="bigStepper" src="audio/big-stepper.mp3" loop preload="auto"></audio>
+  <!-- music element (Brandon's playlist) — fires on first user gesture, advances on `ended` -->
+  <audio id="bigStepper" preload="auto"></audio>
 
   <!-- ====================================================================
        ARCADE HUD (new) — replaces the thin telemetry look
@@ -3496,18 +3496,42 @@
       startEngineSFX();
       // (procedural pad + drum scheduler disabled — replaced by BIG STEPPER MP3)
 
-      // BIG STEPPER — actual game music
-      const music = document.getElementById('bigStepper');
-      if (music) {
-        music.volume = 0.62;
-        music.loop = true;
-        music.muted = audioMuted;
-        const p = music.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {/* will retry on next gesture */});
-      }
+      // ---- BRANDON's playlist (advances on `ended`, cycles forever) ----
+      startMusicPlaylist();
+    }
 
+    const MUSIC_PLAYLIST = [
+      { src: 'audio/big-stepper.mp3', title: 'BIG STEPPER (BRANDON)' },
+      { src: 'audio/ooiiiii.mp3',     title: 'OOIIIII (BRANDON)'     },
+    ];
+    let _trackIdx = 0;
+    function _setAudioLabel() {
       const lbl = document.getElementById('audioLbl');
-      if (lbl) lbl.textContent = 'BIG STEPPER (B.FOY)';
+      if (!lbl) return;
+      lbl.textContent = audioMuted ? 'MUTED · M TO UNMUTE' : MUSIC_PLAYLIST[_trackIdx].title;
+    }
+    function startMusicPlaylist() {
+      const music = document.getElementById('bigStepper');
+      if (!music) return;
+      music.loop = false;            // single-track loop off; we advance manually
+      music.volume = 0.62;
+      music.muted = audioMuted;
+      // load + play current track
+      music.src = MUSIC_PLAYLIST[_trackIdx].src;
+      const p = music.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+      _setAudioLabel();
+      // ensure single listener
+      if (!music._cartRunListener) {
+        music._cartRunListener = true;
+        music.addEventListener('ended', () => {
+          _trackIdx = (_trackIdx + 1) % MUSIC_PLAYLIST.length;
+          music.src = MUSIC_PLAYLIST[_trackIdx].src;
+          const p2 = music.play();
+          if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+          _setAudioLabel();
+        });
+      }
     }
     function toggleMute() {
       if (!audioStarted) return;
@@ -3515,8 +3539,7 @@
       audioMaster.gain.setTargetAtTime(audioMuted ? 0 : 0.5, audioCtx.currentTime, 0.03);
       const music = document.getElementById('bigStepper');
       if (music) music.muted = audioMuted;
-      const lbl = document.getElementById('audioLbl');
-      if (lbl) lbl.textContent = audioMuted ? 'MUTED · M TO UNMUTE' : 'BIG STEPPER (B.FOY)';
+      _setAudioLabel();
     }
     function makeBitcrusher(bits) {
       const ws = audioCtx.createWaveShaper();
