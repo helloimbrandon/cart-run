@@ -409,13 +409,26 @@
     }
     #introFade.show { opacity: 1; }
 
-    /* ---- Mobile touch controls ---- */
-    #mobile {
-      position: fixed; inset: 0; z-index: 5;
+    /* ---- Mobile touch controls (legacy buttons — hidden) ---- */
+    #mobile { display: none !important; }
+    .mobile-active #mobile { display: none !important; }
+
+    /* one-thumb mobile hint */
+    #mobileHint {
+      position: fixed; bottom: 220px; left: 50%; transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.5);
+      color: #f5f5f0;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-family: 'Saira Condensed', sans-serif;
+      font-size: 12px; letter-spacing: 2px;
       pointer-events: none;
       display: none;
+      opacity: 0.95;
+      transition: opacity 0.5s ease;
     }
-    .mobile-active #mobile { display: block; }
+    .mobile-active #mobileHint { display: block; }
+    #mobileHint.fade { opacity: 0; }
     /* hide cluttery hint bar / kana ribbon on mobile */
     .mobile-active #wpKatakana,
     .mobile-active #wpStamp,
@@ -1328,13 +1341,8 @@
   <div id="countdown"></div>
   <div id="introFade"></div>
 
-  <!-- mobile touch overlay -->
-  <div id="mobile">
-    <div class="mob-btn" id="mobL">◀</div>
-    <div class="mob-btn" id="mobR">▶</div>
-    <div class="mob-btn" id="mobB">BRAKE</div>
-    <div class="mob-btn" id="mobG">GO</div>
-  </div>
+  <!-- mobile: hint only; controls are one-thumb gestures on the road canvas -->
+  <div id="mobileHint">DRAG TO STEER · TAP TO BOOST</div>
 
   <!-- start-of-run title card -->
   <div id="title-card">
@@ -2938,7 +2946,10 @@
           boostTime = BOOST_DURATION;
           boostMeter = 0;
           triggerBoostBlast();
-          try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          try {
+            sfxBoost(audioCtx ? audioCtx.currentTime : 0);
+            raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
+          } catch(_) {}
           bark('BOOST');
         }
       }
@@ -3095,6 +3106,23 @@
           const note = BELL_PHRASE[barInSec % BELL_PHRASE.length];
           if (note !== null && note !== undefined) scheduleBellLead(nextNoteTime, note);
         }
+
+        // ---- Rave vocal hits (rhythmic accents, sparingly) ----
+        // every 8 bars on beat 1 of section A → "YEAH!"
+        if (sec === 'A' && barInSec === 0 && ss === 0) raveVocal(nextNoteTime, 'YEAH');
+        // beat 1 of bar 5 in section A → "MOVE!"
+        if (sec === 'A' && barInSec === 4 && ss === 0) raveVocal(nextNoteTime, 'MOVE');
+        // section B kicks off with "RAVE!" on bar 0 beat 1
+        if (sec === 'B' && barInSec === 0 && ss === 0) raveVocal(nextNoteTime, 'RAVE');
+        // before hook return (last bar of section B, beat 4) — "GO!"
+        if (sec === 'B' && barInSec === 7 && ss === 12) raveVocal(nextNoteTime, 'GO');
+        // section C builds: "PUSH!" on bar 0, "HEY!" on bar 4 offbeat
+        if (sec === 'C' && barInSec === 0 && ss === 0) raveVocal(nextNoteTime, 'PUSH');
+        if (sec === 'C' && barInSec === 4 && ss === 6) raveVocal(nextNoteTime, 'HEY');
+        // big fill: chopped "GO-GO-GO" 16ths in the last beat of section C
+        if (sec === 'C' && barInSec === 7 && ss === 12) raveChop(nextNoteTime, 'GO', 4);
+        // "DROP!" right at the section change C → A (cycle wraps)
+        if (sec === 'C' && barInSec === 7 && ss === 15) raveVocal(nextNoteTime, 'DROP');
 
         stepCounter++;
         nextNoteTime += STEP_DUR;
@@ -3325,6 +3353,70 @@
       const g = envGain(t, 0.18, 0.002, 0.1);
       o.connect(g); g.connect(audioMaster);
       o.start(t); o.stop(t + 0.14);
+    }
+
+    // ----- 16-bit rave vocal hits -----
+    // Synthesized vowel-shape "vocals" via saw oscillator → two formant bandpass
+    // filters with pitch + formant glides. The master bitcrusher does the rest.
+    const VOCAL_WORDS = {
+      // [F1_start, F1_end, F2_start, F2_end, pitch_start, pitch_end, duration, vol]
+      'YEAH':  [600, 780,  1050, 1300, 130,  92, 0.32, 0.55],
+      'GO':    [520, 580,  820,  880,  90,  110, 0.20, 0.55],
+      'HEY':   [530, 550,  1800, 1950, 110, 105, 0.18, 0.50],
+      'MOVE':  [340, 360,  900,  980,  108,  98, 0.22, 0.50],
+      'BOOST': [320, 360,  840,  900,  100,  70, 0.30, 0.60],
+      'RAVE':  [700, 720,  1300, 1320, 105,  98, 0.26, 0.55],
+      'PUSH':  [380, 360,  1000, 1100, 110,  95, 0.22, 0.50],
+      'HIT':   [400, 420,  1500, 1600, 120, 120, 0.10, 0.55],
+      'CHECK': [500, 520,  1700, 1800, 115, 110, 0.18, 0.45],
+      'DROP':  [560, 500,  900,  820,  100,  72, 0.26, 0.55],
+    };
+
+    function raveVocal(t, word, opts) {
+      if (!audioCtx) return;
+      const o = opts || {};
+      const preset = VOCAL_WORDS[word] || VOCAL_WORDS['YEAH'];
+      const [f1a, f1b, f2a, f2b, pa, pb, dur, vol] = preset;
+      const pitchJitter = o.pitchJitter != null ? o.pitchJitter : 1;
+      // saw buzz with pitch glide
+      const buzz = audioCtx.createOscillator(); buzz.type = 'sawtooth';
+      buzz.frequency.setValueAtTime(pa * pitchJitter, t);
+      buzz.frequency.linearRampToValueAtTime(pb * pitchJitter, t + dur);
+      // formant 1
+      const bp1 = audioCtx.createBiquadFilter();
+      bp1.type = 'bandpass'; bp1.Q.value = 9;
+      bp1.frequency.setValueAtTime(f1a, t);
+      bp1.frequency.linearRampToValueAtTime(f1b, t + dur);
+      // formant 2 (slightly louder Q for more vowel character)
+      const bp2 = audioCtx.createBiquadFilter();
+      bp2.type = 'bandpass'; bp2.Q.value = 14;
+      bp2.frequency.setValueAtTime(f2a, t);
+      bp2.frequency.linearRampToValueAtTime(f2b, t + dur);
+      // sum the two formants
+      const sum = audioCtx.createGain(); sum.gain.value = 1.0;
+      buzz.connect(bp1); bp1.connect(sum);
+      buzz.connect(bp2); bp2.connect(sum);
+      // envelope (snappy attack, slight body, fast decay)
+      const env = audioCtx.createGain();
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(vol, t + 0.012);
+      env.gain.setValueAtTime(vol, t + Math.max(0.04, dur * 0.55));
+      env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      sum.connect(env);
+      env.connect(audioMaster);
+      // tiny slapback (no reverb so it stays raw)
+      const slap = audioCtx.createDelay(0.2);
+      slap.delayTime.value = 0.07;
+      const slapG = audioCtx.createGain(); slapG.gain.value = 0.16;
+      env.connect(slap); slap.connect(slapG); slapG.connect(audioMaster);
+      buzz.start(t); buzz.stop(t + dur + 0.05);
+    }
+    // chopped phrase — repeats a word as 16th-note stutter
+    function raveChop(t, word, n, stepDur) {
+      const ssDur = stepDur || STEP_DUR;
+      for (let i = 0; i < n; i++) {
+        raveVocal(t + i * ssDur, word, { pitchJitter: 1 + (i / n) * 0.08 });
+      }
     }
 
     // ----- Voice barks (SpeechSynthesis + on-screen subtitle bubble) -----
@@ -3816,7 +3908,10 @@
           introT = 0.45;
           setCountdown('GO', true, true);
           bark('GO');
-          try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          try {
+            sfxBoost(audioCtx ? audioCtx.currentTime : 0);
+            raveVocal(audioCtx ? audioCtx.currentTime : 0, 'GO');
+          } catch(_) {}
           // Start the race timer the moment GO appears
           raceStartMs = performance.now();
           raceTimerRunning = true;
@@ -3837,46 +3932,62 @@
       }
     });
 
-    // ---- Mobile touch controls ----
+    // ---- Mobile: one-thumb gesture steering + auto-accelerate ----
     const isMobile = ('ontouchstart' in window) && innerWidth < 900;
-    if (isMobile) document.body.classList.add('mobile-active');
-    function bindMobBtn(id, key) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const press = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('held'); startAudio(); };
-      const release = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('held'); };
-      el.addEventListener('touchstart', press, { passive: false });
-      el.addEventListener('touchend', release);
-      el.addEventListener('touchcancel', release);
-      el.addEventListener('mousedown', press);
-      el.addEventListener('mouseup', release);
-      el.addEventListener('mouseleave', release);
-    }
-    bindMobBtn('mobL', 'a');
-    bindMobBtn('mobR', 'd');
-    bindMobBtn('mobB', 's');
-    // GO button does press-to-fire boost (and also throttles accel)
-    {
-      const el = document.getElementById('mobG');
-      if (el) {
-        const press = (e) => {
-          e.preventDefault();
-          keys['w'] = true;
-          el.classList.add('held');
-          startAudio();
-          if (boostMeter >= 0.999 && !boostActive) {
-            boostActive = true; boostTime = BOOST_DURATION; boostMeter = 0;
-            try { triggerBoostBlast(); sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
-            bark('BOOST');
-          }
-        };
-        const release = (e) => { e.preventDefault(); keys['w'] = false; el.classList.remove('held'); };
-        el.addEventListener('touchstart', press, { passive: false });
-        el.addEventListener('touchend', release);
-        el.addEventListener('touchcancel', release);
-        el.addEventListener('mousedown', press);
-        el.addEventListener('mouseup', release);
-        el.addEventListener('mouseleave', release);
+    if (isMobile) {
+      document.body.classList.add('mobile-active');
+      // auto-accel: hold "w" forever
+      keys['w'] = true;
+
+      let tOrigin = null;          // {x, y, time}
+      let tMoved = false;
+      const STEER_DEADZONE = 12;   // px before steering registers
+      const STEER_FULL = 120;      // px for max steer
+
+      function clearSteer() { keys['a'] = false; keys['d'] = false; }
+
+      function onStart(e) {
+        e.preventDefault();
+        const t = e.touches[0];
+        tOrigin = { x: t.clientX, y: t.clientY, time: performance.now() };
+        tMoved = false;
+        startAudio();
+      }
+      function onMove(e) {
+        e.preventDefault();
+        if (!tOrigin) return;
+        const t = e.touches[0];
+        const dx = t.clientX - tOrigin.x;
+        if (Math.abs(dx) > STEER_DEADZONE) tMoved = true;
+        keys['a'] = dx < -STEER_DEADZONE;
+        keys['d'] = dx >  STEER_DEADZONE;
+        // small visual hint dismiss on first interaction
+        const hint = document.getElementById('mobileHint');
+        if (hint) hint.classList.add('fade');
+      }
+      function onEnd(e) {
+        e.preventDefault();
+        const dt = performance.now() - (tOrigin ? tOrigin.time : 0);
+        // quick tap (no drag) → fire boost
+        if (!tMoved && dt < 280 && boostMeter >= 0.999 && !boostActive) {
+          boostActive = true; boostTime = BOOST_DURATION; boostMeter = 0;
+          try {
+            triggerBoostBlast();
+            sfxBoost(audioCtx ? audioCtx.currentTime : 0);
+            raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
+          } catch(_) {}
+          bark('BOOST');
+        }
+        clearSteer();
+        tOrigin = null;
+      }
+      // bind to the WebGL canvas so the road stays visible underneath
+      const tcanvas = document.getElementById('c');
+      if (tcanvas) {
+        tcanvas.addEventListener('touchstart',  onStart, { passive: false });
+        tcanvas.addEventListener('touchmove',   onMove,  { passive: false });
+        tcanvas.addEventListener('touchend',    onEnd,   { passive: false });
+        tcanvas.addEventListener('touchcancel', onEnd,   { passive: false });
       }
     }
 
@@ -3925,6 +4036,7 @@
       if (stageRecap || gameOver) return;
       stageRecap = true;
       bark('CHECKPOINT');
+      try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
       // record this stage's time for the rally HUD
       const ms = performance.now() - stageStartTime;
       lastStageTime = ms;
