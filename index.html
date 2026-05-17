@@ -4411,6 +4411,8 @@
     // audio: 170 BPM dark d&b / tech-step (procedural, '98 vibe)
     // =========================================================================
     let audioCtx = null;
+    let _captureTap = null;       // post-master tap: speakers + recorder both pull from here
+    let _musicSource = null;      // MediaElementSource wrapping the <audio id="bigStepper">
     let audioStarted = false;
     let audioMaster = null;
     let audioReverb = null;
@@ -4446,7 +4448,13 @@
       comp.threshold.value = -12; comp.knee.value = 6;
       comp.ratio.value = 8;       comp.attack.value = 0.002;
       comp.release.value = 0.18;
-      comp.connect(audioCtx.destination);
+      // Insert a capture tap between the master comp and the speakers.
+      // Recording mode taps off this node so music + SFX always land in the
+      // file even when the OS / browser doesn't capture tab audio.
+      _captureTap = audioCtx.createGain();
+      _captureTap.gain.value = 1.0;
+      comp.connect(_captureTap);
+      _captureTap.connect(audioCtx.destination);
 
       // ----- PS1-era lo-fi master chain: bitcrush + lowpass before compression -----
       const lofiLP = audioCtx.createBiquadFilter();
@@ -4521,6 +4529,14 @@
       music.loop = false;            // single-track loop off; we advance manually
       music.volume = 0.88;           // music sits ABOVE the SFX bus (audioMaster gain = 0.28)
       music.muted = audioMuted;
+      // Route the audio element through the capture tap so recording grabs it.
+      // MediaElementSource can only be created once per element.
+      if (audioCtx && _captureTap && !_musicSource) {
+        try {
+          _musicSource = audioCtx.createMediaElementSource(music);
+          _musicSource.connect(_captureTap);
+        } catch (_) { /* if it fails the element still plays via OS */ }
+      }
       // load + play current track
       music.src = MUSIC_PLAYLIST[_trackIdx].src;
       const p = music.play();
@@ -5031,14 +5047,17 @@
     }
 
     // ===================================================================
-    //  WEBM record mode — R toggles tab capture (720p, video + audio).
-    //  Uses getDisplayMedia so HUD overlays, SFX, and music all land in
-    //  the recording. User picks "this tab" + "share audio" in the
-    //  browser prompt. Saves to a timestamped .webm download.
+    //  Record mode — R toggles capture (720p MP4 when supported, else WebM).
+    //  Video: getDisplayMedia pinned to current tab (HTML HUD + canvas).
+    //  Audio: tapped off the Web Audio graph (music + SFX always land,
+    //  no "share tab audio" checkbox needed).
+    //  Saves a timestamped download under ~15 MB/min.
     // ===================================================================
     let _mediaRecorder = null;
     let _recordChunks = [];
-    let _recordStream = null;
+    let _recordStream = null;       // combined stream fed to MediaRecorder
+    let _recordDisplayStream = null; // raw getDisplayMedia stream
+    let _recordAudioDest = null;    // MediaStreamDestination off the capture tap
     let _recordStart = 0;
     let _recordTimerHandle = null;
     const _recIndicator = document.getElementById('recIndicator');
@@ -5057,12 +5076,38 @@
         bark('REC UNSUPPORTED');
         return;
       }
+      if (!audioCtx || !_captureTap) {
+        // audio graph hasn't started yet — recording would have no music/SFX
+        bark('START AUDIO FIRST');
+        return;
+      }
       try {
-        _recordStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { width: 1280, height: 720, frameRate: 30 },   // 30fps is plenty + smaller files
-          audio: true,
+        // Pin to current tab so the picker can't capture the whole window/screen.
+        // Chrome honors preferCurrentTab + selfBrowserSurface; other surfaces are
+        // explicitly excluded so the user gets a one-click "Share this tab" confirm.
+        _recordDisplayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { width: 1280, height: 720, frameRate: 30 },
+          audio: false, // audio comes from Web Audio tap, not the OS — always perfect
           preferCurrentTab: true,
+          selfBrowserSurface: 'include',
+          surfaceSwitching: 'exclude',
+          monitorTypeSurfaces: 'exclude',
+          systemAudio: 'exclude',
         });
+
+        // Tap the audio graph so music (HTMLAudioElement routed through
+        // _musicSource) and every SFX (audioMaster → comp → _captureTap) both
+        // appear in the file regardless of OS tab-audio settings.
+        _recordAudioDest = audioCtx.createMediaStreamDestination();
+        _captureTap.connect(_recordAudioDest);
+
+        // Combine video tracks from the tab capture with the synthesized audio
+        // track from our Web Audio destination.
+        _recordStream = new MediaStream([
+          ..._recordDisplayStream.getVideoTracks(),
+          ..._recordAudioDest.stream.getAudioTracks(),
+        ]);
+
         _recordChunks = [];
         // Prefer MP4 (H.264 / AAC) when supported, fall back to WebM.
         const candidates = [
@@ -5097,10 +5142,7 @@
           a.download = `cart-run-${stamp}.${ext}`;
           a.click();
           setTimeout(() => URL.revokeObjectURL(url), 60_000);
-          if (_recordStream) {
-            _recordStream.getTracks().forEach(t => t.stop());
-            _recordStream = null;
-          }
+          _teardownRecordStreams();
           if (_recIndicator) _recIndicator.classList.remove('active');
           clearInterval(_recordTimerHandle);
           _recordTimerHandle = null;
@@ -5108,7 +5150,7 @@
           bark(`SAVED ${mb}MB`);
         };
         // auto-stop if user revokes screen share
-        _recordStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
+        _recordDisplayStream.getVideoTracks()[0].addEventListener('ended', () => stopRecording());
         _mediaRecorder.start(1000); // 1s timeslice
         _recordStart = performance.now();
         if (_recIndicator) _recIndicator.classList.add('active');
@@ -5123,17 +5165,32 @@
         bark(isMp4 ? 'RECORDING MP4' : 'RECORDING WEBM');
       } catch (e) {
         console.warn('record start failed', e);
+        _teardownRecordStreams();
         bark('REC CANCELLED');
       }
     }
 
     function stopRecording() {
       if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
-        _mediaRecorder.stop();
-      } else if (_recordStream) {
-        _recordStream.getTracks().forEach(t => t.stop());
-        _recordStream = null;
+        _mediaRecorder.stop();   // onstop runs the teardown
+      } else {
+        _teardownRecordStreams();
         if (_recIndicator) _recIndicator.classList.remove('active');
+      }
+    }
+
+    function _teardownRecordStreams() {
+      if (_recordDisplayStream) {
+        _recordDisplayStream.getTracks().forEach(t => t.stop());
+        _recordDisplayStream = null;
+      }
+      if (_recordStream) {
+        _recordStream.getTracks().forEach(t => { try { t.stop(); } catch (_) {} });
+        _recordStream = null;
+      }
+      if (_recordAudioDest) {
+        try { _captureTap.disconnect(_recordAudioDest); } catch (_) {}
+        _recordAudioDest = null;
       }
     }
 
