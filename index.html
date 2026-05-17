@@ -757,6 +757,15 @@
       0%   { box-shadow: inset 0 0 140px 90px rgba(255, 60, 60, 0.6); }
       100% { box-shadow: inset 0 0 0 0 rgba(255, 60, 60, 0); }
     }
+    /* Boost takedown — softer orange/cyan rim instead of the red crash flash */
+    #crashEdge.boost-hit {
+      box-shadow: inset 0 0 120px 70px rgba(255, 160, 40, 0.45);
+      animation: boostHitFade 0.32s ease-out;
+    }
+    @keyframes boostHitFade {
+      0%   { box-shadow: inset 0 0 120px 70px rgba(255, 160, 40, 0.45); }
+      100% { box-shadow: inset 0 0 0 0 rgba(255, 160, 40, 0); }
+    }
 
     /* --- Wrong-way warning (placeholder, ready for future detection) --- */
     #wrongWay {
@@ -1228,6 +1237,35 @@
     .thrust-bar.thrust::before {
       background: linear-gradient(90deg, #00d4ff 0%, #2ce053 35%, #ffce4a 65%, #ff7a00 100%);
     }
+    /* TOP speed readout under the speed cluster */
+    .thrust-top-row {
+      display: flex; align-items: baseline; gap: 6px;
+      margin-top: -4px; font-family: 'Russo One', sans-serif; font-style: italic;
+    }
+    .thrust-toplbl  { font-size: 12px; letter-spacing: 3px; color: #ffce4a; text-shadow: 2px 2px 0 #000; }
+    .thrust-topval  { font-size: 20px; color: #fff;        text-shadow: 3px 3px 0 #000; letter-spacing: 1px; }
+    .thrust-topdelta {
+      font-size: 14px; color: #ffce4a;
+      letter-spacing: 1.5px;
+      text-shadow: 2px 2px 0 #000;
+      opacity: 0;
+      transition: opacity 200ms ease;
+    }
+    .thrust-topdelta.show { opacity: 1; }
+    /* yellow flash on speed cluster when TOP grows */
+    #thrustCluster.top-grow .thrust-num,
+    #thrustCluster.top-grow .thrust-topval {
+      animation: topFlash 420ms ease-out both;
+    }
+    @keyframes topFlash {
+      0%   { color: #fff; }
+      35%  { color: #ffce4a; transform: scale(1.06); }
+      100% { color: #fff; transform: scale(1); }
+    }
+    .mobile-active .thrust-top-row { gap: 3px; }
+    .mobile-active .thrust-toplbl  { font-size: 8px; letter-spacing: 2px; }
+    .mobile-active .thrust-topval  { font-size: 14px; letter-spacing: 0.5px; text-shadow: 2px 2px 0 #000; }
+    .mobile-active .thrust-topdelta { font-size: 10px; }
 
     /* Hide the old rallyBR speed/gear cluster — replaced by thrustCluster */
     #rallyBR { display: none !important; }
@@ -2150,7 +2188,8 @@
     #boostBlast{ position: fixed; inset: 0; pointer-events: none; width: 100vw; height: 100vh; mix-blend-mode: screen; opacity: 0; }
     #scanlines {
       position: fixed; inset: 0; pointer-events: none;
-      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 3px);
+      /* thinner + fainter than before: 0.5px dark stripe inside a 2px tile */
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 0.5px, transparent 0.5px, transparent 2px);
       mix-blend-mode: multiply;
       z-index: 4;
     }
@@ -2591,6 +2630,11 @@
     <div class="thrust-top">
       <span class="thrust-num" id="thrustSpeed">000</span>
       <span class="thrust-unit-pill">KPH</span>
+    </div>
+    <div class="thrust-top-row">
+      <span class="thrust-toplbl">TOP</span>
+      <span class="thrust-topval" id="thrustTopVal">000</span>
+      <span class="thrust-topdelta" id="thrustTopDelta"></span>
     </div>
     <div class="thrust-meter-row">
       <span class="thrust-meter-label">ENERGY</span>
@@ -4601,25 +4645,7 @@
       if (e.key.toLowerCase() === 'r' && !wasDown) toggleRecord();
       if (e.code === 'Space') {
         e.preventDefault();
-        // press-to-fire: tap only, must be fully charged
-        if (!wasDown && boostMeter >= 0.999 && !boostActive) {
-          boostActive = true;
-          boostTime = BOOST_DURATION;
-          boostMeter = 0;
-          triggerBoostBlast();
-          try {
-            sfxBoost(audioCtx ? audioCtx.currentTime : 0);
-            raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
-          } catch(_) {}
-          bark('BOOST');
-          arcadeCallout('BOOST', { type: 'boost', pos: 'lt', holdMs: 600 });
-          setDriverState('happy', 1.5, 'LET\'S GO!');
-          // type/motion: speed digit punches, gear flickers
-          const speedEl = document.getElementById('rKmh');
-          const gearEl  = document.getElementById('rGear');
-          if (speedEl) reanim(speedEl, 'anim-speed-boost');
-          if (gearEl)  reanim(gearEl, 'anim-flicker');
-        }
+        if (!wasDown) tryStartBoost();
       }
       startAudio();
       if (e.key.toLowerCase() === 'm') toggleMute();
@@ -4627,6 +4653,86 @@
     addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
     addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
     addEventListener('pointerdown', startAudio);
+
+    // -----------------------------------------------------------------
+    // Gamepad input — Standard Mapping (Switch Pro, Xbox, PS4/5, etc.)
+    //   left stick X  → steer
+    //   D-pad L/R     → steer (digital fallback)
+    //   south button  → boost (Xbox A / Switch B / PS X)  button 0
+    //   east button   → boost alt (Switch A)              button 1
+    //   right trigger → boost alt (R2 / ZR)               button 7
+    //   left trigger  → brake (L2 / ZL)                   button 6
+    //   west button   → brake alt (X / Y on Switch)       button 2
+    // The "boost" button list covers both Xbox-style and Nintendo-style
+    // remappings since Safari sometimes hands Switch Pro back with the
+    // south/east buttons swapped depending on driver.
+    // -----------------------------------------------------------------
+    const PAD_BOOST_BUTTONS = [0, 1, 7];
+    const PAD_BRAKE_BUTTONS = [2, 6];
+    const PAD_RETRY_BUTTONS = [3];      // north (Y / Triangle / X)
+    const PAD_MUTE_BUTTONS  = [8, 9];   // Select / Start (and -/+)
+    let _padPrev = {};                  // last frame's button-down map
+    let _padConnected = false;
+    addEventListener('gamepadconnected', (e) => {
+      _padConnected = true;
+      arcadeCallout('CONTROLLER', {
+        type: 'boost', pos: 'lt', size: 's',
+        subtext: (e.gamepad && e.gamepad.id || 'PAD').slice(0, 22).toUpperCase(),
+        holdMs: 900,
+      });
+      // also satisfies the browser user-gesture requirement for audio
+      startAudio();
+    });
+    addEventListener('gamepaddisconnected', () => { _padConnected = false; });
+
+    function pollGamepad() {
+      if (!navigator.getGamepads) return;
+      const pads = navigator.getGamepads();
+      let pad = null;
+      for (const p of pads) { if (p && p.connected) { pad = p; break; } }
+      if (!pad) return;
+      // Left stick X — apply deadzone, fall back to D-pad
+      const lx = pad.axes[0] || 0;
+      const DZ = 0.18;
+      const dpadLeft  = pad.buttons[14] && pad.buttons[14].pressed;
+      const dpadRight = pad.buttons[15] && pad.buttons[15].pressed;
+      keys['a'] = (lx < -DZ) || dpadLeft;
+      keys['d'] = (lx >  DZ) || dpadRight;
+      // Forward — auto-accel like mobile (most controllers don't sit on the throttle).
+      // We still honor a "brake" button to slow down.
+      keys['w'] = true;
+      const brakeDown =
+        PAD_BRAKE_BUTTONS.some(b => pad.buttons[b] && pad.buttons[b].pressed) ||
+        (pad.buttons[6] && pad.buttons[6].value > 0.5) ||
+        (pad.axes[7] && pad.axes[7] > 0.5);
+      keys['s'] = !!brakeDown;
+      // Boost — any south/east/right-trigger button, edge-triggered
+      for (const idx of PAD_BOOST_BUTTONS) {
+        const pressed = !!(pad.buttons[idx] && pad.buttons[idx].pressed);
+        const prev = _padPrev[idx] || false;
+        if (pressed && !prev) tryStartBoost();
+        _padPrev[idx] = pressed;
+      }
+      // Retry / Mute when in replay done state
+      for (const idx of PAD_RETRY_BUTTONS) {
+        const pressed = !!(pad.buttons[idx] && pad.buttons[idx].pressed);
+        const prev = _padPrev['r' + idx] || false;
+        if (pressed && !prev) {
+          if (_replayPhase === 'done') retryStage();
+          else if (_replayPhase) skipReplay();
+        }
+        _padPrev['r' + idx] = pressed;
+      }
+      for (const idx of PAD_MUTE_BUTTONS) {
+        const pressed = !!(pad.buttons[idx] && pad.buttons[idx].pressed);
+        const prev = _padPrev['m' + idx] || false;
+        if (pressed && !prev) {
+          if (_replayPhase === 'done') { continueToNextStage(); }
+          else toggleMute();
+        }
+        _padPrev['m' + idx] = pressed;
+      }
+    }
 
     // =========================================================================
     // audio: 170 BPM dark d&b / tech-step (procedural, '98 vibe)
@@ -5539,6 +5645,65 @@
     let boostActive = false;
     let boostTime = 0;
     const BOOST_DURATION = 2.5;           // seconds of burst per fire
+
+    // ---- Style → performance: per-stage top-speed bonus + boost gain
+    // Risky driving (near miss / close call / thread the needle / nice jump)
+    // permanently raises the truck's max speed for the rest of the current
+    // stage and adds energy to the boost meter. Resets on stage start.
+    // Speeds here are in m/s; 1 KPH ≈ 0.2778 m/s. +50 KPH ≈ 13.9 m/s.
+    const KPH_PER_MPS = 3.6;
+    let topSpeedBonus     = 0;            // m/s, additive to TRUCK_MAX_SPEED, clamped to MAX_TOP_BONUS
+    const MAX_TOP_BONUS   = 50 / KPH_PER_MPS;  // ≈ +13.9 m/s ≈ +50 KPH cap
+    let _boostTakedownChain = 0;          // resets when boost ends
+
+    function _resetStyleBoosts() {
+      topSpeedBonus = 0;
+      _boostTakedownChain = 0;
+    }
+
+    // Effective max in m/s — used by accel/decel clamps + speedo target.
+    function effectiveMaxSpeed() { return TRUCK_MAX_SPEED + topSpeedBonus; }
+
+    // Single source of truth for boost activation (keyboard / touch / gamepad)
+    function tryStartBoost() {
+      if (boostMeter < 0.999 || boostActive) return false;
+      boostActive = true;
+      boostTime = BOOST_DURATION;
+      boostMeter = 0;
+      _boostTakedownChain = 0;
+      try {
+        if (typeof triggerBoostBlast === 'function') triggerBoostBlast();
+        sfxBoost(audioCtx ? audioCtx.currentTime : 0);
+        raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
+      } catch(_) {}
+      bark('BOOST');
+      arcadeCallout('BOOST', { type: 'boost', pos: 'lt', holdMs: 600 });
+      setDriverState('happy', 1.5, 'LET\'S GO!');
+      const speedEl = document.getElementById('rKmh');
+      const gearEl  = document.getElementById('rGear');
+      if (speedEl) reanim(speedEl, 'anim-speed-boost');
+      if (gearEl)  reanim(gearEl, 'anim-flicker');
+      return true;
+    }
+
+    // Visual: pulse the speed cluster + show a brief "+N KPH" delta when
+    // topSpeedBonus grows from a successful style action.
+    let _topFlashHandle = null;
+    function flashTopBonus(kph) {
+      const cluster = document.getElementById('thrustCluster');
+      const delta   = document.getElementById('thrustTopDelta');
+      if (!cluster || !delta) return;
+      delta.textContent = `+${kph}`;
+      delta.classList.add('show');
+      cluster.classList.remove('top-grow');
+      void cluster.offsetWidth;
+      cluster.classList.add('top-grow');
+      clearTimeout(_topFlashHandle);
+      _topFlashHandle = setTimeout(() => {
+        delta.classList.remove('show');
+        cluster.classList.remove('top-grow');
+      }, 900);
+    }
     const BOOST_REGEN_PER_SEC = 0.08;     // ~12s to fully recharge from empty
     const BOOST_PICKUP_VALUE = 0.5;       // each pickup adds 50%
     const BOOST_CRASH_LOSS = 1.0;         // crash empties entirely
@@ -5671,16 +5836,21 @@
       const now = performance.now();
       const oncoming = (c.dir === -1);
 
-      // tier classification
-      let label, base, type;
+      // tier classification — score base, boost gain (0..1 of meter), top-speed
+      // bonus in KPH (later converted to m/s and added to topSpeedBonus, clamped).
+      let label, base, type, boostGain, topKph;
       if (minD <= closeDist) {
-        label = oncoming ? 'CLOSE CALL' : 'CLOSE CALL';
+        label = 'CLOSE CALL';
         base  = oncoming ? 400 : 250;
         type  = 'closecall';
+        boostGain = 0.10;     // +10%
+        topKph    = 2;
       } else {
-        label = oncoming ? 'ONCOMING'   : 'NEAR MISS';
+        label = oncoming ? 'ONCOMING' : 'NEAR MISS';
         base  = oncoming ? 200 : 100;
         type  = oncoming ? 'oncoming' : 'nearmiss';
+        boostGain = 0.05;     // +5%
+        topKph    = 1;
       }
 
       // combo timer
@@ -5703,20 +5873,46 @@
         label = 'THREAD THE NEEDLE';
         base  = Math.max(base, 500);
         type  = 'thread';
+        boostGain = 0.20;       // +20%
+        topKph    = 4;
       }
 
+      // Combo multiplier shapes ALL three rewards (score / boost / top speed).
+      // x1=1.0, x2=1.25, x3=1.5, x4=1.75, x5=2.0
       const mult = _dodgeCombo;
-      const pts  = base * mult;
+      const comboMul = 1 + (mult - 1) * 0.25;
+      const pts        = Math.round(base * mult);
+      const boostAdd   = boostGain * comboMul;
+      const topAddMps  = (topKph / KPH_PER_MPS) * comboMul;
+
+      // Apply: score, boost meter, top-speed bonus
       addScore(pts);
       stageDodges++;
       stageNearMisses++;
       if (mult > stageBestChain) stageBestChain = mult;
+      const prevBoost = boostMeter;
+      boostMeter = Math.min(1.0, boostMeter + boostAdd);
+      // If boost is full, surplus is converted to a small score top-up.
+      const overflow = (prevBoost + boostAdd) - 1.0;
+      if (overflow > 0) addScore(Math.round(overflow * 200));
+      const beforeTop = topSpeedBonus;
+      topSpeedBonus = Math.min(MAX_TOP_BONUS, topSpeedBonus + topAddMps);
+      const topGainedKph = Math.round((topSpeedBonus - beforeTop) * KPH_PER_MPS);
 
-      const subtext = mult > 1
-        ? `+${pts} · CHAIN ×${mult}`
-        : `+${pts}`;
+      // pulse the speedo if we actually grew top speed
+      if (topGainedKph > 0) {
+        const tnum = document.getElementById('thrustSpeed');
+        if (tnum) reanim(tnum, 'anim-speed-boost');
+        flashTopBonus(topGainedKph);
+      }
+
+      // Compact arcade subtext: + N% BOOST · + M KPH TOP · CHAIN ×N
+      const subParts = [`+${pts}`];
+      subParts.push(`+${Math.round(boostAdd * 100)}% BST`);
+      if (topGainedKph > 0) subParts.push(`+${topGainedKph} TOP`);
+      if (mult > 1) subParts.push(`CHAIN ×${mult}`);
       arcadeCallout(label, {
-        type, subtext, pos: 'lr',
+        type, subtext: subParts.join(' · '), pos: 'lr',
         size: threaded ? 'l' : '',
         holdMs: threaded ? 1000 : 700,
       });
@@ -5728,6 +5924,70 @@
           ? 'NICE'
           : DODGE_VOICE_LINES[(Math.random() * DODGE_VOICE_LINES.length) | 0]);
       }
+    }
+
+    // -----------------------------------------------------------------
+    // BOOST TAKEDOWN — called when a boosted truck rams traffic.
+    // Knocks the car aside (sets c.knocked + c.knockVel), adds a chunky
+    // score chain, preserves the player's speed, and gives a little
+    // boost back so chains feel additive.
+    // -----------------------------------------------------------------
+    const TAKEDOWN_LABELS = ['BOOST RAM', 'TAKEDOWN', 'SMASH THROUGH', 'ROAD CLEAR'];
+    function boostedTakedown(c) {
+      _boostTakedownChain = Math.min(8, _boostTakedownChain + 1);
+      const chain = _boostTakedownChain;
+
+      // Knock the car: pick the side away from the truck and tumble it.
+      const side = Math.sign(c.lat - truckLateral) || ((Math.random() < 0.5) ? -1 : 1);
+      c.knocked    = true;
+      c.knockDir   = side;
+      c.knockVelLat = side * 28;             // m/s outward
+      c.knockSpin  = (Math.random() * 2 - 1) * 8 + side * 5;  // yaw rad/s
+      c.knockRoll  = side * 1.6;             // target roll for tumble
+      c.knockT     = 1.4;                    // seconds until despawn
+
+      // Score + small boost refill + tiny top-speed credit for the takedown
+      const base = (chain === 1) ? 250 : (chain === 2) ? 400 : 600;
+      const pts  = base;
+      addScore(pts);
+      const before = boostMeter;
+      boostMeter = Math.min(1.0, boostMeter + 0.04);    // small top-up so chains extend boost slightly
+      // tiny top-speed bonus, capped
+      const beforeTop = topSpeedBonus;
+      topSpeedBonus   = Math.min(MAX_TOP_BONUS, topSpeedBonus + (1 / KPH_PER_MPS));
+      const topGain   = Math.round((topSpeedBonus - beforeTop) * KPH_PER_MPS);
+
+      // Visuals — slam-in callout in lower-right; bigger label as chain grows.
+      const label = chain >= 3
+        ? `CHAIN HIT ×${chain}`
+        : TAKEDOWN_LABELS[Math.min(chain - 1, TAKEDOWN_LABELS.length - 1)];
+      const subParts = [`+${pts}`];
+      if (topGain > 0) subParts.push(`+${topGain} TOP`);
+      arcadeCallout(label, {
+        type: 'thread',
+        pos: 'lr',
+        size: chain >= 2 ? 'l' : '',
+        subtext: subParts.join(' · '),
+        holdMs: 850,
+      });
+      // SFX rises with the chain
+      try {
+        if (chain >= 3) sfxBoost(audioCtx ? audioCtx.currentTime : 0);
+        else            sfxBump(audioCtx ? audioCtx.currentTime : 0);
+      } catch(_) {}
+
+      // Driver pop + screen edge flash (soft, not the crash red)
+      setDriverState('happy', 0.9, 'TAKEDOWN!');
+      const edge = document.getElementById('crashEdge');
+      if (edge) {
+        edge.classList.remove('hit', 'boost-hit');
+        void edge.offsetWidth;
+        edge.classList.add('boost-hit');
+        setTimeout(() => edge.classList.remove('boost-hit'), 320);
+      }
+
+      // Keep most of the player's speed (heavy / unstoppable feel).
+      truckSpeed = Math.max(truckSpeed * 0.96, truckSpeed - 1.5);
     }
 
     function arcadeCallout(text, opts) {
@@ -6106,6 +6366,9 @@
       if (thrustSpeedEl) thrustSpeedEl.textContent = String(Math.round(truckSpeed * 3.6)).padStart(3, '0');
       if (energyBarEl)   energyBarEl.style.setProperty('--fill', clamp(boostMeter, 0, 1));
       if (thrustBarEl)   thrustBarEl.style.setProperty('--fill', clamp(truckSpeed / TRUCK_BOOST_SPEED, 0, 1));
+      // TOP — base max + per-stage bonus from style actions
+      const _topVal = document.getElementById('thrustTopVal');
+      if (_topVal) _topVal.textContent = String(Math.round(effectiveMaxSpeed() * KPH_PER_MPS)).padStart(3, '0');
 
       // mobile compact time/delivery box
       if (document.body.classList.contains('mobile-active')) {
@@ -6335,15 +6598,7 @@
         e.preventDefault();
         const dt = performance.now() - (tOrigin ? tOrigin.time : 0);
         // quick tap (no drag) → fire boost
-        if (!tMoved && dt < 280 && boostMeter >= 0.999 && !boostActive) {
-          boostActive = true; boostTime = BOOST_DURATION; boostMeter = 0;
-          try {
-            triggerBoostBlast();
-            sfxBoost(audioCtx ? audioCtx.currentTime : 0);
-            raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
-          } catch(_) {}
-          bark('BOOST');
-        }
+        if (!tMoved && dt < 280) tryStartBoost();
         clearSteer();
         tOrigin = null;
       }
@@ -6716,6 +6971,7 @@
       truckLateral = 2.5;
       stageDodges = 0;
       _resetStageStyleStats();
+      _resetStyleBoosts();
       stageStartScore = score;
       stageStartCarts = cartsRemaining;
       stageStartTime = performance.now();
@@ -6771,6 +7027,7 @@
       cartsRemaining = stageStartCarts;
       stageDodges = 0;
       _resetStageStyleStats();
+      _resetStyleBoosts();
       truckS = 0;
       truckLateral = 2.5;
       stageStartTime = performance.now();
@@ -6781,6 +7038,9 @@
     function tick() {
       const dt = Math.min(clock.getDelta(), 0.05);
       let steerInput = 0;
+
+      // ---- gamepad polling (any standard-mapping controller) ----
+      pollGamepad();
 
       // ---- stage intro plays before gameplay resumes ----
       if (introState) {
@@ -6796,7 +7056,10 @@
         // throttle — boost is a press-to-fire timed burst, not a hold
         if (boostActive) {
           boostTime -= dt;
-          if (boostTime <= 0) boostActive = false;
+          if (boostTime <= 0) {
+            boostActive = false;
+            _boostTakedownChain = 0;
+          }
         }
         // passive recharge (slower than pickups) so the meter eventually refills
         if (!boostActive && boostMeter < 1) {
@@ -6804,19 +7067,20 @@
         }
         const accel = keys['w'] || keys['arrowup'];
         const brake = keys['s'] || keys['arrowdown'];
+        const effMax = effectiveMaxSpeed();
         if (boostActive) {
           truckSpeed += TRUCK_ACCEL * 1.5 * dt;
         } else if (accel) {
-          if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed += TRUCK_ACCEL * dt;
+          if (truckSpeed < effMax) truckSpeed += TRUCK_ACCEL * dt;
         } else if (brake) {
           truckSpeed -= TRUCK_BRAKE * dt;
         } else {
           truckSpeed -= TRUCK_DRAG * dt;
         }
-        // boost falloff: when burst ends, decel back to MAX
-        if (!boostActive && truckSpeed > TRUCK_MAX_SPEED) {
+        // boost falloff: when burst ends, decel back to effective MAX
+        if (!boostActive && truckSpeed > effMax) {
           truckSpeed -= 16 * dt;
-          if (truckSpeed < TRUCK_MAX_SPEED) truckSpeed = TRUCK_MAX_SPEED;
+          if (truckSpeed < effMax) truckSpeed = effMax;
         }
         truckSpeed = clamp(truckSpeed, TRUCK_MIN_SPEED, TRUCK_BOOST_SPEED);
 
@@ -6925,6 +7189,25 @@
       for (let i = traffic.length - 1; i >= 0; i--) {
         const c = traffic[i];
         if (!c.alive) { levelGroup.remove(c.mesh); traffic.splice(i, 1); continue; }
+        // If this car got rammed by a boosted player, run a short knockback
+        // animation and skip its normal AI / collision rules.
+        if (c.knocked) {
+          c.knockT -= dt;
+          c.lat += c.knockVelLat * dt;
+          c.knockVelLat *= 0.94;                        // ease toward stop
+          c.mesh.rotation.y += c.knockSpin * dt;
+          c.knockSpin *= 0.93;
+          c.mesh.rotation.z += (c.knockRoll - c.mesh.rotation.z) * Math.min(1, dt * 4);
+          // fall off the road shoulder as it tumbles
+          c.mesh.position.y = Math.max(-0.4, c.mesh.position.y - dt * 1.6);
+          const tn = clamp(c.s / curveLength, 0, 1);
+          const cp = pointAt(tn);
+          const crt = rightFromTangent(tangentAt(tn));
+          c.mesh.position.x = cp.x + crt.x * c.lat;
+          c.mesh.position.z = cp.z + crt.z * c.lat;
+          if (c.knockT <= 0) c.alive = false;
+          continue;
+        }
         // forward in their own direction
         c.s += c.speed * dt * c.dir;     // dir = -1 (oncoming toward truck) or +1 (same direction)
         // lane-change AI: occasionally retarget within the vehicle's own lane(s)
@@ -6959,7 +7242,14 @@
           }
           // collision
           // jump-over forgiveness: if truck is airborne, skip the hit
-          if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half) && bumpY < 0.7) {
+          if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half) && bumpY < 0.7 && !c.knocked) {
+            if (boostActive) {
+              // ----- BOOST TAKEDOWN -----
+              // Truck is invulnerable: knock the car aside, keep speed,
+              // protect cargo, add a chunky score chain.
+              boostedTakedown(c);
+              continue;
+            }
             for (let k = 0; k < 6; k++) dropCart();
             bumpVel = Math.max(8, truckSpeed * 0.6);
             truckSpeed *= 0.55;
