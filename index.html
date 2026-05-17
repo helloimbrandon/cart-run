@@ -138,24 +138,48 @@
     #wpEdgeL { left: 4px; }
     #wpEdgeR { right: 4px; }
 
-    /* ====== voice bark subtitle ====== */
+    /* ====== voice bark caption (small announcer prompt, not a button) ====== */
     #bark {
-      position: fixed; bottom: 120px; left: 50%;
-      transform: translateX(-50%) translateY(12px);
-      padding: 6px 22px;
-      background: var(--safety); color: var(--navy);
+      position: fixed; bottom: 22%; left: 50%;
+      transform: translateX(-50%) translateY(8px);
+      padding: 3px 10px;
+      background: rgba(255, 122, 0, 0.92); color: #001a3a;
       font-family: 'Saira Condensed', sans-serif;
-      font-weight: 900; font-size: 22px; letter-spacing: 8px;
-      border: 1px solid var(--white);
+      font-weight: 900; font-size: 13px; letter-spacing: 4px;
+      border-radius: 2px;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.18s ease, transform 0.25s ease;
+      transition: opacity 0.16s ease, transform 0.22s ease;
       z-index: 6;
     }
     #bark::before {
-      content: '►'; font-size: 14px; margin-right: 12px; color: var(--navy);
+      content: '▶'; font-size: 9px; margin-right: 7px; color: #001a3a;
     }
     #bark.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ====== HUD dim states during stage intro / countdown ====== */
+    body.intro-active #rallyTL,
+    body.intro-active #rallyTR,
+    body.intro-active #rallyBL,
+    body.intro-active #rallyBR,
+    body.intro-active #rallyTurn {
+      opacity: 0 !important;
+      transition: opacity 0.35s ease;
+    }
+    body.countdown-phase #rallyTL,
+    body.countdown-phase #rallyTurn,
+    body.countdown-phase #rallyBL {
+      opacity: 0.38;
+      transition: opacity 0.35s ease;
+    }
+    body.countdown-phase #rallyTR,
+    body.countdown-phase #rallyBR {
+      opacity: 0.66;
+      transition: opacity 0.35s ease;
+    }
+    /* legacy fragments — force-hide just in case any old marker survives */
+    body.intro-active #title-card,
+    body.intro-active #stageBanner { display: none !important; }
 
     /* =====================================================================
        ARCADE HUD — chunky panels, bright color blocks, big readable numbers.
@@ -1585,19 +1609,8 @@
     <div class="stage-sub" id="stageTitleSub">SECTOR A / CART-RUN '97</div>
   </div>
 
-  <!-- start-of-run title card -->
-  <div id="title-card">
-    <div class="t1">CART RUN</div>
-    <div class="t2">3 DELIVERIES · 1 TRUCK · NO RESTOCK</div>
-  </div>
-
-  <!-- stage entry banner -->
-  <div id="stageBanner">
-    <div class="stagenum">STAGE 1</div>
-    <div class="stagename">SUBURB</div>
-    <div class="ruler"></div>
-    <div class="stagesub">900 M / NORMAL</div>
-  </div>
+  <!-- (legacy #title-card and #stageBanner removed —
+       the stage intro now uses #stageTitle exclusively) -->
 
   <div id="overlay">
     <h1 id="title">YOU MADE IT</h1>
@@ -3928,17 +3941,8 @@
         glitchText(sectionLetter, currentSection, 0.45);
       }
     }
-    const stageBannerEl = document.getElementById('stageBanner');
-    let _bannerHide = null;
-    function showStageBanner(num, name, distM, holdMs) {
-      stageBannerEl.querySelector('.stagenum').textContent = `STAGE ${num}`;
-      stageBannerEl.querySelector('.stagesub').textContent = `${distM} M / NORMAL`;
-      const nameEl = stageBannerEl.querySelector('.stagename');
-      stageBannerEl.classList.add('show');
-      glitchText(nameEl, name, 0.55);
-      clearTimeout(_bannerHide);
-      _bannerHide = setTimeout(() => stageBannerEl.classList.remove('show'), holdMs || 2000);
-    }
+    // (Old #stageBanner removed — startIntro() drives #stageTitle directly.)
+    function showStageBanner() { /* no-op */ }
 
     // ---- Arcade HUD elements ----
     const arcClockValue = document.getElementById('arcClockValue');
@@ -4126,13 +4130,19 @@
     }
 
     // ---- Stage intro / countdown ----
+    // States:  fadeIn (0.4s, black-out)
+    //       →  title  (1.1s, stageTitle visible, HUD hidden)
+    //       →  3 / 2 / 1 (0.6s each, countdown visible, HUD dim)
+    //       →  go     (0.4s, race begins, HUD full)
     function startIntro() {
+      document.body.classList.add('intro-active');
+      document.body.classList.remove('countdown-phase');
       introState = 'fadeIn';
-      introT = 0.5;
+      introT = 0.4;
       introFadeEl.classList.add('show');
       raceTimerRunning = false;
       countdownEl.classList.remove('show', 'go');
-      // arcade-broadcast stage title card
+      // populate + animate the single stage title (no other title overlay competes)
       const L = LEVELS[levelIdx];
       const stTab  = document.getElementById('stageTitleTab');
       const stName = document.getElementById('stageTitleName');
@@ -4145,9 +4155,10 @@
         stRoot.classList.remove('show');
         void stRoot.offsetWidth;
         stRoot.classList.add('show');
-        setTimeout(() => stRoot.classList.remove('show'), 2200);
+        // clear BEFORE countdown begins (fadeIn 0.4s + title 1.1s ≈ 1.5s)
+        setTimeout(() => stRoot.classList.remove('show'), 1500);
       }
-      // position digit pop
+      // position digit pop (low-key, since HUD is hidden anyway)
       reanim(document.getElementById('rPos'), 'anim-pos-pop');
     }
     function setCountdown(text, big, isGo) {
@@ -4163,40 +4174,44 @@
       switch (introState) {
         case 'fadeIn':
           introFadeEl.classList.remove('show');
-          introState = 'idle';
-          introT = 0.45;
+          introState = 'title';
+          introT = 1.1;            // hold the stage-title card alone
           bark('GOOD LUCK');
           break;
-        case 'idle':
+        case 'title':
+          // stage title is mid-fade-out; bring HUD in at dim intensity for countdown
+          document.body.classList.remove('intro-active');
+          document.body.classList.add('countdown-phase');
           introState = '3';
-          introT = 0.7;
+          introT = 0.6;
           setCountdown('3', true, false);
           try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
           break;
         case '3':
           introState = '2';
-          introT = 0.7;
+          introT = 0.6;
           setCountdown('2', true, false);
           try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
           break;
         case '2':
           introState = '1';
-          introT = 0.7;
+          introT = 0.6;
           setCountdown('1', true, false);
           try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
           break;
         case '1':
           introState = 'go';
-          introT = 0.45;
+          introT = 0.4;
           setCountdown('GO', true, true);
           bark('GO');
           try {
             sfxBoost(audioCtx ? audioCtx.currentTime : 0);
             raveVocal(audioCtx ? audioCtx.currentTime : 0, 'GO');
           } catch(_) {}
-          // Start the race timer the moment GO appears
+          // Start the race timer the moment GO appears, full HUD
           raceStartMs = performance.now();
           raceTimerRunning = true;
+          document.body.classList.remove('countdown-phase');
           break;
         case 'go':
           hideCountdown();
@@ -4759,11 +4774,8 @@
         }
       }
 
-      // fire a pending stage banner on first frame after a loadLevel
-      if (_pendingBanner) {
-        showStageBanner(_pendingBanner.num, _pendingBanner.name, _pendingBanner.dist);
-        _pendingBanner = null;
-      }
+      // (stage banner now handled directly in startIntro — no deferred call)
+      _pendingBanner = null;
 
       // ---- HUD update ----
       setCartsHUD(cartsRemaining);
