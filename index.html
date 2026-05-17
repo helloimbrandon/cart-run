@@ -6,7 +6,7 @@
   <title>Cart Run — Beat the Cart Clock</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@700;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800;900&family=Share+Tech+Mono&family=Noto+Sans+JP:wght@700;900&family=Russo+One&family=Bungee&display=swap">
   <style>
     :root {
       /* WipEout / Designers Republic palette */
@@ -445,7 +445,247 @@
     #mobB  { bottom: 140px; right: 24px; width: 110px; height: 70px; background: var(--arc-cyan); }
 
     /* ---- legacy HUD panels: hide ---- */
-    #hudStats, #hudSpeedo, #hudSection, #hudBoost { display: none !important; }
+    #hudStats, #hudSpeedo, #hudSection, #hudBoost,
+    #wpStamp, #wpKatakana, #wpEdgeL, #wpEdgeR, #hudHints { display: none !important; }
+
+    /* =====================================================================
+       CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
+       stepped corners, drop-shadows, exaggerated gear/speed. Layered as
+       overrides so existing JS doesn't break.
+       ===================================================================== */
+    .arc { font-family: 'Russo One', 'Saira Condensed', sans-serif; }
+
+    /* offset corner brackets to use as a decorative motif */
+    .arc-bracket { position: absolute; width: 18px; height: 18px; border: 4px solid var(--arc-orange); pointer-events: none; }
+    .arc-bracket.tl { top: -2px; left: -2px;  border-right: none; border-bottom: none; }
+    .arc-bracket.br { right: -2px; bottom: -2px; border-left: none; border-top: none; }
+
+    /* PILOT ORDER (top-left) — bigger, bolder */
+    #arcPos {
+      top: 16px; left: 16px;
+      filter: drop-shadow(0 6px 0 rgba(0,0,0,0.45));
+    }
+    #arcPos .arc-head {
+      background: var(--arc-orange);
+      color: var(--arc-navy);
+      padding: 8px 20px;
+      font-family: 'Russo One', sans-serif;
+      font-size: 18px; font-weight: 400; letter-spacing: 5px;
+      border: 5px solid var(--arc-white);
+      border-bottom: none;
+      position: relative;
+    }
+    #arcPos .arc-head::after {
+      content: '';
+      position: absolute; right: -5px; top: -5px;
+      border-style: solid;
+      border-width: 0 18px 18px 0;
+      border-color: transparent var(--arc-navy) transparent transparent;
+    }
+    #arcPos .arc-list {
+      background: var(--arc-gray);
+      border: 5px solid var(--arc-white);
+      padding: 8px 0;
+      min-width: 340px;
+    }
+    #arcPos .pos-row {
+      padding: 8px 16px;
+      grid-template-columns: 58px 32px 1fr 100px;
+      gap: 12px;
+      font-size: 22px;
+      letter-spacing: 2px;
+    }
+    #arcPos .pos-row.me {
+      background: var(--arc-green);
+      color: var(--arc-navy);
+      position: relative;
+    }
+    #arcPos .pos-row.me::before {
+      content: '►';
+      position: absolute; left: -2px; color: var(--arc-navy); font-size: 16px;
+    }
+    #arcPos .pos-rank {
+      font-family: 'Russo One', sans-serif;
+      font-size: 44px; line-height: 0.8; font-weight: 400;
+    }
+    #arcPos .pos-car {
+      width: 30px; height: 18px;
+      border: 2px solid var(--arc-white);
+    }
+    #arcPos .pos-row.me .pos-car { border-color: var(--arc-navy); }
+    #arcPos .pos-name {
+      font-family: 'Russo One', sans-serif;
+      font-size: 22px; letter-spacing: 1px;
+    }
+    #arcPos .pos-dist {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 16px;
+    }
+
+    /* RACE CLOCK — much bigger, stepped corners */
+    #arcClock { top: 16px; }
+    #arcClock .clock-lbl {
+      padding: 6px 22px;
+      font-family: 'Russo One', sans-serif;
+      font-size: 14px; font-weight: 400; letter-spacing: 6px;
+      border: 5px solid var(--arc-white);
+      border-bottom: none;
+    }
+    #arcClock .clock-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 90px; font-weight: 700;
+      padding: 8px 36px 14px;
+      border: 6px solid var(--arc-white);
+      letter-spacing: 6px;
+      text-shadow: 5px 5px 0 var(--arc-navy), 0 0 24px rgba(44,224,83,0.35);
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
+    }
+
+    /* chevrons under timer (90s arcade speed accent) */
+    #arcChevrons {
+      position: fixed; top: 145px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px;
+      pointer-events: none;
+    }
+    #arcChevrons .cv {
+      width: 0; height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 22px solid var(--arc-orange);
+      opacity: 0.85;
+    }
+    #arcChevrons .cv:nth-child(2) { border-top-color: var(--arc-white); opacity: 0.55; }
+    #arcChevrons .cv:nth-child(3) { border-top-color: var(--arc-orange); opacity: 0.35; }
+
+    /* TURN signal — bigger, chunkier, more sign-like */
+    #arcTurn { top: 192px; }
+    #arcTurn .turn-pad {
+      width: 132px; height: 132px;
+      border: 6px solid var(--arc-white);
+      border-radius: 20px;
+      font-size: 92px;
+      font-family: 'Russo One', sans-serif;
+      box-shadow: 0 10px 0 var(--arc-navy-d), inset 0 -8px 0 rgba(0,0,0,0.18);
+    }
+    #arcTurn .turn-lbl {
+      padding: 4px 16px;
+      font-family: 'Russo One', sans-serif;
+      font-size: 12px; font-weight: 400; letter-spacing: 5px;
+      border: 3px solid var(--arc-navy);
+      margin-top: 10px;
+    }
+
+    /* SECTOR / DIST / CARGO splits — chunkier */
+    #arcSplits .row {
+      border: 5px solid var(--arc-white);
+      padding: 6px 20px;
+      min-width: 340px;
+      grid-template-columns: 130px 1fr;
+    }
+    #arcSplits .lbl {
+      font-family: 'Russo One', sans-serif;
+      font-size: 14px; font-weight: 400; letter-spacing: 4px;
+    }
+    #arcSplits .val {
+      font-size: 38px; letter-spacing: 4px;
+    }
+
+    /* SPEED / GEAR / RPM / BOOST cluster — exaggerated */
+    .rpm-bar {
+      width: 32px; height: 224px;
+      border: 5px solid var(--arc-white);
+      background: var(--arc-gray);
+    }
+    .rpm-fill {
+      background:
+        repeating-linear-gradient(0deg, transparent 0 12px, rgba(0,0,0,0.5) 12px 14px),
+        linear-gradient(to top,
+          var(--arc-green) 0%, var(--arc-green) 55%,
+          var(--arc-amber) 60%, var(--arc-amber) 75%,
+          var(--arc-red) 80%, var(--arc-red) 100%);
+    }
+    .rpm-lbl {
+      font-family: 'Russo One', sans-serif;
+      font-size: 13px; font-weight: 400; letter-spacing: 3px;
+      padding: 3px 8px; border-width: 3px;
+    }
+    .boost-seg-lbl {
+      font-family: 'Russo One', sans-serif;
+      font-size: 13px; font-weight: 400; letter-spacing: 4px;
+      padding: 4px 14px;
+      border: 3px solid var(--arc-white);
+    }
+    .boost-seg {
+      width: 40px; height: 22px;
+      border: 3px solid var(--arc-white);
+      transform: skewX(-12deg);     /* italic / arcade tilt */
+    }
+
+    .speed-box {
+      border: 6px solid var(--arc-white);
+      padding: 6px 24px 10px;
+      box-shadow: 0 10px 0 var(--arc-gray-2);
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+    }
+    .speed-num {
+      font-family: 'Russo One', sans-serif;
+      font-size: 104px; font-weight: 400;
+      line-height: 0.85;
+      min-width: 210px;
+      letter-spacing: 0;
+    }
+    .speed-unit {
+      font-family: 'Russo One', sans-serif;
+      font-size: 18px; letter-spacing: 4px;
+    }
+    .gear-box {
+      width: 120px; height: 120px;
+      border: 6px solid var(--arc-white);
+      box-shadow: 0 10px 0 var(--arc-gray-2);
+      font-family: 'Russo One', sans-serif;
+      font-size: 96px; font-weight: 400;
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+      line-height: 1;
+    }
+    .speed-tag {
+      font-family: 'Russo One', sans-serif;
+      font-size: 12px; font-weight: 400; letter-spacing: 5px;
+      padding: 3px 14px; border: 3px solid var(--arc-navy);
+    }
+
+    /* Diagonal racing-stripe accent behind position panel */
+    #arcStripes {
+      position: fixed; top: 26px; left: 372px;
+      width: 140px; height: 160px;
+      pointer-events: none;
+      background:
+        repeating-linear-gradient(135deg,
+          var(--arc-orange) 0 14px,
+          transparent 14px 32px);
+      opacity: 0.32;
+      mask-image: linear-gradient(to right, black, transparent);
+      -webkit-mask-image: linear-gradient(to right, black, transparent);
+    }
+
+    /* corner sponsor mark — chunky orange block */
+    #arcSponsor {
+      position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+      pointer-events: none;
+      display: flex; align-items: stretch; gap: 0;
+      filter: drop-shadow(0 4px 0 rgba(0,0,0,0.35));
+    }
+    #arcSponsor .sp-block {
+      background: var(--arc-orange); color: var(--arc-navy);
+      font-family: 'Russo One', sans-serif;
+      font-size: 14px; letter-spacing: 4px;
+      padding: 4px 12px;
+      border: 3px solid var(--arc-white);
+    }
+    #arcSponsor .sp-block.alt { background: var(--arc-navy); color: var(--arc-white); }
+    #arcSponsor .sp-block.kana { background: var(--arc-white); color: var(--arc-navy); font-family: 'Noto Sans JP', sans-serif; }
+    /* hide on mobile */
+    .mobile-active #arcSponsor, .mobile-active #arcStripes { display: none; }
+
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff;
       font-family: 'Saira Condensed', ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: var(--ui-white); letter-spacing: 0.5px;
@@ -845,14 +1085,26 @@
     </div>
   </div>
 
-  <!-- top-center: race clock + turn signal -->
+  <!-- decorative racing stripes behind position panel -->
+  <div id="arcStripes"></div>
+
+  <!-- top-center: race clock + chevrons + turn signal -->
   <div id="arcClock" class="arc">
-    <div class="clock-lbl">RACE CLOCK</div>
+    <div class="clock-lbl">RACE CLOCK / SECTOR A</div>
     <div class="clock-value" id="arcClockValue">00:00.00</div>
   </div>
+  <div id="arcChevrons"><div class="cv"></div><div class="cv"></div><div class="cv"></div></div>
   <div id="arcTurn" class="arc">
-    <div class="turn-pad" id="arcTurnPad">↑</div>
+    <div class="turn-pad" id="arcTurnPad">▲</div>
     <div class="turn-lbl">COURSE SIGNAL</div>
+  </div>
+
+  <!-- bottom-center sponsor strip -->
+  <div id="arcSponsor">
+    <span class="sp-block">D-04</span>
+    <span class="sp-block alt">A-G QUANTAX</span>
+    <span class="sp-block kana">急行</span>
+    <span class="sp-block alt">CART-RUN'97</span>
   </div>
 
   <!-- bottom-left: sector / total / dist times -->
@@ -1011,10 +1263,10 @@
         tDiffuse: { value: null },
         resolution: { value: new THREE.Vector2(innerWidth, innerHeight) },
         time: { value: 0 },
-        chroma: { value: 0.0009 },   // softer chromatic aberration
-        curve: { value: 0.010 },     // less barrel
-        scanI: { value: 0.035 },     // very light scanlines
-        vig:   { value: 0.30 },      // gentle vignette
+        chroma: { value: 0.0007 },   // very soft chromatic aberration
+        curve: { value: 0.008 },     // tiny barrel
+        scanI: { value: 0.012 },     // scanlines barely there
+        vig:   { value: 0.22 },      // gentle vignette
       },
       vertexShader: /* glsl */`
         varying vec2 vUv;
