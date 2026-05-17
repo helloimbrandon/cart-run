@@ -1392,28 +1392,22 @@
       width: 240px; height: 300px;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
-      border: 2px solid #2da848;     /* MGS codec phosphor green frame */
-      box-shadow: 0 0 0 3px #0a1a0e, 0 0 14px rgba(45, 168, 72, 0.35);
-      background: #0a1a0e;
+      border: 3px solid #fff;
+      background: #11141c;
     }
     #driverPip .driver-strip {
       display: flex; justify-content: space-between;
-      font-family: 'Share Tech Mono', monospace;
-      font-style: normal; font-size: 11px; letter-spacing: 3px;
-      color: #6df068;
-      padding: 4px 4px 0;
-      text-shadow: 0 0 4px rgba(109, 240, 104, 0.4);
+      font-style: italic; font-size: 11px; letter-spacing: 3px;
+      color: #ffce4a;
+      padding: 3px 4px 0;
     }
-    #driverPip .driver-name { color: #c8ffc4; }
+    #driverPip .driver-name { color: #fff; }
     #driverPip .driver-caption {
-      font-family: 'Share Tech Mono', monospace;
-      font-style: normal; font-weight: 400;
-      color: #6df068;
-      font-size: 12px; letter-spacing: 2px;
+      font-style: italic; font-weight: 400;
+      color: #ffce4a;
+      font-size: 13px; letter-spacing: 2px;
       margin-top: 2px;
       min-height: 16px;
-      text-shadow: 0 0 4px rgba(109, 240, 104, 0.5);
-      padding: 0 4px;
     }
     /* shake on hit */
     @keyframes driverShake {
@@ -2205,13 +2199,13 @@
     /* ====== rank badge inside recap modal ====== */
     #stageRecap .rank-badge {
       font-family: 'Russo One', sans-serif;
-      font-size: 160px;
+      font-size: 96px;
       line-height: 1;
       color: var(--arc-amber);
-      text-shadow: 6px 6px 0 var(--arc-navy), 0 0 24px rgba(255,206,74,0.45);
+      text-shadow: 4px 4px 0 var(--arc-navy), 0 0 18px rgba(255,206,74,0.45);
       font-style: italic;
       letter-spacing: 4px;
-      margin: -10px 0 8px;
+      margin: 4px 0 8px;
     }
     #stageRecap .rank-badge.s  { color: #ffe46b; }
     #stageRecap .rank-badge.a  { color: #2ce053; }
@@ -2219,31 +2213,43 @@
     #stageRecap .rank-badge.c  { color: #ff7a00; }
 
     /* ====== stage recap modal ====== */
+    /* Side panel, NOT a full-screen overlay. Lives over the replay
+       camera shot so the player still watches the 3D action. */
     #stageRecap {
-      position: fixed; inset: 0; z-index: 10;
-      display: none; flex-direction: column; align-items: center; justify-content: center;
-      background: linear-gradient(180deg, rgba(20,18,14,0.88), rgba(0,0,0,0.95));
-      padding: 40px;
+      position: fixed;
+      top: 50%; left: 32px;
+      transform: translateY(-50%);
+      z-index: 10;
+      display: none; flex-direction: column; align-items: flex-start;
+      background: transparent;
+      padding: 0;
+      max-width: 42vw;
+      pointer-events: none;           /* don't block clicks on the world */
     }
     #stageRecap.show { display: flex; }
+    /* re-enable pointer events only on the interactive bits */
+    #stageRecap #recapContinue { pointer-events: auto; }
     #stageRecap .recap-bar {
-      font-size: 14px; letter-spacing: 6px; color: var(--orange);
-      font-weight: 700; margin-bottom: 8px;
+      font-size: 13px; letter-spacing: 4px; color: var(--orange);
+      font-weight: 700; margin-bottom: 4px;
+      text-shadow: 2px 2px 0 #000;
     }
     #stageRecap .recap-header {
-      font-size: 72px; letter-spacing: 12px; font-weight: 900; color: var(--ui-white);
-      margin-bottom: 36px; line-height: 1;
+      font-size: 44px; letter-spacing: 7px; font-weight: 900; color: var(--ui-white);
+      margin-bottom: 14px; line-height: 1;
+      text-shadow: 4px 4px 0 #000;
     }
     #stageRecap .recap-ruler {
-      width: min(50vw, 560px); height: 2px;
-      background: linear-gradient(90deg, transparent, var(--orange) 25%, var(--orange) 75%, transparent);
-      margin-bottom: 28px;
+      width: 320px; height: 2px;
+      background: linear-gradient(90deg, var(--orange) 0%, var(--orange) 70%, transparent);
+      margin-bottom: 14px;
     }
     #stageRecap .recap-stats {
-      display: flex; flex-direction: column; gap: 7px;
+      display: flex; flex-direction: column; gap: 5px;
       border-left: 3px solid var(--orange);
-      padding: 10px 18px; margin-bottom: 32px;
-      min-width: 380px;
+      padding: 8px 14px; margin-bottom: 16px;
+      min-width: 320px;
+      background: rgba(0,0,0,0.55);
     }
     #stageRecap .recap-stats .stat-row {
       font-size: 22px; letter-spacing: 3px;
@@ -2281,24 +2287,24 @@
       40%  { color: #ffce4a; transform: scale(1.08); }
       100% { color: #ffce4a; transform: scale(1); }
     }
-    /* FINAL SCORE block — big chunky italic number at the top */
+    /* FINAL SCORE block — chunky italic number at the top of the side panel */
     #stageRecap .recap-finalwrap {
-      display: flex; flex-direction: column; align-items: center;
-      margin-top: -22px; margin-bottom: 28px;
-      opacity: 0; transform: translateY(-12px);
+      display: flex; flex-direction: column; align-items: flex-start;
+      margin-top: 0; margin-bottom: 14px;
+      opacity: 0; transform: translateY(-8px);
       transition: opacity 240ms ease, transform 240ms ease;
     }
     #stageRecap .recap-finalwrap.in { opacity: 1; transform: translateY(0); }
     #stageRecap .recap-finallbl {
       font-family: 'Russo One', sans-serif; font-style: italic;
-      font-size: 18px; letter-spacing: 6px; color: var(--yellow);
-      text-shadow: 3px 3px 0 #000;
+      font-size: 14px; letter-spacing: 5px; color: var(--yellow);
+      text-shadow: 2px 2px 0 #000;
     }
     #stageRecap .recap-finalval {
       font-family: 'Russo One', sans-serif; font-style: italic;
-      font-size: 84px; line-height: 0.9; letter-spacing: 4px;
+      font-size: 58px; line-height: 0.9; letter-spacing: 3px;
       color: #fff;
-      text-shadow: 6px 6px 0 #1a1a3a, 0 0 18px rgba(255,206,74,0.25);
+      text-shadow: 4px 4px 0 #1a1a3a, 0 0 16px rgba(255,206,74,0.25);
     }
     /* Rank badge slams in at the end */
     #stageRecap .rank-badge {
@@ -5774,7 +5780,7 @@
       const gearEl  = document.getElementById('rGear');
       if (speedEl) reanim(speedEl, 'anim-speed-boost');
       if (gearEl)  reanim(gearEl, 'anim-flicker');
-      rumble(220, 0.85, 0.55);
+      rumble(160, 0.35, 0.20);
       return true;
     }
 
@@ -6083,8 +6089,8 @@
 
       // Keep most of the player's speed (heavy / unstoppable feel).
       truckSpeed = Math.max(truckSpeed * 0.96, truckSpeed - 1.5);
-      // Beefy thunk that grows with chain.
-      rumble(140 + chain * 30, Math.min(1, 0.6 + chain * 0.08), 0.4);
+      // Softer thunk per takedown — grows gently with chain.
+      rumble(110 + chain * 18, Math.min(0.55, 0.20 + chain * 0.05), 0.15);
     }
 
     function arcadeCallout(text, opts) {
@@ -6237,29 +6243,30 @@
     // pixel-art renderer — palette + draw helpers
     const DRIVER_PALETTE = {
       skin:   '#f3c79a',
-      // MGS codec phosphor palette — 7 shades of green from BG to highlight
-      bg0:    '#08130a',   // deepest shadow / background
-      bg1:    '#0e2010',   // background plate
-      bg2:    '#152a18',   // soft side fill
-      sk0:    '#1f4422',   // shadow ridge / hair underplane
-      sk1:    '#2f6a32',   // mid-tone skin shadow
-      sk2:    '#4ca246',   // base skin
-      sk3:    '#7adc70',   // skin highlight (cheek catch)
-      sk4:    '#b8ffae',   // brightest highlight (nose tip / brow ridge)
-      ink:    '#06120a',   // pure-black ink lines
+      // Natural-color portrait palette — 5 skin shades + cap/hair/ink.
+      // Keeps the chunky MGS-style shading depth without the green CRT look.
+      bg0:    '#0a0d18',   // deepest background
+      bg1:    '#11141c',   // base plate
+      bg2:    '#1c2240',   // side accent
+      sk0:    '#4a2818',   // deep shadow / hair underplane
+      sk1:    '#a06848',   // mid-tone skin shadow
+      sk2:    '#d8a878',   // base skin
+      sk3:    '#f0c898',   // skin highlight (cheek catch)
+      sk4:    '#ffdcb0',   // brightest highlight (nose tip / brow ridge)
+      ink:    '#0c0a0e',   // ink lines
       // semantic aliases (kept so other code reads cleanly)
-      skin:   '#4ca246',
-      skinDk: '#2f6a32',
-      hair:   '#1f4422',
-      cap:    '#1f4422',   // helmet → dark green silhouette
-      capDk:  '#152a18',
-      visor:  '#06120a',
-      mouth:  '#06120a',
-      eye:    '#06120a',
-      eyeBg:  '#b8ffae',
-      brow:   '#06120a',
-      bgA:    '#0e2010',
-      bgB:    '#152a18',
+      skin:   '#d8a878',
+      skinDk: '#a06848',
+      hair:   '#1a1208',
+      cap:    '#c83a30',
+      capDk:  '#7a1810',
+      visor:  '#1a1a22',
+      mouth:  '#3a1010',
+      eye:    '#1a1a22',
+      eyeBg:  '#fff',
+      brow:   '#1a1a22',
+      bgA:    '#11141c',
+      bgB:    '#1c2240',
     };
     function pixel(x, y, c, size = 1) {
       driverCtx.fillStyle = c;
@@ -6286,8 +6293,8 @@
         const c = f < 0.35 ? P.bg2 : f < 0.7 ? P.bg1 : P.bg0;
         rectFill(0, yy, W, 1, c);
       }
-      // diagonal "interlace" texture every 6 px
-      driverCtx.fillStyle = 'rgba(11, 32, 14, 0.45)';
+      // diagonal "interlace" texture every 6 px — neutral darken
+      driverCtx.fillStyle = 'rgba(0, 0, 0, 0.18)';
       for (let yy = 0; yy < H; yy += 6) driverCtx.fillRect(0, yy, W, 1);
       // soft vignette by darkening edges
       rectFill(0, 0, 4, H, P.bg0);
@@ -6473,30 +6480,10 @@
         rectFill(cx + 2, faceTop + 8, 2, 3, P.sk1);
       }
 
-      // --- HUD overlay: signal bars + frame ticks (codec window chrome) ---
-      // top-left signal indicator
-      const sigOn = (Math.floor(now * 2) % 2) === 0;
-      driverCtx.fillStyle = P.sk3;
-      driverCtx.fillRect(8,  8, 3, 6);
-      driverCtx.fillRect(13, 6, 3, 8);
-      driverCtx.fillStyle = sigOn ? P.sk4 : P.sk0;
-      driverCtx.fillRect(18, 4, 3, 10);
-      // tick marks bottom-right (looks like a frequency dial)
-      driverCtx.fillStyle = P.sk2;
-      for (let i = 0; i < 6; i++) driverCtx.fillRect(W - 28 + i * 4, H - 10, 2, 4);
-      // small "REC" dot top-right
-      driverCtx.fillStyle = ((Math.floor(now * 1.5) % 2) === 0) ? P.sk4 : P.sk1;
-      driverCtx.fillRect(W - 12, 8, 4, 4);
-
-      // --- scanline + chromatic-flicker overlay ---
-      driverCtx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      // light scanline overlay — keeps the chunky CRT feel without the
+      // full codec chrome treatment
+      driverCtx.fillStyle = 'rgba(0, 0, 0, 0.18)';
       for (let yy = 0; yy < H; yy += 2) driverCtx.fillRect(0, yy, W, 1);
-      // very occasional horizontal glitch bar
-      if (Math.random() < 0.02) {
-        const gy = (Math.floor(now * 60) % H);
-        driverCtx.fillStyle = 'rgba(180, 255, 170, 0.18)';
-        driverCtx.fillRect(0, gy, W, 2);
-      }
     }
 
     // periodic driver-state evaluation (called every frame)
@@ -7058,10 +7045,10 @@
       bark('FINISH');
       try { raveVocal(audioCtx ? audioCtx.currentTime : 0, 'YEAH'); } catch(_) {}
       setDriverState('relieved', 1.8, 'FINISH!');
-      // Celebratory triple-thump on the controller
-      rumble(180, 0.9, 0.7);
-      setTimeout(() => rumble(180, 0.7, 0.5), 220);
-      setTimeout(() => rumble(280, 1.0, 0.9), 460);
+      // Celebratory triple-thump — softened
+      rumble(140, 0.30, 0.20);
+      setTimeout(() => rumble(140, 0.25, 0.15), 220);
+      setTimeout(() => rumble(220, 0.40, 0.25), 460);
       reanim(document.getElementById('rTime'), 'anim-glitch');
     }
 
@@ -7082,6 +7069,9 @@
           _replayT = 0;
           _replayShot = 0;
           _replayShotT = 0;
+          // Pop the side recap panel now — its stamp-in animation runs
+          // alongside the replay camera shots instead of after them.
+          showResultsPanel(_replayStats);
         }
         return;
       }
@@ -7105,9 +7095,16 @@
           _replayShot++;
           _replayShotT = 0;
         }
-        // End orbit when either: all shots done, OR replay playback hits 1.0
+        // End orbit when either: all shots done, OR replay playback hits 1.0.
+        // Skip the separate 'tally' phase — the recap was popped at orbit
+        // start and the truck simply holds on the last recorded pose now.
         if (u >= 1 || _replayShot >= REPLAY_SHOTS.length) {
-          _enterTallyPhase();
+          _replayPhase = 'done';
+          _replayT = 0;
+          // Make sure the panel is marked tally-done (continue prompt up)
+          // in case the tally animation hasn't fully completed yet.
+          const root = document.getElementById('stageRecap');
+          if (root) root.classList.add('tally-done');
         }
         return;
       }
@@ -7184,8 +7181,13 @@
       const ts = performance.now() * 0.001;
       camera.position.x += Math.sin(ts * 11.0) * 0.08;
       camera.position.y += Math.sin(ts * 9.3)  * 0.06;
+      // Force the world-up so lookAt can't flip the frame (Three's Euler
+      // decomposition can end up "upside down" after the gameplay branch
+      // accumulated rotation.z). We also skip any explicit rotation.z
+      // override on the replay camera — lookAt with up=(0,1,0) is enough.
+      camera.up.set(0, 1, 0);
+      camera.rotation.set(0, 0, 0);
       camera.lookAt(look);
-      camera.rotation.z = Math.sin(ts * 7.0) * 0.012;
     }
 
     // -----------------------------------------------------------------
@@ -7279,13 +7281,19 @@
     let _replaySkipReady = 0;
     function skipReplay() {
       if (!_replayPhase || performance.now() < _replaySkipReady) return;
-      if (_replayPhase === 'finish' || _replayPhase === 'orbit') {
-        _enterTallyPhase();
-      } else if (_replayPhase === 'tally') {
-        // complete the tally instantly
+      const s = _replayStats;
+      const root = document.getElementById('stageRecap');
+      if (_replayPhase === 'finish') {
+        // jump past the FINISH coast — pop the panel and start the orbit
+        _replayPhase = 'orbit';
+        _replayT = 0; _replayShot = 0; _replayShotT = 0;
+        if (s) showResultsPanel(s);
+        return;
+      }
+      // orbit (or any later) → complete the recap immediately + freeze truck
+      if (s && root) {
         _clearReplayTickers();
-        const s = _replayStats;
-        const root = document.getElementById('stageRecap');
+        if (!root.classList.contains('show')) showResultsPanel(s);
         document.getElementById('recapFinalWrap').classList.add('in');
         for (const row of root.querySelectorAll('.stat-row')) row.classList.add('in');
         document.getElementById('recapTime').textContent  = fmtRally(s.elapsed);
@@ -7297,8 +7305,8 @@
         document.getElementById('recapTotal').textContent  = String(s.finalScore).padStart(7, '0');
         document.getElementById('recapRank').classList.add('in');
         root.classList.add('tally-done');
-        _replayPhase = 'done';
       }
+      _replayPhase = 'done';
     }
 
     function continueToNextStage() {
@@ -7607,7 +7615,7 @@
             boostActive = false;
             addScore(-40);
             _breakDodgeChain('COMBO LOST');
-            rumble(360, 1.0, 0.8);
+            rumble(260, 0.45, 0.30);
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
             arcadeCallout('WATCH IT', { type: 'warning', pos: 'lr', holdMs: 700 });
