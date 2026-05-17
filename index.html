@@ -1251,14 +1251,87 @@
     .mobile-active #rallyBR .gauge-info .kmh #rKmh { font-size: 20px; }
     .mobile-active #countdown { font-size: 28vmin; }
 
-    /* Mobile re-tune for the new boards/cluster */
-    .mobile-active #cargoBoard, .mobile-active #deliveryBoard {
-      transform: scale(0.55); transform-origin: top left;
+    /* =====================================================================
+       MOBILE HUD REBUILD — cleanly opt-in. Hide everything noisy, keep only
+       the essentials in fixed compact slots. Center road stays visible.
+       ===================================================================== */
+    .mobile-active #rallyTL,
+    .mobile-active #rallyTR,
+    .mobile-active #rallyTurn,
+    .mobile-active #rallyBR,
+    .mobile-active #deliveryBoard,
+    .mobile-active #scoreBoard,
+    .mobile-active #wpStamp,
+    .mobile-active #wpKatakana,
+    .mobile-active #wpEdgeL,
+    .mobile-active #wpEdgeR,
+    .mobile-active #hudHints,
+    .mobile-active #arcSponsor,
+    .mobile-active #arcStripes,
+    .mobile-active #arcChevrons {
+      display: none !important;
     }
-    .mobile-active #deliveryBoard { top: 80px; }
-    .mobile-active #scoreBoard { transform: scale(0.55); transform-origin: top right; }
-    .mobile-active #rallyTR { top: 60px !important; }
-    .mobile-active #thrustCluster { transform: scale(0.55); transform-origin: bottom right; }
+
+    /* mobile cargo + delivery + time, compact top row */
+    .mobile-active #cargoBoard {
+      top: 14px; left: 10px;
+      transform: none;
+    }
+    .mobile-active #cargoBoard .sb-num { font-size: 38px; line-height: 0.85; }
+    .mobile-active #cargoBoard .sb-num.small { font-size: 28px; }
+    .mobile-active #cargoBoard .sb-of { font-size: 18px; }
+    .mobile-active #cargoBoard .sb-lbl { font-size: 11px; letter-spacing: 3px; }
+
+    /* mobile-only TIME readout, top-right */
+    #mobileTimeBox {
+      position: fixed; top: 14px; right: 10px;
+      font-family: 'Russo One', sans-serif;
+      font-style: italic;
+      pointer-events: none;
+      text-align: right;
+      display: none;
+      z-index: 4;
+    }
+    .mobile-active #mobileTimeBox { display: block; }
+    #mobileTimeBox .mtv {
+      font-size: 26px;
+      color: #fff;
+      letter-spacing: 2px;
+      text-shadow: 3px 3px 0 #000;
+      line-height: 1;
+    }
+    #mobileTimeBox .mtl {
+      font-size: 10px; letter-spacing: 3px; color: #ffce4a;
+      text-shadow: 2px 2px 0 #000;
+      margin-top: 2px;
+    }
+    #mobileTimeBox .mts {
+      font-size: 16px; color: #fff; letter-spacing: 1.5px;
+      text-shadow: 2px 2px 0 #000;
+      margin-top: 6px;
+    }
+
+    /* mobile thrust cluster — compact, anchored bottom-right */
+    .mobile-active #thrustCluster {
+      bottom: 12px; right: 10px;
+      transform: none;
+      gap: 3px;
+    }
+    .mobile-active #thrustCluster .thrust-num   { font-size: 66px; line-height: 0.8; letter-spacing: -2px; text-shadow: 4px 4px 0 #000; }
+    .mobile-active #thrustCluster .thrust-unit-pill { font-size: 11px; padding: 2px 6px; border-width: 2px; box-shadow: 2px 2px 0 #000; margin-bottom: 6px; }
+    .mobile-active #thrustCluster .thrust-meter-label { font-size: 11px; min-width: 56px; letter-spacing: 2px; }
+    .mobile-active #thrustCluster .thrust-bar  { width: 140px; height: 12px; box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+
+    /* mobile delta — bottom-left, compact */
+    .mobile-active #rallyBL {
+      bottom: 12px; left: 10px;
+      font-size: 22px; letter-spacing: 2px;
+      padding: 4px 10px;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    }
+
+    /* mobile hint slightly higher so it doesn't bleed under the delta */
+    .mobile-active #mobileHint { bottom: 60px; font-size: 11px; }
 
     /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
@@ -2068,6 +2141,13 @@
 
   <!-- mobile: hint only; controls are one-thumb gestures on the road canvas -->
   <div id="mobileHint">DRAG TO STEER · TAP TO BOOST</div>
+
+  <!-- mobile-only: compact TIME / DELIVERY / SCORE readout (replaces full panels) -->
+  <div id="mobileTimeBox">
+    <div class="mtv" id="mTime">00'00"00</div>
+    <div class="mtl">TIME</div>
+    <div class="mts" id="mDelivery">1 / 3</div>
+  </div>
 
   <!-- Motion-graphic overlays -->
   <div id="crashEdge"></div>
@@ -4782,6 +4862,14 @@
       if (thrustSpeedEl) thrustSpeedEl.textContent = String(Math.round(truckSpeed * 3.6)).padStart(3, '0');
       if (energyBarEl)   energyBarEl.style.setProperty('--fill', clamp(boostMeter, 0, 1));
       if (thrustBarEl)   thrustBarEl.style.setProperty('--fill', clamp(truckSpeed / TRUCK_BOOST_SPEED, 0, 1));
+
+      // mobile compact time/delivery box
+      if (document.body.classList.contains('mobile-active')) {
+        const mt = document.getElementById('mTime');
+        const md = document.getElementById('mDelivery');
+        if (mt) mt.textContent = fmtRally(elapsedMs);
+        if (md) md.textContent = `${levelIdx + 1} / ${LEVELS.length}`;
+      }
 
       // records: show all-time best + last for current stage
       const best = bestStageTimes[levelIdx];
