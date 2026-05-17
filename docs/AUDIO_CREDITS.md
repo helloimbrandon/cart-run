@@ -25,7 +25,23 @@ If the licence requires attribution, also mirror the credit line into the in-gam
 
 ## Current samples
 
-*(none — procedural only)*
+### Music
+- **File:** `audio/big-stepper.mp3`
+  **Used for:** main game music (track 1 of the playlist)
+  **Author:** Brandon Foy (project owner)
+  **Licence:** owned by author — all rights retained
+  **Attribution required?** no (self)
+  **Date added:** 2026-05-16
+
+- **File:** `audio/ooiiiii.mp3`
+  **Used for:** main game music (track 2 of the playlist; plays when track 1 ends)
+  **Author:** Brandon Foy (project owner)
+  **Licence:** owned by author
+  **Attribution required?** no (self)
+  **Date added:** 2026-05-16
+
+### SFX
+*(none yet — the `audio/sfx/` folder + the `loadSample()` / `playSample()` runtime helpers in `index.html` are ready for drop-in CC0/CC-BY samples. See [`AUDIO_SOURCES.md`](./AUDIO_SOURCES.md) for vetted sources. All in-game SFX, voice barks, rave vocal hits, and engine drone are still procedurally synthesized by the Web Audio code.)*
 
 ## In-game / in-engine procedural sound design
 
