@@ -2570,9 +2570,13 @@
     // renderer / scene / camera / post-processing
     // =========================================================================
     const canvas = document.getElementById('c');
-    // antialias OFF so the PS1 pixelation reads as crunchy edges
+    // Detect mobile early so PS1_PIXEL, FOV, and chase-cam distance can all
+    // adapt up front.
+    const isMobile = ('ontouchstart' in window) && innerWidth < 900;
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-    const PS1_PIXEL = 0.45;                                // ~45% pixel ratio for chunky upscale
+    // Mobile renders at a higher pixel ratio (sharper graphics) since portrait
+    // screens are physically small; desktop keeps the chunky 0.45 PS1 look.
+    const PS1_PIXEL = isMobile ? 0.7 : 0.45;
     renderer.setPixelRatio(PS1_PIXEL);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.BasicShadowMap;        // dithered/hard shadows
@@ -5761,7 +5765,7 @@
     });
 
     // ---- Mobile: one-thumb gesture steering + auto-accelerate ----
-    const isMobile = ('ontouchstart' in window) && innerWidth < 900;
+    // (isMobile already declared at module top so PS1_PIXEL / FOV / cam adapt)
     if (isMobile) {
       document.body.classList.add('mobile-active');
       // auto-accel: hold "w" forever
@@ -6347,9 +6351,11 @@
       const blendTanX = _curTan.x * 0.55 + aheadTan.x * 0.45;
       const blendTanZ = _curTan.z * 0.55 + aheadTan.z * 0.45;
       // 10mm-ish ultra-wide chase cam — pulled back, height + angle kept.
-      const camTargetX = truck.position.x - blendTanX * 8.5;
-      const camTargetY = 9.5 + bumpY * 0.4;
-      const camTargetZ = truck.position.z - blendTanZ * 8.5;
+      // Mobile pushes further back since portrait crops the wide lens horizontally.
+      const camDist = isMobile ? 13 : 8.5;
+      const camTargetX = truck.position.x - blendTanX * camDist;
+      const camTargetY = (isMobile ? 11 : 9.5) + bumpY * 0.4;
+      const camTargetZ = truck.position.z - blendTanZ * camDist;
       camera.position.x += (camTargetX - camera.position.x) * 0.14;
       camera.position.y += (camTargetY - camera.position.y) * 0.10;
       camera.position.z += (camTargetZ - camera.position.z) * 0.18;
@@ -6386,8 +6392,8 @@
       const blur = clamp((truckSpeed - 26) / 22, 0, 1);
       afterimagePass.uniforms['damp'].value = blur * 0.35;
       const fovFactor = clamp((truckSpeed - 18) / 30, 0, 1);
-      // 10mm-ish baseline + small punch on boost
-      camera.fov = 104 + fovFactor * 14;
+      // 10mm-ish baseline + small punch on boost — narrower on mobile portrait
+      camera.fov = (isMobile ? 82 : 104) + fovFactor * (isMobile ? 8 : 14);
       camera.updateProjectionMatrix();
       const vAmt = Math.round(60 + fovFactor * 140);
       vignette.style.boxShadow = `inset 0 0 ${vAmt}px ${Math.round(30 + fovFactor * 90)}px rgba(0,0,0,${0.22 + fovFactor * 0.32})`;
