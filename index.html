@@ -593,6 +593,233 @@
     .mobile-active #rallyBR .gauge-info .gear { font-size: 54px; }
 
     /* =====================================================================
+       TYPE + MOTION SYSTEM v3 — chunky shadowed digits, arcade motion
+       (snapIn / panelPop / flicker / impactPulse / crashFlash / tickerShift)
+       ===================================================================== */
+
+    /* --- chunky text-shadow treatment for the level-1 race numbers --- */
+    #rTime {
+      font-size: 36px;
+      letter-spacing: 4px;
+      text-shadow:
+        2px 0 0 #000, -2px 0 0 #000,
+        0 2px 0 #000, 0 -2px 0 #000,
+        4px 4px 0 rgba(60, 40, 110, 0.95);
+    }
+    #rPos {
+      font-size: 104px;
+      letter-spacing: -2px;
+      text-shadow:
+        3px 0 0 #000, -3px 0 0 #000,
+        0 3px 0 #000, 0 -3px 0 #000,
+        6px 6px 0 rgba(60, 40, 110, 1);
+    }
+    #rallyBR .gauge-info .gear {
+      font-size: 96px;
+      text-shadow:
+        3px 0 0 rgba(0,0,0,0.95), -3px 0 0 rgba(0,0,0,0.95),
+        0 3px 0 rgba(0,0,0,0.95), 0 -3px 0 rgba(0,0,0,0.95),
+        5px 5px 0 rgba(0, 0, 0, 0.7);
+    }
+    #rallyBR .gauge-info .kmh #rKmh {
+      font-size: 18px;
+      letter-spacing: 2px;
+    }
+    #rallyBL {
+      font-size: 34px;
+      letter-spacing: 4px;
+      text-shadow:
+        0 0 14px rgba(44, 224, 83, 0.55),
+        2px 2px 0 #000;
+    }
+    #rallyTL .row .val { font-size: 16px; letter-spacing: 1.5px; }
+    #rallyTurn .arrow {
+      font-size: 30px;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.7);
+    }
+
+    /* ----- arcade motion keyframes ----- */
+    @keyframes snapInL {
+      0%   { opacity: 0; transform: translateX(-40px) scale(0.92); }
+      55%  { opacity: 1; transform: translateX(6px)  scale(1.04); }
+      80%  {            transform: translateX(-2px) scale(0.99); }
+      100% { opacity: 1; transform: translateX(0)    scale(1); }
+    }
+    @keyframes snapInR {
+      0%   { opacity: 0; transform: translateX( 40px) scale(0.92); }
+      55%  { opacity: 1; transform: translateX(-6px)  scale(1.04); }
+      80%  {            transform: translateX( 2px) scale(0.99); }
+      100% { opacity: 1; transform: translateX(0)     scale(1); }
+    }
+    @keyframes panelPop {
+      0%   { opacity: 0; transform: scale(0.82); }
+      55%  { opacity: 1; transform: scale(1.10); }
+      85%  {             transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes flickerOn {
+      0%   { opacity: 0; }
+      6%   { opacity: 1; }
+      12%  { opacity: 0.2; }
+      24%  { opacity: 1; }
+      32%  { opacity: 0.4; }
+      48%  { opacity: 1; }
+      100% { opacity: 1; }
+    }
+    @keyframes impactPulse {
+      0%   { transform: scale(1);    filter: brightness(1); }
+      40%  { transform: scale(1.22); filter: brightness(1.7); }
+      100% { transform: scale(1);    filter: brightness(1); }
+    }
+    @keyframes tickerSnap {
+      0%   { transform: translateY(-12px); opacity: 0.2; }
+      55%  { transform: translateY( 4px);  opacity: 1; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes crtGlitchOnce {
+      0%   { transform: translateX(0); filter: none; }
+      14%  { transform: translateX(-4px); filter: hue-rotate(20deg) saturate(1.4); }
+      28%  { transform: translateX(3px); }
+      42%  { transform: translateX(-2px); filter: hue-rotate(-12deg); }
+      56%  { transform: translateX(2px); }
+      100% { transform: translateX(0); filter: none; }
+    }
+
+    /* easing tokens */
+    .ease-arcade { animation-timing-function: cubic-bezier(0.25, 1.55, 0.45, 1); }
+
+    /* trigger classes (toggled via JS) */
+    .anim-snap-l    { animation: snapInL 220ms cubic-bezier(0.25, 1.55, 0.45, 1) both; }
+    .anim-snap-r    { animation: snapInR 220ms cubic-bezier(0.25, 1.55, 0.45, 1) both; }
+    .anim-pop       { animation: panelPop 260ms cubic-bezier(0.25, 1.55, 0.45, 1) both; }
+    .anim-flicker   { animation: flickerOn 420ms steps(8, end) both; }
+    .anim-impact    { animation: impactPulse 280ms ease-out both; }
+    .anim-ticker    { animation: tickerSnap 140ms cubic-bezier(0.25, 1.55, 0.45, 1) both; }
+    .anim-glitch    { animation: crtGlitchOnce 360ms steps(6, end) both; }
+
+    /* --- Checkpoint panel (snaps in, holds, exits) --- */
+    #checkpointBubble {
+      position: fixed; left: 50%; top: 20%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      background: var(--rally-purple);
+      border: 2px solid var(--rally-purple-edge);
+      border-radius: 3px;
+      padding: 8px 22px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      z-index: 6;
+    }
+    #checkpointBubble.show { opacity: 1; }
+    #checkpointBubble .cp-tab {
+      display: inline-block;
+      background: var(--arc-orange);
+      color: var(--arc-navy);
+      padding: 3px 10px;
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 12px; letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+    #checkpointBubble .cp-label {
+      font-family: 'Russo One', sans-serif;
+      font-size: 28px; color: var(--arc-green);
+      letter-spacing: 4px; line-height: 1;
+      text-shadow: 2px 2px 0 #000;
+    }
+    #checkpointBubble .cp-time {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 24px; color: var(--rally-white);
+      letter-spacing: 3px;
+      margin-top: 6px;
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    /* --- Crash red-edge flash overlay --- */
+    #crashEdge {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 0 0 0 rgba(255, 50, 50, 0);
+      transition: box-shadow 0.06s ease-out;
+      z-index: 5;
+      mix-blend-mode: screen;
+    }
+    #crashEdge.hit {
+      box-shadow: inset 0 0 140px 90px rgba(255, 60, 60, 0.6);
+      animation: crashFade 0.45s ease-out;
+    }
+    @keyframes crashFade {
+      0%   { box-shadow: inset 0 0 140px 90px rgba(255, 60, 60, 0.6); }
+      100% { box-shadow: inset 0 0 0 0 rgba(255, 60, 60, 0); }
+    }
+
+    /* --- Wrong-way warning (placeholder, ready for future detection) --- */
+    #wrongWay {
+      position: fixed; left: 50%; top: 32%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      background: rgba(160, 30, 30, 0.9);
+      color: #fff;
+      font-family: 'Russo One', sans-serif;
+      font-size: 38px; letter-spacing: 8px;
+      padding: 10px 28px;
+      border: 3px solid #fff;
+      opacity: 0;
+      z-index: 6;
+      transition: opacity 0.18s ease;
+    }
+    #wrongWay.show { opacity: 1; animation: impactPulse 280ms ease-out both; }
+
+    /* --- Stage title card (PS1 broadcast slide-in) --- */
+    #stageTitle {
+      position: fixed; left: 0; right: 0; top: 32%;
+      pointer-events: none;
+      text-align: left;
+      padding-left: 12vw;
+      opacity: 0;
+      z-index: 5;
+    }
+    #stageTitle.show .stage-tab {
+      animation: snapInL 240ms cubic-bezier(0.25, 1.55, 0.45, 1) both;
+    }
+    #stageTitle.show .stage-name {
+      animation: snapInL 260ms 60ms cubic-bezier(0.25, 1.55, 0.45, 1) both,
+                 flickerOn 420ms 60ms steps(8, end);
+    }
+    #stageTitle.show .stage-sub {
+      animation: snapInL 280ms 140ms cubic-bezier(0.25, 1.55, 0.45, 1) both;
+    }
+    #stageTitle.show { opacity: 1; }
+    .stage-tab {
+      display: inline-block;
+      background: var(--arc-orange);
+      color: var(--arc-navy);
+      padding: 4px 12px;
+      font-family: 'Russo One', sans-serif;
+      font-size: 15px; letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+    .stage-name {
+      font-family: 'Russo One', sans-serif;
+      font-size: 86px; color: var(--rally-white);
+      line-height: 0.95; letter-spacing: 6px;
+      text-shadow: 5px 5px 0 rgba(60, 40, 110, 1);
+    }
+    .stage-sub {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 800; font-size: 16px;
+      color: var(--rally-label);
+      letter-spacing: 5px; margin-top: 6px;
+    }
+
+    /* boost speed-num pulse + cart count pop (apply via JS) */
+    .anim-speed-boost { animation: impactPulse 320ms ease-out both; }
+    .anim-cart-decr   { animation: panelPop 200ms cubic-bezier(0.25, 1.55, 0.45, 1) both; }
+    /* position digit pop on stage change */
+    .anim-pos-pop { animation: impactPulse 360ms ease-out both; }
+
+    /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
        stepped corners, drop-shadows, exaggerated gear/speed. Layered as
        overrides so existing JS doesn't break.
@@ -1343,6 +1570,20 @@
 
   <!-- mobile: hint only; controls are one-thumb gestures on the road canvas -->
   <div id="mobileHint">DRAG TO STEER · TAP TO BOOST</div>
+
+  <!-- Motion-graphic overlays -->
+  <div id="crashEdge"></div>
+  <div id="wrongWay">WRONG WAY</div>
+  <div id="checkpointBubble">
+    <div class="cp-tab">SECTOR</div>
+    <div class="cp-label">CHECKPOINT</div>
+    <div class="cp-time" id="checkpointTime">+00'00"00</div>
+  </div>
+  <div id="stageTitle">
+    <div class="stage-tab" id="stageTitleTab">STAGE 1</div>
+    <div class="stage-name" id="stageTitleName">SUBURB</div>
+    <div class="stage-sub" id="stageTitleSub">SECTOR A / CART-RUN '97</div>
+  </div>
 
   <!-- start-of-run title card -->
   <div id="title-card">
@@ -2963,6 +3204,11 @@
             raveVocal(audioCtx ? audioCtx.currentTime : 0, 'BOOST');
           } catch(_) {}
           bark('BOOST');
+          // type/motion: speed digit punches, gear flickers
+          const speedEl = document.getElementById('rKmh');
+          const gearEl  = document.getElementById('rGear');
+          if (speedEl) reanim(speedEl, 'anim-speed-boost');
+          if (gearEl)  reanim(gearEl, 'anim-flicker');
         }
       }
       startAudio();
@@ -3668,6 +3914,13 @@
       }
       hudCarts.textContent = n;
     }
+    // re-trigger a CSS animation by toggling its class
+    function reanim(el, klass) {
+      if (!el) return;
+      el.classList.remove(klass);
+      void el.offsetWidth;
+      el.classList.add(klass);
+    }
     let _lastSection = 'A';
     function maybeGlitchSection() {
       if (typeof currentSection !== 'undefined' && currentSection !== _lastSection) {
@@ -3879,6 +4132,23 @@
       introFadeEl.classList.add('show');
       raceTimerRunning = false;
       countdownEl.classList.remove('show', 'go');
+      // arcade-broadcast stage title card
+      const L = LEVELS[levelIdx];
+      const stTab  = document.getElementById('stageTitleTab');
+      const stName = document.getElementById('stageTitleName');
+      const stSub  = document.getElementById('stageTitleSub');
+      const stRoot = document.getElementById('stageTitle');
+      if (stTab && stName && stSub && stRoot) {
+        stTab.textContent  = `STAGE ${levelIdx + 1}`;
+        stName.textContent = L.name;
+        stSub.textContent  = `SECTOR ${'ABC'[levelIdx] || 'A'} / CART-RUN '97`;
+        stRoot.classList.remove('show');
+        void stRoot.offsetWidth;
+        stRoot.classList.add('show');
+        setTimeout(() => stRoot.classList.remove('show'), 2200);
+      }
+      // position digit pop
+      reanim(document.getElementById('rPos'), 'anim-pos-pop');
     }
     function setCountdown(text, big, isGo) {
       countdownEl.textContent = text;
@@ -4052,9 +4322,23 @@
       // record this stage's time for the rally HUD
       const ms = performance.now() - stageStartTime;
       lastStageTime = ms;
-      if (bestStageTimes[levelIdx] == null || ms < bestStageTimes[levelIdx]) {
-        bestStageTimes[levelIdx] = ms;
+      const wasBest = (bestStageTimes[levelIdx] == null || ms < bestStageTimes[levelIdx]);
+      if (wasBest) bestStageTimes[levelIdx] = ms;
+      // motion-graphic: snap-in checkpoint bubble with split time
+      const bubble = document.getElementById('checkpointBubble');
+      const cpTime = document.getElementById('checkpointTime');
+      if (bubble && cpTime) {
+        const prevBest = bestStageTimes[levelIdx];
+        const sign = wasBest ? '-' : '+';
+        const delta = wasBest && prevBest != null ? 0 : Math.abs(ms - (prevBest || ms));
+        cpTime.textContent = `${sign}${fmtRally(delta)}`;
+        bubble.classList.remove('show', 'anim-pop');
+        void bubble.offsetWidth;
+        bubble.classList.add('show', 'anim-pop');
+        setTimeout(() => bubble.classList.remove('show'), 1700);
       }
+      // glitch the time digit briefly
+      reanim(document.getElementById('rTime'), 'anim-glitch');
       const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
       const spilled = stageStartCarts - cartsRemaining;
       const gained  = score - stageStartScore;
@@ -4246,6 +4530,16 @@
             addScore(-40);
             try { sfxCrash(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
             bark('WATCH IT');
+            // type/motion: red-edge flash + glitch
+            const edge = document.getElementById('crashEdge');
+            if (edge) {
+              edge.classList.remove('hit');
+              void edge.offsetWidth;
+              edge.classList.add('hit');
+              setTimeout(() => edge.classList.remove('hit'), 460);
+            }
+            const speedEl = document.getElementById('rKmh');
+            if (speedEl) reanim(speedEl, 'anim-glitch');
             c.alive = false;
             continue;
           }
