@@ -446,7 +446,138 @@
 
     /* ---- legacy HUD panels: hide ---- */
     #hudStats, #hudSpeedo, #hudSection, #hudBoost,
-    #wpStamp, #wpKatakana, #wpEdgeL, #wpEdgeR, #hudHints { display: none !important; }
+    #wpStamp, #wpKatakana, #wpEdgeL, #wpEdgeR, #hudHints,
+    /* hide the previous chunky/WipEout HUD too — replaced by rally panels */
+    #arcPos, #arcClock, #arcChevrons, #arcTurn, #arcSplits, #arcCluster,
+    #arcStripes, #arcSponsor { display: none !important; }
+
+    /* =====================================================================
+       PS1 RALLY HUD — translucent purple panels, white numbers, cyan arc,
+       green-LCD delta. No WipEout branding in the in-race UI.
+       ===================================================================== */
+    :root {
+      --rally-purple:      rgba(70, 50, 130, 0.78);
+      --rally-purple-edge: rgba(195, 170, 240, 0.55);
+      --rally-label:       #ffd88a;
+      --rally-white:       #f5f5f0;
+      --rally-cyan:        #80e0e0;
+      --rally-green:       #2ce053;
+      --rally-black:       rgba(0, 0, 0, 0.85);
+    }
+    .rally { pointer-events: none; color: var(--rally-white); font-family: 'Saira Condensed', sans-serif; }
+
+    /* top-left: records panel */
+    #rallyTL {
+      position: fixed; top: 14px; left: 14px;
+      background: var(--rally-purple);
+      border: 1px solid var(--rally-purple-edge);
+      border-radius: 3px;
+      padding: 8px 14px;
+      min-width: 230px;
+    }
+    #rallyTL .row {
+      display: grid; grid-template-columns: 96px 1fr;
+      align-items: baseline;
+      margin: 2px 0;
+    }
+    #rallyTL .row .label { font-size: 13px; letter-spacing: 1.5px; color: var(--rally-label); }
+    #rallyTL .row .val {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; color: var(--rally-white);
+      text-align: right; letter-spacing: 1px;
+    }
+
+    /* top-center: small turn indicator (not the giant sign) */
+    #rallyTurn {
+      position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+      background: var(--rally-purple);
+      border: 1px solid var(--rally-purple-edge);
+      border-radius: 3px;
+      padding: 4px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    #rallyTurn .lbl { font-size: 12px; letter-spacing: 2px; color: var(--rally-label); }
+    #rallyTurn .arrow { font-size: 26px; line-height: 1; color: var(--rally-white); }
+
+    /* top-right: lap/time + huge italic position */
+    #rallyTR {
+      position: fixed; top: 14px; right: 14px;
+      display: flex; align-items: flex-end; gap: 10px;
+    }
+    #rallyTR .info {
+      background: var(--rally-purple);
+      border: 1px solid var(--rally-purple-edge);
+      border-radius: 3px;
+      padding: 6px 14px;
+      text-align: right;
+    }
+    #rallyTR .info .header {
+      font-size: 12px; letter-spacing: 2px; color: var(--rally-label);
+    }
+    #rallyTR .info .time {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 32px; font-weight: 700;
+      color: var(--rally-white);
+      letter-spacing: 3px; line-height: 1.08;
+    }
+    #rallyTR .pos {
+      font-family: 'Russo One', sans-serif;
+      font-size: 88px;
+      color: var(--rally-white);
+      font-style: italic;
+      line-height: 0.85;
+      text-shadow: 4px 4px 0 rgba(60, 40, 110, 0.95);
+    }
+
+    /* bottom-left: green LCD delta */
+    #rallyBL {
+      position: fixed; bottom: 14px; left: 14px;
+      background: var(--rally-black);
+      border: 1px solid #555;
+      border-radius: 3px;
+      padding: 4px 18px;
+      color: var(--rally-green);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 30px;
+      letter-spacing: 3px;
+    }
+
+    /* bottom-right: cyan arc speedo + km/h + huge gear */
+    #rallyBR {
+      position: fixed; bottom: 14px; right: 14px;
+      display: flex; align-items: flex-end; gap: 8px;
+    }
+    #rallyBR .gauge-svg { width: 230px; height: 130px; display: block; }
+    #rallyBR .gauge-info {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding-right: 4px;
+    }
+    #rallyBR .gauge-info .kmh {
+      font-family: 'Saira Condensed', sans-serif;
+      font-size: 14px; letter-spacing: 2px;
+      color: var(--rally-white);
+    }
+    #rallyBR .gauge-info .kmh #rKmh {
+      font-family: 'Share Tech Mono', monospace;
+      font-weight: 700; color: var(--rally-white);
+      margin-left: 4px;
+    }
+    #rallyBR .gauge-info .gear {
+      font-family: 'Russo One', sans-serif;
+      font-size: 82px;
+      color: var(--rally-white);
+      font-style: italic;
+      line-height: 0.85;
+      text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    /* mobile cleanup */
+    .mobile-active #rallyTL { font-size: 11px; min-width: 0; padding: 4px 8px; }
+    .mobile-active #rallyTL .row { grid-template-columns: 60px 1fr; }
+    .mobile-active #rallyTR .pos { font-size: 56px; }
+    .mobile-active #rallyTR .info .time { font-size: 22px; }
+    .mobile-active #rallyBR .gauge-svg { width: 160px; height: 92px; }
+    .mobile-active #rallyBR .gauge-info .gear { font-size: 54px; }
 
     /* =====================================================================
        CHUNKY ARCADE PASS (v2) — Russo One numbers, fatter borders,
@@ -1054,7 +1185,52 @@
        ARCADE HUD (new) — replaces the thin telemetry look
   ===================================================================== -->
 
-  <!-- top-left: leaderboard -->
+  <!-- ====================================================================
+       PS1 RALLY HUD — translucent purple panels, white numbers
+  ===================================================================== -->
+
+  <!-- top-left: records / best / last -->
+  <div id="rallyTL" class="rally">
+    <div class="row"><span class="label">RECORD</span><span class="val" id="rRecord">--'--"--</span></div>
+    <div class="row"><span class="label">BEST</span><span class="val" id="rBest">--'--"--</span></div>
+    <div class="row"><span class="label">LAST</span><span class="val" id="rLast">--'--"--</span></div>
+  </div>
+
+  <!-- top-center: small turn indicator -->
+  <div id="rallyTurn" class="rally">
+    <span class="lbl">NEXT</span>
+    <span class="arrow" id="rTurnArrow">▲</span>
+  </div>
+
+  <!-- top-right: lap / time + huge italic stage position -->
+  <div id="rallyTR" class="rally">
+    <div class="info">
+      <div class="header">LAP <span id="rLap">1/3</span> · POS</div>
+      <div class="time" id="rTime">00'00"00</div>
+    </div>
+    <div class="pos" id="rPos">1</div>
+  </div>
+
+  <!-- bottom-left: green LCD delta -->
+  <div id="rallyBL" class="rally"><span id="rDelta">-00'00"00</span></div>
+
+  <!-- bottom-right: cyan arc speedo + gear -->
+  <div id="rallyBR" class="rally">
+    <svg class="gauge-svg" viewBox="0 0 230 130" preserveAspectRatio="xMidYMid meet">
+      <path d="M 30 120 A 85 85 0 0 1 200 120" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="22" />
+      <path id="rGaugeArc" d="M 30 120 A 85 85 0 0 1 200 120" fill="none"
+            stroke="#80e0e0" stroke-width="22" stroke-linecap="butt"
+            stroke-dasharray="267" stroke-dashoffset="267" />
+      <g id="rGaugeTicks" stroke="white" stroke-width="1.4"></g>
+      <g id="rGaugeNums" fill="white" font-family="Saira Condensed, sans-serif" font-size="10"></g>
+    </svg>
+    <div class="gauge-info">
+      <span class="kmh">KM/H<span id="rKmh">0</span></span>
+      <span class="gear" id="rGear">1</span>
+    </div>
+  </div>
+
+  <!-- (legacy arcade HUD below is hidden via CSS — left for compatibility with existing JS refs) -->
   <div id="arcPos" class="arc">
     <div class="arc-head">PILOT ORDER</div>
     <div class="arc-list" id="arcPosList">
@@ -3465,6 +3641,95 @@
       else                 { arcTurnPad.textContent = '▶'; if (mag > 0.18) arcTurnPad.classList.add('hard'); else arcTurnPad.classList.add('warn'); }
     }
 
+    // ----- PS1 rally HUD elements -----
+    const rRecord     = document.getElementById('rRecord');
+    const rBest       = document.getElementById('rBest');
+    const rLast       = document.getElementById('rLast');
+    const rTime       = document.getElementById('rTime');
+    const rLap        = document.getElementById('rLap');
+    const rPos        = document.getElementById('rPos');
+    const rDelta      = document.getElementById('rDelta');
+    const rKmh        = document.getElementById('rKmh');
+    const rGear       = document.getElementById('rGear');
+    const rGaugeArc   = document.getElementById('rGaugeArc');
+    const rTurnArrow  = document.getElementById('rTurnArrow');
+    const RALLY_ARC_LEN = 267;
+
+    // build gauge tick marks + number labels
+    (function buildGaugeTicks() {
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const ticks = document.getElementById('rGaugeTicks');
+      const nums  = document.getElementById('rGaugeNums');
+      if (!ticks || !nums) return;
+      const cx = 115, cy = 120, r1 = 96, r2 = 108;
+      for (let i = 0; i <= 5; i++) {
+        const t = i / 5;
+        const angle = Math.PI * (1 - t);    // π (left) → 0 (right)
+        const x1 = cx + Math.cos(angle) * r1, y1 = cy - Math.sin(angle) * r1;
+        const x2 = cx + Math.cos(angle) * r2, y2 = cy - Math.sin(angle) * r2;
+        const ln = document.createElementNS(SVG_NS, 'line');
+        ln.setAttribute('x1', x1); ln.setAttribute('y1', y1);
+        ln.setAttribute('x2', x2); ln.setAttribute('y2', y2);
+        ticks.appendChild(ln);
+        const tx = document.createElementNS(SVG_NS, 'text');
+        tx.setAttribute('x', cx + Math.cos(angle) * 118);
+        tx.setAttribute('y', cy - Math.sin(angle) * 118 + 4);
+        tx.setAttribute('text-anchor', 'middle');
+        tx.textContent = String(i * 40 + 40);   // 40, 80, 120, 160, 200, 240
+        nums.appendChild(tx);
+      }
+    })();
+
+    function fmtRally(ms) {
+      const total = Math.max(0, ms);
+      const m  = Math.floor(total / 60000);
+      const s  = Math.floor((total % 60000) / 1000);
+      const cs = Math.floor((total % 1000) / 10);
+      return `${String(m).padStart(2,'0')}'${String(s).padStart(2,'0')}"${String(cs).padStart(2,'0')}`;
+    }
+    let bestStageTimes = [];
+    let lastStageTime  = 0;
+
+    function updateRallyHUD() {
+      const elapsedMs = raceTimerRunning ? performance.now() - raceStartMs : 0;
+      rTime.textContent = fmtRally(elapsedMs);
+      rLap.textContent  = `${levelIdx + 1}/${LEVELS.length}`;
+      rPos.textContent  = String(levelIdx + 1);
+
+      // records: show all-time best + last for current stage
+      const best = bestStageTimes[levelIdx];
+      rBest.textContent   = best   != null ? fmtRally(best)        : "--'--\"--";
+      rLast.textContent   = lastStageTime ? fmtRally(lastStageTime): "--'--\"--";
+      // running record approximate = par
+      rRecord.textContent = fmtRally(30000);
+
+      // delta vs par (30s)
+      const par = 30000;
+      const delta = elapsedMs - par;
+      const sign = delta < 0 ? '-' : '+';
+      rDelta.textContent = sign + fmtRally(Math.abs(delta));
+
+      // gauge (km/h, max 240)
+      const kmh = Math.round(truckSpeed * 3.6);
+      rKmh.textContent = kmh;
+      const pct = clamp(kmh / 240, 0, 1);
+      if (rGaugeArc) rGaugeArc.setAttribute('stroke-dashoffset', RALLY_ARC_LEN * (1 - pct));
+      rGear.textContent = gearFor(truckSpeed);
+
+      // small turn indicator: ▲ / ◀ / ▶
+      if (curve) {
+        const t1 = clamp((truckS + 25) / curveLength, 0, 1);
+        const t2 = clamp((truckS + 70) / curveLength, 0, 1);
+        const a = tangentAt(t1);
+        const b = tangentAt(t2);
+        const cross = a.x * b.z - a.z * b.x;
+        const mag = Math.abs(cross);
+        if (mag < 0.06)      rTurnArrow.textContent = '▲';
+        else if (cross > 0)  rTurnArrow.textContent = '◀';
+        else                 rTurnArrow.textContent = '▶';
+      }
+    }
+
     function updateArcadeHUD(speedMph) {
       // race clock
       if (raceTimerRunning) {
@@ -3660,6 +3925,12 @@
       if (stageRecap || gameOver) return;
       stageRecap = true;
       bark('CHECKPOINT');
+      // record this stage's time for the rally HUD
+      const ms = performance.now() - stageStartTime;
+      lastStageTime = ms;
+      if (bestStageTimes[levelIdx] == null || ms < bestStageTimes[levelIdx]) {
+        bestStageTimes[levelIdx] = ms;
+      }
       const seconds = ((performance.now() - stageStartTime) / 1000).toFixed(1);
       const spilled = stageStartCarts - cartsRemaining;
       const gained  = score - stageStartScore;
@@ -4112,8 +4383,8 @@
       // engine drone follows speed
       if (audioStarted) updateEngineSFX(truckSpeed);
 
-      // arcade HUD (timer, gear, rpm, turn signal, boost segments, splits)
-      updateArcadeHUD(Math.round(truckSpeed * 2.237));
+      // PS1 rally HUD (translucent panels, white numbers, cyan arc)
+      updateRallyHUD();
 
       if (crtPass) crtPass.uniforms.time.value += dt;
       composer.render();
