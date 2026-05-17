@@ -157,6 +157,295 @@
     }
     #bark.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* =====================================================================
+       ARCADE HUD — chunky panels, bright color blocks, big readable numbers.
+       Sega Rally / Ridge Racer 4 / Colin McRae core HUD with WipEout flavor.
+       ===================================================================== */
+    :root {
+      --arc-green:  #2ce053;
+      --arc-cyan:   #2de7ff;
+      --arc-orange: #ff7a00;
+      --arc-amber:  #ffce4a;
+      --arc-red:    #ff2a30;
+      --arc-navy:   #001a3a;
+      --arc-navy-d: #00112a;
+      --arc-gray:   #1c2230;
+      --arc-gray-2: #2b3344;
+      --arc-white:  #f5f5f0;
+    }
+    .arc { font-family: 'Saira Condensed', sans-serif; pointer-events: none; }
+
+    /* ---- Top-left: position / leaderboard ---- */
+    #arcPos { position: fixed; top: 14px; left: 14px; }
+    #arcPos .arc-head {
+      background: var(--arc-orange);
+      color: var(--arc-navy);
+      font-weight: 900; font-size: 13px; letter-spacing: 4px;
+      padding: 5px 14px;
+      border: 3px solid var(--arc-white);
+      border-bottom: none;
+    }
+    #arcPos .arc-list {
+      background: var(--arc-gray);
+      border: 3px solid var(--arc-white);
+      padding: 6px 0;
+      min-width: 260px;
+    }
+    #arcPos .pos-row {
+      display: grid;
+      grid-template-columns: 44px 22px 1fr 78px;
+      align-items: center; gap: 8px;
+      padding: 4px 10px;
+      font-weight: 800; font-size: 18px; letter-spacing: 1px;
+      color: var(--arc-white);
+    }
+    #arcPos .pos-row.me { background: var(--arc-green); color: var(--arc-navy); }
+    #arcPos .pos-rank {
+      font-size: 26px; font-weight: 900; color: var(--arc-orange);
+      font-family: 'Share Tech Mono', monospace;
+      text-align: right;
+    }
+    #arcPos .pos-row.me .pos-rank { color: var(--arc-navy); }
+    #arcPos .pos-car {
+      width: 18px; height: 12px; background: var(--arc-cyan);
+    }
+    #arcPos .pos-row.me .pos-car { background: var(--arc-navy); }
+    #arcPos .pos-name { letter-spacing: 2px; }
+    #arcPos .pos-dist {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px; text-align: right;
+    }
+    #arcPos .pos-row.me .pos-dist { color: var(--arc-navy); }
+
+    /* ---- Top-center: big green race clock ---- */
+    #arcClock { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); text-align: center; }
+    #arcClock .clock-lbl {
+      display: inline-block;
+      background: var(--arc-navy);
+      color: var(--arc-white);
+      font-weight: 900; font-size: 11px; letter-spacing: 5px;
+      padding: 4px 14px;
+      border: 3px solid var(--arc-white);
+      border-bottom: none;
+    }
+    #arcClock .clock-value {
+      background: var(--arc-navy-d);
+      color: var(--arc-green);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 64px; font-weight: 700;
+      padding: 6px 26px;
+      letter-spacing: 5px;
+      border: 4px solid var(--arc-white);
+      line-height: 1;
+      text-shadow: 3px 3px 0 var(--arc-navy);
+    }
+
+    /* ---- Course signal: big turn arrow under timer ---- */
+    #arcTurn { position: fixed; top: 138px; left: 50%; transform: translateX(-50%); text-align: center; }
+    #arcTurn .turn-pad {
+      width: 96px; height: 96px;
+      background: var(--arc-green);
+      border: 4px solid var(--arc-white);
+      border-radius: 22px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--arc-navy);
+      font-weight: 900;
+      font-size: 64px; line-height: 1;
+      box-shadow: 0 6px 0 var(--arc-navy-d);
+      transition: background 0.2s;
+    }
+    #arcTurn .turn-pad.warn  { background: var(--arc-amber); }
+    #arcTurn .turn-pad.hard  { background: var(--arc-orange); }
+    #arcTurn .turn-lbl {
+      display: inline-block;
+      margin-top: 6px;
+      background: var(--arc-white);
+      color: var(--arc-navy);
+      font-weight: 900; font-size: 10px; letter-spacing: 4px;
+      padding: 3px 10px;
+      border: 2px solid var(--arc-navy);
+    }
+
+    /* ---- Bottom-left: sector / split times ---- */
+    #arcSplits {
+      position: fixed; bottom: 14px; left: 14px;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    #arcSplits .row {
+      background: var(--arc-navy);
+      border: 3px solid var(--arc-white);
+      display: grid; grid-template-columns: 110px 1fr;
+      align-items: baseline;
+      padding: 4px 14px;
+      margin-bottom: -3px;
+      min-width: 280px;
+    }
+    #arcSplits .lbl {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 12px; letter-spacing: 3px;
+      color: var(--arc-orange);
+    }
+    #arcSplits .val {
+      font-size: 28px; letter-spacing: 3px; text-align: right;
+      color: var(--arc-cyan);
+    }
+    #arcSplits .row.last .val { color: var(--arc-white); }
+
+    /* ---- Bottom-right: speed/gear/RPM/boost cluster ---- */
+    #arcCluster {
+      position: fixed; bottom: 14px; right: 14px;
+      display: flex; align-items: flex-end; gap: 10px;
+    }
+    /* vertical RPM/throttle bar */
+    .rpm-wrap { display: flex; flex-direction: column; align-items: center; }
+    .rpm-bar {
+      width: 22px; height: 168px;
+      background: var(--arc-gray);
+      border: 3px solid var(--arc-white);
+      position: relative;
+      overflow: hidden;
+    }
+    .rpm-fill {
+      position: absolute; left: 0; right: 0; bottom: 0;
+      height: 100%;
+      background: linear-gradient(to top, var(--arc-green) 0%, var(--arc-green) 55%, var(--arc-amber) 70%, var(--arc-red) 88%, var(--arc-red) 100%);
+      transition: clip-path 0.06s linear;
+      clip-path: inset(100% 0 0 0);
+    }
+    .rpm-lbl {
+      margin-top: 4px;
+      background: var(--arc-navy);
+      color: var(--arc-white);
+      font-weight: 900; font-size: 10px; letter-spacing: 2px;
+      padding: 2px 6px;
+      border: 2px solid var(--arc-white);
+    }
+
+    /* speed cluster right column */
+    .speed-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    /* boost segmented bar */
+    .boost-seg-wrap {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    }
+    .boost-seg-row { display: flex; gap: 3px; }
+    .boost-seg {
+      width: 28px; height: 14px;
+      background: var(--arc-gray);
+      border: 2px solid var(--arc-white);
+    }
+    .boost-seg.lit { background: var(--arc-orange); }
+    .boost-seg.firing { background: var(--arc-green); animation: segBlink 0.18s steps(2) infinite; }
+    @keyframes segBlink {
+      0% { background: var(--arc-green); }
+      100% { background: var(--arc-amber); }
+    }
+    .boost-seg-lbl {
+      background: var(--arc-orange); color: var(--arc-navy);
+      font-weight: 900; font-size: 10px; letter-spacing: 3px;
+      padding: 2px 8px;
+      border: 2px solid var(--arc-white);
+    }
+
+    /* speed + gear row */
+    .speed-row { display: flex; align-items: stretch; gap: 8px; }
+    .speed-box {
+      background: var(--arc-navy);
+      border: 4px solid var(--arc-white);
+      padding: 4px 18px;
+      box-shadow: 0 6px 0 var(--arc-gray-2);
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .speed-num {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 76px; font-weight: 700; line-height: 0.85;
+      color: var(--arc-cyan);
+      min-width: 132px; text-align: right;
+    }
+    .speed-num.boost { color: var(--arc-amber); }
+    .speed-unit {
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900; font-size: 14px; letter-spacing: 3px;
+      color: var(--arc-white);
+    }
+    .gear-box {
+      background: var(--arc-orange);
+      border: 4px solid var(--arc-white);
+      width: 76px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--arc-navy);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 56px; font-weight: 700;
+      box-shadow: 0 6px 0 var(--arc-gray-2);
+    }
+    .speed-tag {
+      background: var(--arc-white); color: var(--arc-navy);
+      font-weight: 900; font-size: 10px; letter-spacing: 3px;
+      padding: 2px 10px;
+      border: 2px solid var(--arc-navy);
+      align-self: flex-end;
+    }
+
+    /* ---- Stage countdown ---- */
+    #countdown {
+      position: fixed; left: 50%; top: 42%; transform: translate(-50%, -50%);
+      font-family: 'Share Tech Mono', monospace;
+      font-weight: 700;
+      font-size: 240px;
+      color: var(--arc-green);
+      text-shadow: 10px 10px 0 var(--arc-navy);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.12s ease;
+      z-index: 6;
+    }
+    #countdown.show { opacity: 1; }
+    #countdown.go { color: var(--arc-orange); }
+    #introFade {
+      position: fixed; inset: 0;
+      background: #000;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.4s ease;
+      z-index: 7;
+    }
+    #introFade.show { opacity: 1; }
+
+    /* ---- Mobile touch controls ---- */
+    #mobile {
+      position: fixed; inset: 0; z-index: 5;
+      pointer-events: none;
+      display: none;
+    }
+    .mobile-active #mobile { display: block; }
+    /* hide cluttery hint bar / kana ribbon on mobile */
+    .mobile-active #wpKatakana,
+    .mobile-active #wpStamp,
+    .mobile-active #wpEdgeL,
+    .mobile-active #wpEdgeR,
+    .mobile-active #hudHints { display: none; }
+    .mob-btn {
+      position: fixed;
+      pointer-events: auto;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      background: var(--arc-orange);
+      color: var(--arc-navy);
+      border: 4px solid var(--arc-white);
+      font-family: 'Saira Condensed', sans-serif;
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: 3px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 0 var(--arc-navy-d);
+      border-radius: 8px;
+    }
+    .mob-btn.held { transform: translateY(4px); box-shadow: 0 2px 0 var(--arc-navy-d); }
+    #mobL  { bottom: 30px; left: 24px;  width: 96px; height: 96px; }
+    #mobR  { bottom: 30px; left: 140px; width: 96px; height: 96px; }
+    #mobG  { bottom: 30px; right: 24px; width: 110px; height: 96px; background: var(--arc-green); }
+    #mobB  { bottom: 140px; right: 24px; width: 110px; height: 70px; background: var(--arc-cyan); }
+
+    /* ---- legacy HUD panels: hide ---- */
+    #hudStats, #hudSpeedo, #hudSection, #hudBoost { display: none !important; }
     html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #9fd7ff;
       font-family: 'Saira Condensed', ui-sans-serif, system-ui, -apple-system, sans-serif;
       color: var(--ui-white); letter-spacing: 0.5px;
@@ -521,6 +810,104 @@
   <!-- voice bark subtitle -->
   <div id="bark"></div>
 
+  <!-- ====================================================================
+       ARCADE HUD (new) — replaces the thin telemetry look
+  ===================================================================== -->
+
+  <!-- top-left: leaderboard -->
+  <div id="arcPos" class="arc">
+    <div class="arc-head">PILOT ORDER</div>
+    <div class="arc-list" id="arcPosList">
+      <div class="pos-row me">
+        <span class="pos-rank">1</span>
+        <span class="pos-car"></span>
+        <span class="pos-name">RUN-04</span>
+        <span class="pos-dist" id="arcPosDist">0M</span>
+      </div>
+      <div class="pos-row">
+        <span class="pos-rank">2</span>
+        <span class="pos-car" style="background:#ff7a00"></span>
+        <span class="pos-name">AUR-02</span>
+        <span class="pos-dist" id="arcPos2">—</span>
+      </div>
+      <div class="pos-row">
+        <span class="pos-rank">3</span>
+        <span class="pos-car" style="background:#ff2a30"></span>
+        <span class="pos-name">FEI-01</span>
+        <span class="pos-dist" id="arcPos3">—</span>
+      </div>
+      <div class="pos-row">
+        <span class="pos-rank">4</span>
+        <span class="pos-car" style="background:#9a6aff"></span>
+        <span class="pos-name">QIR-03</span>
+        <span class="pos-dist" id="arcPos4">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- top-center: race clock + turn signal -->
+  <div id="arcClock" class="arc">
+    <div class="clock-lbl">RACE CLOCK</div>
+    <div class="clock-value" id="arcClockValue">00:00.00</div>
+  </div>
+  <div id="arcTurn" class="arc">
+    <div class="turn-pad" id="arcTurnPad">↑</div>
+    <div class="turn-lbl">COURSE SIGNAL</div>
+  </div>
+
+  <!-- bottom-left: sector / total / dist times -->
+  <div id="arcSplits" class="arc">
+    <div class="row">
+      <span class="lbl">SECTOR</span>
+      <span class="val" id="arcSector">1 / 3</span>
+    </div>
+    <div class="row">
+      <span class="lbl">DIST TO MK</span>
+      <span class="val" id="arcDistVal">000</span>
+    </div>
+    <div class="row last">
+      <span class="lbl">CARGO</span>
+      <span class="val" id="arcCargoVal">120</span>
+    </div>
+  </div>
+
+  <!-- bottom-right: RPM bar + boost segments + speed + gear -->
+  <div id="arcCluster" class="arc">
+    <div class="rpm-wrap">
+      <div class="rpm-bar"><div class="rpm-fill" id="arcRpm"></div></div>
+      <div class="rpm-lbl">RPM</div>
+    </div>
+    <div class="speed-stack">
+      <div class="boost-seg-wrap">
+        <div class="boost-seg-lbl" id="arcBoostLbl">BOOST ARM</div>
+        <div class="boost-seg-row" id="arcBoostSegs">
+          <div class="boost-seg"></div><div class="boost-seg"></div><div class="boost-seg"></div>
+          <div class="boost-seg"></div><div class="boost-seg"></div><div class="boost-seg"></div>
+        </div>
+      </div>
+      <div class="speed-row">
+        <div class="speed-box">
+          <span class="speed-num" id="arcSpeed">0</span>
+          <span class="speed-unit">MPH</span>
+        </div>
+        <div class="gear-box" id="arcGear">1</div>
+      </div>
+      <span class="speed-tag">A-G OUTPUT</span>
+    </div>
+  </div>
+
+  <!-- countdown + intro fade -->
+  <div id="countdown"></div>
+  <div id="introFade"></div>
+
+  <!-- mobile touch overlay -->
+  <div id="mobile">
+    <div class="mob-btn" id="mobL">◀</div>
+    <div class="mob-btn" id="mobR">▶</div>
+    <div class="mob-btn" id="mobB">BRAKE</div>
+    <div class="mob-btn" id="mobG">GO</div>
+  </div>
+
   <!-- start-of-run title card -->
   <div id="title-card">
     <div class="t1">CART RUN</div>
@@ -624,10 +1011,10 @@
         tDiffuse: { value: null },
         resolution: { value: new THREE.Vector2(innerWidth, innerHeight) },
         time: { value: 0 },
-        chroma: { value: 0.0018 },
-        curve: { value: 0.018 },
-        scanI: { value: 0.10 },
-        vig:   { value: 0.55 },
+        chroma: { value: 0.0009 },   // softer chromatic aberration
+        curve: { value: 0.010 },     // less barrel
+        scanI: { value: 0.035 },     // very light scanlines
+        vig:   { value: 0.30 },      // gentle vignette
       },
       vertexShader: /* glsl */`
         varying vec2 vUv;
@@ -1171,6 +1558,12 @@
     let curve = null;
     let curveLength = 0;
     let _pendingBanner = null;
+
+    // ---- stage intro / countdown state ----
+    // states: 'fadeIn' (0.5s) → 'idle' (0.6s) → '3' → '2' → '1' → 'GO' (0.5s) → null (playing)
+    let introState = null;
+    let introT = 0;
+    let introHasShown = false; // allows tap-to-skip after first stage
     let levelGroup = new THREE.Group();
     scene.add(levelGroup);
     const obstacles = [];          // {type, t, gapMinLat, gapMaxLat, lat, hit}
@@ -1907,6 +2300,8 @@
 
       // banner (deferred — fired by tick on first frame so DOM helpers are ready)
       _pendingBanner = { num: idx + 1, name: L.name, dist: Math.round(curveLength) };
+      // start the arcade stage intro
+      startIntro();
     }
 
     function makeStore(name) {
@@ -2137,8 +2532,8 @@
     let nextNoteTime = 0;
     let stepCounter = 0;
     let schedulerHandle = null;
-    const BPM = 124;                       // deep house tempo
-    const STEP_DUR = 60 / BPM / 4;         // 16th-note (~0.121s)
+    const BPM = 132;                       // upbeat house / early rave
+    const STEP_DUR = 60 / BPM / 4;         // 16th-note
     const LOOKAHEAD = 0.12;
     const SCHED_MS = 25;
 
@@ -2734,6 +3129,214 @@
       _bannerHide = setTimeout(() => stageBannerEl.classList.remove('show'), holdMs || 2000);
     }
 
+    // ---- Arcade HUD elements ----
+    const arcClockValue = document.getElementById('arcClockValue');
+    const arcTurnPad    = document.getElementById('arcTurnPad');
+    const arcSector     = document.getElementById('arcSector');
+    const arcDistVal    = document.getElementById('arcDistVal');
+    const arcCargoVal   = document.getElementById('arcCargoVal');
+    const arcRpm        = document.getElementById('arcRpm');
+    const arcSpeed      = document.getElementById('arcSpeed');
+    const arcGear       = document.getElementById('arcGear');
+    const arcBoostLbl   = document.getElementById('arcBoostLbl');
+    const arcBoostSegs  = document.getElementById('arcBoostSegs');
+    const arcPosDist    = document.getElementById('arcPosDist');
+    const arcPos2       = document.getElementById('arcPos2');
+    const arcPos3       = document.getElementById('arcPos3');
+    const arcPos4       = document.getElementById('arcPos4');
+    const countdownEl   = document.getElementById('countdown');
+    const introFadeEl   = document.getElementById('introFade');
+
+    let raceStartMs = performance.now();
+    let raceTimerRunning = false;
+    let lastRaceFormatted = '00:00.00';
+    function fmtClock(ms) {
+      const total = Math.max(0, ms);
+      const m  = Math.floor(total / 60000);
+      const s  = Math.floor((total % 60000) / 1000);
+      const cs = Math.floor((total % 1000) / 10);
+      return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+    }
+
+    function gearFor(speed) {
+      // 6 gears, snapping every ~11 m/s with boost extending into 6th
+      if (speed < 8)  return 1;
+      if (speed < 18) return 2;
+      if (speed < 28) return 3;
+      if (speed < 38) return 4;
+      if (speed < 50) return 5;
+      return 6;
+    }
+    function gearRange(g) {
+      return [[0,8],[8,18],[18,28],[28,38],[38,50],[50,66]][g - 1] || [0, 1];
+    }
+
+    function updateTurnIndicator() {
+      // sample 25m and 65m ahead, compute bend
+      if (!curve) return;
+      const t1 = clamp((truckS + 25) / curveLength, 0, 1);
+      const t2 = clamp((truckS + 70) / curveLength, 0, 1);
+      const a = tangentAt(t1);
+      const b = tangentAt(t2);
+      // signed Y of (a × b): positive = right turn, negative = left turn
+      const cross = a.x * b.z - a.z * b.x;
+      const mag = Math.abs(cross);
+      arcTurnPad.classList.remove('warn', 'hard');
+      if (mag < 0.06)        arcTurnPad.textContent = '▲';
+      else if (cross > 0)  { arcTurnPad.textContent = '◀'; if (mag > 0.18) arcTurnPad.classList.add('hard'); else arcTurnPad.classList.add('warn'); }
+      else                 { arcTurnPad.textContent = '▶'; if (mag > 0.18) arcTurnPad.classList.add('hard'); else arcTurnPad.classList.add('warn'); }
+    }
+
+    function updateArcadeHUD(speedMph) {
+      // race clock
+      if (raceTimerRunning) {
+        lastRaceFormatted = fmtClock(performance.now() - raceStartMs);
+      }
+      arcClockValue.textContent = lastRaceFormatted;
+      arcSector.textContent = `${levelIdx + 1} / ${LEVELS.length}`;
+      arcDistVal.textContent = String(Math.max(0, Math.round(curveLength - truckS))).padStart(3, '0');
+      arcCargoVal.textContent = cartsRemaining;
+      arcSpeed.textContent = speedMph;
+      const g = gearFor(truckSpeed);
+      arcGear.textContent = g;
+      const [glo, ghi] = gearRange(g);
+      const rpmPct = clamp((truckSpeed - glo) / (ghi - glo), 0, 1);
+      arcRpm.style.clipPath = `inset(${(1 - rpmPct) * 100}% 0 0 0)`;
+      if (boostActive) arcSpeed.classList.add('boost'); else arcSpeed.classList.remove('boost');
+
+      // boost segments (6)
+      const segs = arcBoostSegs.children;
+      const lit = Math.round(boostMeter * segs.length);
+      for (let i = 0; i < segs.length; i++) {
+        segs[i].classList.toggle('lit', i < lit && !boostActive);
+        segs[i].classList.toggle('firing', boostActive);
+      }
+      arcBoostLbl.textContent = boostActive ? 'A-G FIRING'
+                              : boostMeter >= 0.999 ? 'TAP SPACE'
+                              : 'BOOST ARM';
+
+      // fake leaderboard distances
+      const m = Math.max(0, Math.round(curveLength - truckS));
+      arcPosDist.textContent = m + 'M';
+      arcPos2.textContent = (m + 35) + 'M';
+      arcPos3.textContent = (m + 78) + 'M';
+      arcPos4.textContent = (m + 134) + 'M';
+
+      updateTurnIndicator();
+    }
+
+    // ---- Stage intro / countdown ----
+    function startIntro() {
+      introState = 'fadeIn';
+      introT = 0.5;
+      introFadeEl.classList.add('show');
+      raceTimerRunning = false;
+      countdownEl.classList.remove('show', 'go');
+    }
+    function setCountdown(text, big, isGo) {
+      countdownEl.textContent = text;
+      countdownEl.classList.add('show');
+      if (isGo) countdownEl.classList.add('go'); else countdownEl.classList.remove('go');
+    }
+    function hideCountdown() { countdownEl.classList.remove('show', 'go'); }
+
+    function runIntro(dt) {
+      introT -= dt;
+      if (introT > 0) return;
+      switch (introState) {
+        case 'fadeIn':
+          introFadeEl.classList.remove('show');
+          introState = 'idle';
+          introT = 0.45;
+          bark('GOOD LUCK');
+          break;
+        case 'idle':
+          introState = '3';
+          introT = 0.7;
+          setCountdown('3', true, false);
+          try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          break;
+        case '3':
+          introState = '2';
+          introT = 0.7;
+          setCountdown('2', true, false);
+          try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          break;
+        case '2':
+          introState = '1';
+          introT = 0.7;
+          setCountdown('1', true, false);
+          try { sfxBump(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          break;
+        case '1':
+          introState = 'go';
+          introT = 0.45;
+          setCountdown('GO', true, true);
+          bark('GO');
+          try { sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+          // Start the race timer the moment GO appears
+          raceStartMs = performance.now();
+          raceTimerRunning = true;
+          break;
+        case 'go':
+          hideCountdown();
+          introState = null;
+          introHasShown = true;
+          break;
+      }
+    }
+
+    // tap-to-skip after first viewing
+    addEventListener('keydown', (e) => {
+      if (introState && introHasShown && (e.key === 'Enter' || e.key === ' ' || e.key.toLowerCase() === 'r')) {
+        introState = '1';
+        introT = 0.05;
+      }
+    });
+
+    // ---- Mobile touch controls ----
+    const isMobile = ('ontouchstart' in window) && innerWidth < 900;
+    if (isMobile) document.body.classList.add('mobile-active');
+    function bindMobBtn(id, key) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const press = (e) => { e.preventDefault(); keys[key] = true; el.classList.add('held'); startAudio(); };
+      const release = (e) => { e.preventDefault(); keys[key] = false; el.classList.remove('held'); };
+      el.addEventListener('touchstart', press, { passive: false });
+      el.addEventListener('touchend', release);
+      el.addEventListener('touchcancel', release);
+      el.addEventListener('mousedown', press);
+      el.addEventListener('mouseup', release);
+      el.addEventListener('mouseleave', release);
+    }
+    bindMobBtn('mobL', 'a');
+    bindMobBtn('mobR', 'd');
+    bindMobBtn('mobB', 's');
+    // GO button does press-to-fire boost (and also throttles accel)
+    {
+      const el = document.getElementById('mobG');
+      if (el) {
+        const press = (e) => {
+          e.preventDefault();
+          keys['w'] = true;
+          el.classList.add('held');
+          startAudio();
+          if (boostMeter >= 0.999 && !boostActive) {
+            boostActive = true; boostTime = BOOST_DURATION; boostMeter = 0;
+            try { triggerBoostBlast(); sfxBoost(audioCtx ? audioCtx.currentTime : 0); } catch(_) {}
+            bark('BOOST');
+          }
+        };
+        const release = (e) => { e.preventDefault(); keys['w'] = false; el.classList.remove('held'); };
+        el.addEventListener('touchstart', press, { passive: false });
+        el.addEventListener('touchend', release);
+        el.addEventListener('touchcancel', release);
+        el.addEventListener('mousedown', press);
+        el.addEventListener('mouseup', release);
+        el.addEventListener('mouseleave', release);
+      }
+    }
+
     function endGame(isWin) {
       if (gameOver) return;
       gameOver = true;
@@ -2819,7 +3422,12 @@
       const dt = Math.min(clock.getDelta(), 0.05);
       let steerInput = 0;
 
-      if (!gameOver && !stageRecap) {
+      // ---- stage intro plays before gameplay resumes ----
+      if (introState) {
+        runIntro(dt);
+      }
+
+      if (!gameOver && !stageRecap && !introState) {
         // throttle — boost is a press-to-fire timed burst, not a hold
         if (boostActive) {
           boostTime -= dt;
@@ -2955,7 +3563,8 @@
           const ds = (c.s - truckS);  // positive: ahead of truck
           const dlat = Math.abs(c.lat - truckLateral);
           // collision
-          if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half)) {
+          // jump-over forgiveness: if truck is airborne, skip the hit
+          if (Math.abs(ds) < (2.2 + c.half) && dlat < (0.9 + c.half) && bumpY < 0.7) {
             for (let k = 0; k < 6; k++) dropCart();
             bumpVel = Math.max(8, truckSpeed * 0.6);
             truckSpeed *= 0.55;
@@ -2966,6 +3575,13 @@
             bark('WATCH IT');
             c.alive = false;
             continue;
+          }
+          // bonus when you fly over a car
+          if (!c.passed && bumpY > 0.7 && Math.abs(ds) < 2.5 && dlat < (0.9 + c.half)) {
+            c.passed = true;
+            addScore(c.points + 60);
+            stageDodges++;
+            bark('NICE JUMP');
           }
           // score on safe pass (only fires once per vehicle)
           if (!c.passed) {
@@ -3217,6 +3833,9 @@
 
       // engine drone follows speed
       if (audioStarted) updateEngineSFX(truckSpeed);
+
+      // arcade HUD (timer, gear, rpm, turn signal, boost segments, splits)
+      updateArcadeHUD(Math.round(truckSpeed * 2.237));
 
       if (crtPass) crtPass.uniforms.time.value += dt;
       composer.render();
