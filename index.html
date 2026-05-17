@@ -7305,6 +7305,10 @@
     }
 
     function applyReplayCamera(dt) {
+      // The cockpit camera mode hides the truck mesh during gameplay. The
+      // replay always wants the truck visible — restore it here every frame
+      // so it shows up for every shot regardless of the mode at finish.
+      if (!truck.visible) truck.visible = true;
       const tp = truck.position;
       let pos, look;
       // Heading from the live curve tangent so cameras frame correctly even
